@@ -23,6 +23,8 @@ you can deploy to Vercel, any static host, Docker, or inside your Nest server.
 
 MIT licensed. No accounts, no pricing tiers.
 
+Documentation: **[orbitdocs.vitra.ai](https://orbitdocs.vitra.ai)**
+
 ```bash
 npm install @orbitdocs/nestjs
 npx orbitdocs init      # creates docs/ (a Next.js app) in your Nest project

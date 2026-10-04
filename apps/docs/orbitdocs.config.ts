@@ -10,6 +10,7 @@ export default defineConfig({
   },
   site: {
     title: 'OrbitDocs',
+    url: 'https://orbitdocs.vitra.ai',
     logo: { light: '/logo-light.png', dark: '/logo-dark.png' },
     description: 'Open-source API documentation for NestJS: guides in MDX, a Scalar-style reference, deploy anywhere.',
     github: 'https://github.com/VitraAI/OrbitDocs',
