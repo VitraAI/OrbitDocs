@@ -4,7 +4,7 @@
   "private": true,
   "description": "Self-hosted OrbitDocs platform: projects, registry, publishing, hosting, teams, analytics and audit.",
   "scripts": {
-    "build": "nest build && pnpm --filter @orbitdocs/platform-web build",
+    "build": "nest build",
     "start": "node dist/main.js",
     "dev": "nest start --watch",
     "typecheck": "tsc --noEmit -p tsconfig.json",
