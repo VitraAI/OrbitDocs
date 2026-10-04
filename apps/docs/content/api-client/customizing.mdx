@@ -52,6 +52,31 @@ client: { enabled: false },
 
 This removes **Test Request** from every operation and **API Client** from the top bar. The `/client` page is still built from `app/client/[[...variant]]/page.tsx`; delete that file too if you don't want the page.
 
+### Turn sending off for one API
+
+For an API readers can't call from the browser, such as a demo with no live server, set `send: false` on it:
+
+```ts title="docs/orbitdocs.config.ts"
+apis: [
+  {
+    id: 'demo',
+    source: { file: 'demo/travel.json' },
+    send: false,
+    // Optional; this is the default.
+    sendDisabledMessage: 'Sending requests is turned off for this API. Copy the request as code and run it yourself.',
+  },
+],
+```
+
+Readers can still open that API's requests in the client, edit them and copy them as cURL or code. Nothing is sent:
+
+- **Send** is disabled and explains why on hover. The response pane shows the same message.
+- ⌘ Enter, **Send** in the right-click menu and in the **Send** menu, and **Send request** in the command palette do nothing.
+- The collection runner doesn't run the collection.
+- Requests a reader adds to that API's collection follow the same setting.
+
+In the reference, **Test Request** is disabled with the same message. The code samples and **Copy** stay. Other APIs on the site are not affected.
+
 ## Reader settings
 
 Readers open settings with the gear at the bottom of the rail, or from the command palette.

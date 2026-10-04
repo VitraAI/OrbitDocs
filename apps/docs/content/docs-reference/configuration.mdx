@@ -107,6 +107,8 @@ The plugin writes the resulting CSS to `.orbitdocs/theme.css`. Change the config
     standardErrors: { type: 'boolean | { extra?: string[]; descriptions?: Record<string, string> }', default: 'true', description: 'Add the generic error responses (400 with input, 401/403 when secured, 404 with a path parameter, 500) and a shared error schema to every operation. The object form adds codes every operation can return, such as extra: [\'429\'] behind a rate limiter, and rewords the defaults.' },
     omitParameters: { type: "{ in: 'header' | 'query' | 'path' | 'cookie'; name: string }[]", default: '[]', description: 'Parameters removed from every operation of this API, such as a tenant header that callers using an API key never send. Header names match in any case.' },
     access: { type: 'string[]', description: 'Access groups that can read this API reference and spec (private docs). Restricted APIs get no MCP server.' },
+    send: { type: 'boolean', default: 'true', description: 'Whether readers can send this API requests from the docs. false disables Test Request in the reference and Send in the API client (also ⌘ Enter, the menus, the command palette and the collection runner). Code samples and Copy as cURL still work, so readers can run requests themselves.' },
+    sendDisabledMessage: { type: 'string', default: "'Sending requests is turned off for this API. Copy the request as code and run it yourself.'", description: 'Shown on the disabled buttons when send is false.' },
   }}
 />
 

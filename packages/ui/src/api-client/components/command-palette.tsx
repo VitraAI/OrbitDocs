@@ -10,6 +10,8 @@ export interface PaletteAction {
   id: string;
   label: string;
   hint?: string;
+  /** Shown but can't be picked. */
+  disabled?: boolean;
   run: () => void;
 }
 
@@ -49,7 +51,7 @@ export function CommandPalette({
                 <SearchField.ClearButton />
               </SearchField.Group>
             </SearchField>
-            <ListBox aria-label="Results" onAction={(k) => run(String(k))} className="oc-palette-list">
+            <ListBox aria-label="Results" onAction={(k) => run(String(k))} disabledKeys={acts.filter((a) => a.disabled).map((a) => `act:${a.id}`)} className="oc-palette-list">
               {reqs.length ? (
                 <ListBox.Section>
                   <Header>Requests</Header>

@@ -78,6 +78,10 @@ export const pickedFiles = new Map<string, File>();
 
 /** Pre-request script → send → post-response script and tests. */
 export async function sendRequest(draft: RequestDraft, ctx: SendContext): Promise<SendOutcome> {
+  // Sending is off for the request's API (config `send: false`): nothing runs, nothing is fetched.
+  if (ctx.collection?.sendDisabled) {
+    return { requestId: draft.id, tests: [], logs: [], at: Date.now(), error: ctx.collection.sendDisabled, environment: {}, globals: {}, runVariables: { ...ctx.runVariables } };
+  }
   const env = Object.fromEntries((ctx.environment?.variables ?? []).filter((v) => v.enabled).map((v) => [v.key, v.value]));
   const globals = Object.fromEntries(ctx.globals.filter((v) => v.enabled).map((v) => [v.key, v.value]));
   let runVars = { ...ctx.runVariables };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ConfigError, layoutWarnings, resolveConfig } from './config';
+import { ConfigError, DEFAULT_SEND_DISABLED_MESSAGE, layoutWarnings, resolveConfig, sendDisabledReason } from './config';
 
 describe('resolveConfig', () => {
   it('applies defaults', () => {
@@ -46,6 +46,22 @@ describe('resolveConfig', () => {
       expect(issues).toContain('site.title');
       expect(issues).toContain('apis.0.id');
     }
+  });
+
+  it('lets readers send an API\'s requests unless `send` is off', () => {
+    const c = resolveConfig({
+      site: { title: 'x' },
+      apis: [
+        { id: 'a', source: { file: 'a.json' } },
+        { id: 'b', source: { file: 'b.json' }, send: false },
+        { id: 'c', source: { file: 'c.json' }, send: false, sendDisabledMessage: 'Demo API: nothing answers.' },
+      ],
+    });
+    expect(c.apis.map((a) => a.send)).toEqual([true, false, false]);
+    expect(c.apis.map(sendDisabledReason)).toEqual([undefined, DEFAULT_SEND_DISABLED_MESSAGE, 'Demo API: nothing answers.']);
+    // The message alone doesn't turn sending off.
+    expect(sendDisabledReason({ send: true, sendDisabledMessage: 'x' })).toBeUndefined();
+    expect(() => resolveConfig({ site: { title: 'x' }, apis: [{ id: 'a', source: { file: 'a.json' }, send: 'no' }] })).toThrow(/apis\.0\.send/);
   });
 
   it('rejects duplicate api ids', () => {

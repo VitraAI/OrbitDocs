@@ -625,6 +625,19 @@
 .button.od-test-button[data-hovered] {
   background: oklch(100% 0 0);
 }
+/* Sending is off for the API (config `send: false`): the button explains why on hover or focus. */
+.od-test-off {
+  display: inline-flex;
+  border-radius: 1.5rem;
+  cursor: not-allowed;
+}
+.od-test-off-tip,
+.oc-send-off-tip {
+  max-width: 260px;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-height: 1.45;
+}
 .od-ghost-button,
 .od-icon-button {
   display: inline-flex;
@@ -1195,6 +1208,25 @@
 }
 .oc-send-button {
   gap: 8px;
+}
+.oc-send-off {
+  display: inline-flex;
+  /* Matches the button, so the focus ring follows its shape. */
+  border-start-start-radius: 1.5rem;
+  border-end-start-radius: 1.5rem;
+  cursor: not-allowed;
+}
+/* The wrapped Send button is still the group's first button, not its only one. */
+.button-group--horizontal .oc-send-off .button {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+.oc-send-off-note {
+  max-width: 360px;
+  text-align: center;
+}
+.oc-send-off-alert {
+  flex-shrink: 0;
 }
 .oc-send-kbd {
   margin-left: 2px;

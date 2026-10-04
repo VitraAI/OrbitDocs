@@ -138,6 +138,15 @@ const api = z.object({
   omitParameters: z.array(z.object({ in: z.enum(['header', 'query', 'path', 'cookie']), name: z.string().min(1) })).default([]),
   /** Access groups that can read this API's reference (private docs). */
   access: z.array(z.string()).optional(),
+  /**
+   * Whether readers can send this API's requests from the docs (the
+   * reference's Test Request and the API client's Send). Off: the reference
+   * keeps its code samples and the client still builds, edits and copies
+   * requests as code, but nothing is sent.
+   */
+  send: z.boolean().default(true),
+  /** Shown where sending would be when `send` is off. */
+  sendDisabledMessage: z.string().min(1).optional(),
 });
 
 /** Who belongs to an access group: listed emails, whole email domains, or IdP groups. */
@@ -647,6 +656,13 @@ export type SdksConfig = NonNullable<OrbitDocsConfig['sdks']>;
 export type MockConfig = NonNullable<OrbitDocsConfig['mock']>;
 export type AiConfig = NonNullable<OrbitDocsConfig['ai']>;
 export type AppSessionConfig = NonNullable<AccessConfig['appSession']>;
+
+export const DEFAULT_SEND_DISABLED_MESSAGE = 'Sending requests is turned off for this API. Copy the request as code and run it yourself.';
+
+/** Why readers can't send this API's requests from the docs; undefined when they can. */
+export function sendDisabledReason(api: Pick<ApiConfig, 'send' | 'sendDisabledMessage'>): string | undefined {
+  return api.send ? undefined : (api.sendDisabledMessage ?? DEFAULT_SEND_DISABLED_MESSAGE);
+}
 
 /** Typed helper for `orbitdocs.config.ts`. Returns the input unchanged. */
 export function defineConfig(config: OrbitDocsConfigInput): OrbitDocsConfigInput {

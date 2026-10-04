@@ -66,6 +66,7 @@ export function UrlBar({
   onSend,
   onCopyCurl,
   onDuplicate,
+  sendDisabled,
 }: {
   method: string;
   url: string;
@@ -77,6 +78,8 @@ export function UrlBar({
   /** Secrets are placeholders unless `includeSecrets`. */
   onCopyCurl: (includeSecrets?: boolean) => void;
   onDuplicate: () => void;
+  /** Sending is off for this request's API: why (the Send button explains it). */
+  sendDisabled?: string;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const insert = (name: string) => {
@@ -114,21 +117,33 @@ export function UrlBar({
         </Dropdown.Popover>
       </Dropdown>
       <ButtonGroup>
-        <Button type="submit" isPending={sending} className="oc-send-button">
-          {sending ? null : <Send size={14} />}
-          Send
-          <Kbd className="oc-send-kbd">
-            <Kbd.Abbr keyValue="command" />
-            <Kbd.Content>↵</Kbd.Content>
-          </Kbd>
-        </Button>
+        {sendDisabled ? (
+          <Tooltip delay={150}>
+            <Tooltip.Trigger className="oc-send-off" aria-label={`Send is off. ${sendDisabled}`}>
+              <Button isDisabled className="oc-send-button">
+                <Send size={14} />
+                Send
+              </Button>
+            </Tooltip.Trigger>
+            <Tooltip.Content className="oc-send-off-tip">{sendDisabled}</Tooltip.Content>
+          </Tooltip>
+        ) : (
+          <Button type="submit" isPending={sending} className="oc-send-button">
+            {sending ? null : <Send size={14} />}
+            Send
+            <Kbd className="oc-send-kbd">
+              <Kbd.Abbr keyValue="command" />
+              <Kbd.Content>↵</Kbd.Content>
+            </Kbd>
+          </Button>
+        )}
         <Dropdown>
           <Button isIconOnly aria-label="More send options">
             <ButtonGroup.Separator />
             <ChevronDown size={14} />
           </Button>
           <Dropdown.Popover placement="bottom end">
-            <Dropdown.Menu aria-label="Send options" onAction={(k) => (k === 'curl' ? onCopyCurl() : k === 'curl-secrets' ? onCopyCurl(true) : k === 'duplicate' ? onDuplicate() : onSend())}>
+            <Dropdown.Menu aria-label="Send options" disabledKeys={sendDisabled ? ['send'] : []} onAction={(k) => (k === 'curl' ? onCopyCurl() : k === 'curl-secrets' ? onCopyCurl(true) : k === 'duplicate' ? onDuplicate() : onSend())}>
               <Dropdown.Item id="send" textValue="Send">
                 <Label>Send</Label>
               </Dropdown.Item>

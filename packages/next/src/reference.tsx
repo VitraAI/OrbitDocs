@@ -1,4 +1,4 @@
-import type { OrbitDocsConfig } from '@orbitdocs/core';
+import { type OrbitDocsConfig, sendDisabledReason } from '@orbitdocs/core';
 import { allCodeSamples, ApiReference, type ExtraContent, plainText, type ReferenceContent, referenceSection, sectionFiles } from '@orbitdocs/ui';
 import type { ComponentType } from 'react';
 
@@ -125,6 +125,7 @@ export async function ReferencePage({
       specUrl={hasPublicSpec(api.id) ? specUrl(config, api.id) : undefined}
       openapiVersion={api.document.openapi}
       client={config.client.enabled ? config.client : false}
+      sendDisabled={sendDisabledReason(api.config)}
       personalize={Boolean(config.access)}
       content={referenceContent(config, api.id, content)}
       samplesUrl={`${config.output.basePath}/reference-samples/${api.id}.json`}

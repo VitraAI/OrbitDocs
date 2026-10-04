@@ -112,6 +112,9 @@ export function ApiClient({ seeds, storageKey = 'orbitdocs:client', initialReque
   const environment = ws.environments.find((e) => e.id === ws.activeEnvironmentId);
   const envs = useMemo(() => ws.environments.filter((e) => !e.collectionId || e.collectionId === collection?.id), [ws.environments, collection?.id]);
   const vars = useMemo(() => scope(ws.globals, environment), [ws.globals, environment]);
+  /** Why a request can't be sent (its API has `send: false`); requests the reader adds to that collection follow it. */
+  const sendOffFor = useCallback((r: RequestDraft) => (ws.collections.find((c) => c.id === r.collectionId) ?? ws.collections[0])?.sendDisabled, [ws.collections]);
+  const sendDisabled = draft ? sendOffFor(draft) : undefined;
 
   const doSend = useCallback(async () => {
     if (!draft) return;
@@ -127,9 +130,13 @@ export function ApiClient({ seeds, storageKey = 'orbitdocs:client', initialReque
 
   const send = useCallback(() => {
     if (!draft || sending) return;
+    if (sendDisabled) {
+      toast(sendDisabled);
+      return;
+    }
     if (environment?.production && settings.confirmProduction) setConfirming(true);
     else void doSend();
-  }, [draft, sending, environment, settings.confirmProduction, doSend]);
+  }, [draft, sending, sendDisabled, environment, settings.confirmProduction, doSend]);
 
   const newRequest = useCallback(
     (collectionId = collection?.id ?? 'local') => {
@@ -223,6 +230,7 @@ export function ApiClient({ seeds, storageKey = 'orbitdocs:client', initialReque
         label: 'Send',
         icon: <SendIcon size={14} />,
         shortcut: '⌘↵',
+        disabled: Boolean(sendOffFor(r)),
         onAction: () => {
           open(id);
           setPendingSend(id);
@@ -354,7 +362,7 @@ export function ApiClient({ seeds, storageKey = 'orbitdocs:client', initialReque
   }, [send, settings.showSidebar, settings.layout, setSettings, features.environments]);
 
   const actions: PaletteAction[] = [
-    { id: 'send', label: 'Send request', hint: '↵', run: send },
+    { id: 'send', label: sendDisabled ? 'Send request (off for this API)' : 'Send request', hint: '↵', disabled: Boolean(sendDisabled), run: send },
     { id: 'new', label: 'New request', run: () => newRequest() },
     { id: 'dup', label: 'Duplicate request', run: () => duplicate() },
     { id: 'curl', label: 'Copy as cURL', run: () => void copyCurl() },
@@ -504,6 +512,7 @@ export function ApiClient({ seeds, storageKey = 'orbitdocs:client', initialReque
                 onSend={send}
                 onCopyCurl={(includeSecrets) => void copyCurl(includeSecrets)}
                 onDuplicate={() => duplicate()}
+                sendDisabled={sendDisabled}
               />
               <VariableChips text={`${draft.url} ${draft.headers.map((h) => h.value).join(' ')} ${draft.body.raw}`} vars={vars} />
               <div ref={splitRef} className="oc-split" data-layout={settings.layout}>
@@ -521,7 +530,7 @@ export function ApiClient({ seeds, storageKey = 'orbitdocs:client', initialReque
                 </div>
                 <div className="oc-resizer" role="separator" aria-label="Resize panels" aria-orientation={settings.layout === 'stacked' ? 'horizontal' : 'vertical'} onPointerDown={startResize} />
                 <div className="oc-pane">
-                  <ResponsePanel result={results[draft.id]} sending={sending} wrap={settings.wrapLines} />
+                  <ResponsePanel result={results[draft.id]} sending={sending} wrap={settings.wrapLines} sendDisabled={sendDisabled} />
                 </div>
               </div>
             </div>

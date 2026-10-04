@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { type ClientSeed, mergeSeed, requestHash } from './seed';
+import { type ClientSeed, clientSeed, mergeSeed, requestHash } from './seed';
 import type { Workspace } from './types';
 
 const seed: ClientSeed = {
@@ -46,5 +46,22 @@ describe('mergeSeed', () => {
     expect(env.production).toBe(true);
     expect(env.color).toBe('#EF4444');
     expect(env.variables.map((v) => `${v.key}=${v.value}`)).toEqual(['baseUrl=https://mine', 'apiKey=']);
+  });
+
+  it('takes the API\'s send setting from the seed, over what the saved workspace says', () => {
+    const off = { ...seed, collection: { ...seed.collection, sendDisabled: 'Demo API.' } };
+    const saved = mergeSeed(empty, off);
+    expect(saved.collections[0]!.sendDisabled).toBe('Demo API.');
+    expect(mergeSeed(saved, seed).collections[0]!.sendDisabled).toBeUndefined();
+    expect(mergeSeed(mergeSeed(empty, seed), off).collections[0]!.sendDisabled).toBe('Demo API.');
+  });
+});
+
+describe('clientSeed', () => {
+  const model = { id: 'demo', title: 'Demo', servers: [{ url: 'https://api.demo.example' }], securitySchemes: {}, groups: [], operations: [] } as unknown as Parameters<typeof clientSeed>[0];
+
+  it('marks the collection when sending is off', () => {
+    expect(clientSeed(model).collection.sendDisabled).toBeUndefined();
+    expect(clientSeed(model, { sendDisabled: 'Demo API.' }).collection.sendDisabled).toBe('Demo API.');
   });
 });

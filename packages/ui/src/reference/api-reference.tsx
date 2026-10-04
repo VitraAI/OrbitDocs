@@ -36,6 +36,11 @@ export interface ApiReferenceProps {
   hideModels?: boolean;
   /** API client defaults (config `client`); false hides Test Request. */
   client?: ClientDefaults | false;
+  /**
+   * Sending is off for this API (config `send: false`): the reason shown on
+   * the disabled Test Request button. The code samples stay.
+   */
+  sendDisabled?: string;
   /** Content from `reference/<api>/…` MDX files. */
   content?: ReferenceContent;
   /** Pre-fill credentials from the signed-in reader (`<base>/_auth/me`, private docs). */
@@ -77,7 +82,7 @@ function schemeViews(model: ReferenceModel): SecuritySchemeView[] {
  * intro, group headers and an index of the rest); the other sections load
  * from `<sectionsUrl>/<file>.json` and render with the same component.
  */
-export async function ApiReference({ model, base, active, specUrl, openapiVersion, hideModels, client, content, personalize, samplesUrl, sectionsUrl }: ApiReferenceProps) {
+export async function ApiReference({ model, base, active, specUrl, openapiVersion, hideModels, client, sendDisabled, content, personalize, samplesUrl, sectionsUrl }: ApiReferenceProps) {
   const serverUrl = model.servers[0]?.url ?? '';
   const schemes = schemeViews(model);
   const languages = SAMPLE_LANGUAGES.map((l) => ({ id: l.id, label: l.label }));
@@ -96,7 +101,7 @@ export async function ApiReference({ model, base, active, specUrl, openapiVersio
   const extrasFor = (slug: string): ExtraContent[] | undefined => content?.operations?.[slug];
 
   return (
-    <ReferenceProvider apiId={model.id} servers={model.servers} schemes={schemes} languages={languages} seed={client === false ? undefined : clientSeed(model)} clientDefaults={client || undefined} meUrl={personalize ? `${base.replace(/\/reference\/[^/]+$/, '')}/_auth/me` : undefined} samplesUrl={samplesUrl}>
+    <ReferenceProvider apiId={model.id} servers={model.servers} schemes={schemes} languages={languages} seed={client === false || sendDisabled ? undefined : clientSeed(model)} sendDisabled={client === false ? undefined : sendDisabled} clientDefaults={client || undefined} meUrl={personalize ? `${base.replace(/\/reference\/[^/]+$/, '')}/_auth/me` : undefined} samplesUrl={samplesUrl}>
       <Sections url={sectionsUrl} files={[...model.groups.map((g) => g.slug), ...(models.length ? ['models'] : [])]} first={ownGroup}>
       <div className="od-reference">
         <style dangerouslySetInnerHTML={{ __html: await shikiCss() }} />

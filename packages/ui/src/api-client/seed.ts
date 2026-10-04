@@ -89,8 +89,13 @@ export function requestFromOperation(op: OperationModel, apiId: string, collecti
   return { ...draft, seedHash: requestHash(draft) };
 }
 
+export interface ClientSeedOptions {
+  /** Sending is off for this API (config `send: false`): the reason readers see instead. */
+  sendDisabled?: string;
+}
+
 /** Builds the client seed on the server (plain JSON, passed to the client component). */
-export function clientSeed(model: ReferenceModel): ClientSeed {
+export function clientSeed(model: ReferenceModel, options: ClientSeedOptions = {}): ClientSeed {
   const collectionId = `api:${model.id}`;
   const { auth, variables } = collectionAuth(model);
   const servers = model.servers.length ? model.servers : [{ url: '', description: 'Same origin' }];
@@ -101,6 +106,7 @@ export function clientSeed(model: ReferenceModel): ClientSeed {
       auth,
       folders: model.groups.map((g) => g.name).filter((n): n is string => Boolean(n)),
       source: { api: model.id },
+      ...(options.sendDisabled ? { sendDisabled: options.sendDisabled } : {}),
       preRequestScript: '',
       postResponseScript: '',
     },
@@ -137,7 +143,8 @@ export function mergeSeed(ws: Workspace, seed: ClientSeed): Workspace {
   const existingCollection = ws.collections.find((c) => c.id === seed.collection.id);
   const collections = [
     ...ws.collections.filter((c) => c.id !== seed.collection.id),
-    existingCollection ? { ...existingCollection, name: seed.collection.name, folders: seed.collection.folders } : seed.collection,
+    // Sending follows the config, whatever a saved workspace says.
+    existingCollection ? { ...existingCollection, name: seed.collection.name, folders: seed.collection.folders, sendDisabled: seed.collection.sendDisabled } : seed.collection,
   ];
   // Seeded environments: the reader's values win, but fields added to the seed later
   // (colour, production flag, new variables) are filled in.

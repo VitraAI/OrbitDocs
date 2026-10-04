@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Chip, SearchField, Table, Tabs, Tooltip, toast } from '@heroui/react';
-import { LuCircleCheck as CheckCircle2, LuClock as Clock, LuCopy as Copy, LuDownload as Download, LuHardDrive as HardDrive, LuCircleX as XCircle } from 'react-icons/lu';
+import { LuCircleCheck as CheckCircle2, LuClock as Clock, LuCopy as Copy, LuDownload as Download, LuHardDrive as HardDrive, LuCircleX as XCircle, LuBan as SendOff } from 'react-icons/lu';
 import { useMemo, useState } from 'react';
 
 import type { RunResult } from '../types';
@@ -10,7 +10,7 @@ import { JsonTree } from './json-tree';
 const bytes = (n: number) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
 const tone = (status: number) => (status >= 200 && status < 300 ? 'success' : status >= 300 && status < 400 ? 'accent' : status >= 400 && status < 500 ? 'warning' : 'danger');
 
-export function ResponsePanel({ result, sending, wrap }: { result?: RunResult; sending: boolean; wrap: boolean }) {
+export function ResponsePanel({ result, sending, wrap, sendDisabled }: { result?: RunResult; sending: boolean; wrap: boolean; /** Sending is off for this request's API: why. */ sendDisabled?: string }) {
   const [tab, setTab] = useState('pretty');
   const [query, setQuery] = useState('');
   const r = result?.response;
@@ -22,6 +22,18 @@ export function ResponsePanel({ result, sending, wrap }: { result?: RunResult; s
       return undefined;
     }
   }, [r?.body]);
+
+  if (!result && sendDisabled) {
+    return (
+      <div className="oc-response oc-empty">
+        <div className="oc-empty-art" aria-hidden>
+          <SendOff size={22} />
+        </div>
+        <p className="oc-empty-title">Sending is off for this API</p>
+        <p className="oc-hint oc-send-off-note">{sendDisabled}</p>
+      </div>
+    );
+  }
 
   if (!result) {
     return (

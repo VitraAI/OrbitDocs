@@ -31,6 +31,8 @@ interface ReferenceContext extends State {
   apiId: string;
   /** Collection for the API client (Test Request). */
   seed?: ClientSeed;
+  /** Sending is off for this API (config `send: false`): why Test Request is unavailable. */
+  sendDisabled?: string;
   clientDefaults?: ClientDefaults;
   servers: ServerView[];
   schemes: SecuritySchemeView[];
@@ -62,6 +64,7 @@ export function ReferenceProvider({
   schemes,
   languages,
   seed,
+  sendDisabled,
   clientDefaults,
   meUrl,
   samplesUrl,
@@ -73,6 +76,7 @@ export function ReferenceProvider({
   meUrl?: string;
   apiId: string;
   seed?: ClientSeed;
+  sendDisabled?: string;
   clientDefaults?: ClientDefaults;
   servers: ServerView[];
   schemes: SecuritySchemeView[];
@@ -145,6 +149,7 @@ export function ReferenceProvider({
       ...state,
       apiId,
       seed,
+      sendDisabled,
       clientDefaults,
       servers,
       schemes,
@@ -155,7 +160,7 @@ export function ReferenceProvider({
       moreSamples,
       loadSamples,
     }),
-    [state, apiId, seed, clientDefaults, servers, schemes, languages, update, moreSamples, loadSamples],
+    [state, apiId, seed, sendDisabled, clientDefaults, servers, schemes, languages, update, moreSamples, loadSamples],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

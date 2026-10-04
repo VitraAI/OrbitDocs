@@ -76,6 +76,8 @@ export interface Collection {
   folders: string[];
   /** Generated from an OpenAPI document (re-synced on load). */
   source?: { api: string };
+  /** Readers can't send this collection's requests (config `send: false`): why, shown instead. */
+  sendDisabled?: string;
   preRequestScript: string;
   postResponseScript: string;
 }

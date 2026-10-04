@@ -80,6 +80,8 @@ export default defineConfig({
       title: 'Demo: Orbit Travel API',
       source: { file: 'demo/travel.json' },
       completeness: 'off',
+      // A fictional API: no server answers, so readers copy requests instead of sending them.
+      send: false,
     },
   ],
   output: { mode: 'static', basePath: '' },

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Checkbox, Chip, Label, ListBox, NumberField, ProgressBar, Select, Switch, Table } from '@heroui/react';
+import { Alert, Button, Checkbox, Chip, Label, ListBox, NumberField, ProgressBar, Select, Switch, Table } from '@heroui/react';
 import { LuPlay as Play, LuSquare as Square } from 'react-icons/lu';
 import { useRef, useState } from 'react';
 
@@ -50,8 +50,11 @@ export function RunnerView({
   const stop = useRef(false);
   const inFolder = requests.filter((r) => folder === 'all' || r.folder === folder);
   const queue = inFolder.filter((r) => !excluded.has(r.id));
+  // Sending is off for this API (config `send: false`): its requests are skipped, so nothing runs.
+  const off = collection.sendDisabled;
 
   async function run() {
+    if (off) return;
     stop.current = false;
     const plan: Row[] = [];
     for (let it = 1; it <= iterations; it++) for (const r of queue) plan.push({ key: `${it}:${r.id}`, request: r, iteration: it, state: 'queued' });
@@ -130,11 +133,21 @@ export function RunnerView({
             <Square size={14} /> Stop
           </Button>
         ) : (
-          <Button size="sm" isDisabled={!queue.length} onPress={() => void run()}>
+          <Button size="sm" isDisabled={!queue.length || Boolean(off)} onPress={() => void run()}>
             <Play size={14} /> Run {queue.length * iterations} requests
           </Button>
         )}
       </div>
+
+      {off ? (
+        <Alert className="oc-send-off-alert">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>Sending is off for this API</Alert.Title>
+            <Alert.Description>{off} The runner skips its requests.</Alert.Description>
+          </Alert.Content>
+        </Alert>
+      ) : null}
 
       {rows.length ? (
         <>

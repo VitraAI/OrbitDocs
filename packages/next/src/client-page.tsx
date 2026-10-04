@@ -1,4 +1,4 @@
-import type { OrbitDocsConfig } from '@orbitdocs/core';
+import { type OrbitDocsConfig, sendDisabledReason } from '@orbitdocs/core';
 import { ApiClient } from '@orbitdocs/ui/api-client';
 import { clientSeed } from '@orbitdocs/ui/api-client/server';
 import { notFound } from 'next/navigation';
@@ -17,9 +17,9 @@ export async function ClientPage({ config, variant }: { config: OrbitDocsConfig;
   if (variant && !variantOptions(manifest, 'client').some((o) => o.key === variant)) notFound();
   const viewer = manifest ? accessAt(manifest, variant ? `/client/${variant}` : '/client') : null;
   const apis = await loadApis(config);
-  const models = apis.map((a) => ({ full: a.model, shown: modelFor(manifest, a.model, a.route, viewer) }));
+  const models = apis.map((a) => ({ full: a.model, shown: modelFor(manifest, a.model, a.route, viewer), sendDisabled: sendDisabledReason(a.config) }));
   // An API none of whose operations this reader may open is left out entirely.
-  const seeds = models.filter((m) => m.shown.operations.length || !m.full.operations.length).map((m) => clientSeed(m.shown));
+  const seeds = models.filter((m) => m.shown.operations.length || !m.full.operations.length).map((m) => clientSeed(m.shown, { sendDisabled: m.sendDisabled }));
   return (
     <div className="oc-page">
       <ApiClient seeds={seeds} storageKey="orbitdocs:client" defaults={config.client} />

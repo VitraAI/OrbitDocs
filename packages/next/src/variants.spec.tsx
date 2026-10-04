@@ -3,14 +3,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { type AccessManifest, buildManifest, planVariants, requiredGroups } from '@orbitdocs/auth';
-import { resolveConfig } from '@orbitdocs/core';
+import { DEFAULT_SEND_DISABLED_MESSAGE, resolveConfig } from '@orbitdocs/core';
 import type { ReactElement } from 'react';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { ClientPage } from './client-page';
 import { orbitLayoutOptions, readableApis } from './layout';
 import { filterTree, guidesTree, guideVariantParams, isGuideVariantPage } from './guide-tree';
-import { referenceSamples, referenceSamplesParams, referenceSections, referenceStaticParams } from './reference';
+import { ReferencePage, referenceSamples, referenceSamplesParams, referenceSections, referenceStaticParams } from './reference';
 import { clientStaticParams } from './variants';
 
 const spec = {
@@ -158,6 +158,19 @@ describe('a partially restricted API', () => {
     expect(await seeds()).toContain('List pets');
     expect(await seeds()).not.toContain('Delete user');
     expect(await seeds('c1')).toContain('Delete user');
+  });
+
+  it('turns sending off for an API with `send: false`, in the client and the reference', async () => {
+    writeFileSync(join('openapi', 'quiet.json'), JSON.stringify(spec));
+    const quiet = { ...config, apis: [...config.apis, { ...config.apis[0]!, id: 'quiet', send: false }] };
+    const el = (await ClientPage({ config: quiet })) as ReactElement<{ children: ReactElement<{ seeds: Array<{ collection: { id: string; sendDisabled?: string } }> }> }>;
+    const collections = el.props.children.props.seeds.map((s) => s.collection);
+    expect(collections.find((c) => c.id === 'api:public')?.sendDisabled).toBeUndefined();
+    expect(collections.find((c) => c.id === 'api:quiet')?.sendDisabled).toBe(DEFAULT_SEND_DISABLED_MESSAGE);
+
+    const reference = (params: { api: string }) => ReferencePage({ config: quiet, params }) as Promise<ReactElement<{ sendDisabled?: string }>>;
+    expect((await reference({ api: 'quiet' })).props.sendDisabled).toBe(DEFAULT_SEND_DISABLED_MESSAGE);
+    expect((await reference({ api: 'public' })).props.sendDisabled).toBeUndefined();
   });
 });
 

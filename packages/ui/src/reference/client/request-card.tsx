@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@heroui/react';
+import { Button, Tooltip } from '@heroui/react';
 import { LuPlay as Play } from 'react-icons/lu';
 import { useEffect, useState } from 'react';
 
@@ -32,7 +32,7 @@ export function RequestCard({
   /** `<api>:<operation-slug>`, the request opened in the client. */
   requestId: string;
 }) {
-  const { language, setLanguage, schemes, credentials, seed, clientDefaults, moreSamples, loadSamples } = useReference();
+  const { language, setLanguage, schemes, credentials, seed, sendDisabled, clientDefaults, moreSamples, loadSamples } = useReference();
   const [open, setOpen] = useState(false);
   const slug = requestId.split(':')[1] ?? '';
   const samples = moreSamples?.[slug] ?? initial;
@@ -66,6 +66,17 @@ export function RequestCard({
             <Play size={12} fill="currentColor" />
             Test Request
           </Button>
+        ) : sendDisabled ? (
+          // Sending is off for this API: the button stays, explaining why it can't open.
+          <Tooltip delay={150}>
+            <Tooltip.Trigger className="od-test-off" aria-label={`Test Request is off. ${sendDisabled}`}>
+              <Button size="sm" className="od-test-button" isDisabled>
+                <Play size={12} fill="currentColor" />
+                Test Request
+              </Button>
+            </Tooltip.Trigger>
+            <Tooltip.Content className="od-test-off-tip">{sendDisabled}</Tooltip.Content>
+          </Tooltip>
         ) : null}
       </div>
       {seed ? <ClientModal open={open} onOpenChange={setOpen} seed={seed} requestId={requestId} defaults={clientDefaults} /> : null}
