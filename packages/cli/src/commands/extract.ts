@@ -32,6 +32,8 @@ function filterOptions(api: ApiConfig): FilterOptions {
     ...(api.securitySchemes ? { securitySchemes: api.securitySchemes as FilterOptions['securitySchemes'] } : {}),
     ...(api.security ? { security: api.security } : {}),
     standardErrors: api.standardErrors,
+    api: api.id,
+    ...(api.omitParameters.length ? { omitParameters: api.omitParameters } : {}),
   };
 }
 

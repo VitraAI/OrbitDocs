@@ -38,6 +38,13 @@ export interface FilterOptions {
   standardErrors?: boolean | { descriptions?: Record<string, string>; extra?: string[] };
   /** Keep the original operationId instead of a readable slug. */
   keepOperationIds?: boolean;
+  /** This API's id: operations marked for other APIs (`@DocsOperation({ api })`) are left out. */
+  api?: string;
+  /**
+   * Parameters removed from every kept operation, e.g. a tenant header that API-key
+   * callers never send. Header names match case-insensitively.
+   */
+  omitParameters?: Array<{ in: 'header' | 'query' | 'path' | 'cookie'; name: string }>;
 }
 
 export class DanglingReferenceError extends Error {
@@ -76,6 +83,13 @@ export function mergeParameters(params: Parameter[]): Parameter[] {
   return out;
 }
 
+/** Drops the parameters `omitParameters` names (header names case-insensitively). */
+function omit(params: Parameter[], names: FilterOptions['omitParameters']): Parameter[] {
+  if (!names?.length) return params;
+  const same = (a: string, b: string, header: boolean) => (header ? a.toLowerCase() === b.toLowerCase() : a === b);
+  return params.filter((p) => p.$ref || !names.some((n) => n.in === p.in && same(n.name, p.name, p.in === 'header')));
+}
+
 const markerOf = (op: Operation): OrbitMarker | false | undefined =>
   op[ORBIT_EXTENSION] as OrbitMarker | false | undefined;
 
@@ -104,6 +118,7 @@ export function filterDocument(full: Document, options: FilterOptions = {}): Doc
     const include = mode === 'opt-in' ? Boolean(marker) && !(marker && marker.hidden) : marker !== false && !(marker && marker.hidden);
     if (!include) continue;
     const m: OrbitMarker = marker || {};
+    if (options.api && m.api !== undefined && !(Array.isArray(m.api) ? m.api : [m.api]).includes(options.api)) continue;
 
     const out: Operation = structuredClone(op);
     delete out[ORBIT_EXTENSION];
@@ -113,7 +128,7 @@ export function filterDocument(full: Document, options: FilterOptions = {}): Doc
     }
     if (m.title) out.summary = m.title;
     if (m.description) out.description = m.description;
-    if (out.parameters) out.parameters = mergeParameters(out.parameters);
+    if (out.parameters) out.parameters = omit(mergeParameters(out.parameters), options.omitParameters);
     if (m.group) out.tags = [m.group];
     if (m.order !== undefined) out[ORDER_EXTENSION] = m.order;
     if (m.stability) out[STABILITY_EXTENSION] = m.stability;
@@ -134,7 +149,7 @@ export function filterDocument(full: Document, options: FilterOptions = {}): Doc
     for (const tag of out.tags ?? []) if (!groupOrder.includes(tag)) groupOrder.push(tag);
 
     const target = (paths[path] ??= {} as PathItem);
-    if (item.parameters) target.parameters = item.parameters;
+    if (item.parameters) target.parameters = omit(item.parameters, options.omitParameters);
     target[method] = out;
   }
 

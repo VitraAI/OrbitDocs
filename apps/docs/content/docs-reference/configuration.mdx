@@ -104,7 +104,8 @@ The plugin writes the resulting CSS to `.orbitdocs/theme.css`. Change the config
     securitySchemes: { type: 'Record<string, object>', description: 'OpenAPI security schemes merged into components.securitySchemes.' },
     security: { type: 'string[]', description: 'Scheme names applied to every documented operation (Nest sources replace the operation own security).' },
     completeness: { type: "'error' | 'warn' | 'off'", default: "'warn'", description: 'What to do when operations lack descriptions, examples or typed success responses. error fails extraction and the build.' },
-    standardErrors: { type: 'boolean', default: 'true', description: 'Add the generic error responses (400 with input, 401/403 when secured, 404 with a path parameter, 500) and a shared error schema to every operation.' },
+    standardErrors: { type: 'boolean | { extra?: string[]; descriptions?: Record<string, string> }', default: 'true', description: 'Add the generic error responses (400 with input, 401/403 when secured, 404 with a path parameter, 500) and a shared error schema to every operation. The object form adds codes every operation can return, such as extra: [\'429\'] behind a rate limiter, and rewords the defaults.' },
+    omitParameters: { type: "{ in: 'header' | 'query' | 'path' | 'cookie'; name: string }[]", default: '[]', description: 'Parameters removed from every operation of this API, such as a tenant header that callers using an API key never send. Header names match in any case.' },
     access: { type: 'string[]', description: 'Access groups that can read this API reference and spec (private docs). Restricted APIs get no MCP server.' },
   }}
 />

@@ -80,6 +80,8 @@ Preview mode starts no providers, so nothing connects to a database. Code that r
 source: { nest: { module: 'dist/app.module.js', env: { DATABASE_URL: 'postgres://placeholder' } } },
 ```
 
+Or skip the validation when `process.env.ORBITDOCS_EXTRACT === '1'`, which OrbitDocs sets during extraction. See [Extraction](/nestjs/extraction).
+
 ### The reference is empty, or routes are missing
 
 With `routes: 'opt-in'` (the default) only routes marked with `@DocsOperation()` appear. Either mark them, or show everything `@nestjs/swagger` documents:

@@ -122,8 +122,20 @@ const api = z.object({
    * success responses. `warn` prints the gaps but does not fail.
    */
   completeness: z.enum(['error', 'warn', 'off']).default('warn'),
-  /** Error codes added to every operation (see @orbitdocs/openapi `standardResponses`). */
-  standardErrors: z.boolean().default(true),
+  /**
+   * Error codes added to every operation (see @orbitdocs/openapi `standardResponses`):
+   * 400 with input, 401/403 when secured, 404 with a path parameter, 500. The object form
+   * adds codes every operation can return (`extra: ['429']` behind a rate limiter) and
+   * rewords the defaults (`descriptions: { '429': '…' }`).
+   */
+  standardErrors: z
+    .union([z.boolean(), z.object({ extra: z.array(z.string().regex(/^[45]\d\d$/)).optional(), descriptions: z.record(z.string(), z.string()).optional() })])
+    .default(true),
+  /**
+   * Parameters removed from every operation of this API, e.g. a tenant header that
+   * callers using `security` never send. Header names match case-insensitively.
+   */
+  omitParameters: z.array(z.object({ in: z.enum(['header', 'query', 'path', 'cookie']), name: z.string().min(1) })).default([]),
   /** Access groups that can read this API's reference (private docs). */
   access: z.array(z.string()).optional(),
 });

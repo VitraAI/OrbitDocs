@@ -45,6 +45,9 @@ type NestSwagger = typeof import('@nestjs/swagger');
  * share one copy of Nest.
  */
 export async function extract(req: ExtractRequest): Promise<ExtractResult> {
+  // Lets the app tell an extraction from a real start, e.g. to skip config validation
+  // that needs real secrets. Nothing connects in preview mode, so nothing needs them.
+  process.env.ORBITDOCS_EXTRACT = '1';
   for (const [key, value] of Object.entries(req.env ?? {})) process.env[key] ??= value;
   const root = resolve(req.root);
   const pkg = join(root, 'package.json');

@@ -164,6 +164,17 @@ source: {
 
 Values only fill variables that are not set. A real value in the shell or CI always wins. Never put real secrets here; this file is committed.
 
+When many variables are required, skip the validation during extraction instead. OrbitDocs sets `ORBITDOCS_EXTRACT=1` while it loads your module, so your config can check it:
+
+```ts title="src/app.module.ts"
+ConfigModule.forRoot({
+  // Extraction starts no provider, so it needs no real config.
+  validate: (config) => (process.env.ORBITDOCS_EXTRACT === '1' ? config : schema.parse(config)),
+}),
+```
+
+Your app never sets `ORBITDOCS_EXTRACT` when it really starts, so validation stays on there.
+
 ## API options used by extraction
 
 These live on the API itself, next to `source`:

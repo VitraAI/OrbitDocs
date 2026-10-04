@@ -325,6 +325,32 @@
   margin: 24px 0 8px;
   font-weight: 600;
 }
+/* Markdown tables in operation descriptions and @DocsContent (e.g. a price table). */
+.od-prose table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 12px 0 16px;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.od-prose th,
+.od-prose td {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.od-prose th {
+  background: var(--surface-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.od-prose td:last-child {
+  white-space: nowrap;
+}
 .od-lead {
   margin-top: 8px;
 }

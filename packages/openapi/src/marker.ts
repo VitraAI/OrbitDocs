@@ -17,6 +17,11 @@ export interface OrbitMarker {
   description?: string;
   /** Position within its group, ascending. */
   order?: number;
+  /**
+   * The API (config `apis[].id`) or APIs this operation belongs to, when one app
+   * feeds several API references. Omitted: every API from this app includes it.
+   */
+  api?: string | string[];
   stability?: Stability;
   /** Excludes the operation even when its controller is documented. */
   hidden?: boolean;

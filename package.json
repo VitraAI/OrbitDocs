@@ -1,7 +1,7 @@
 {
   "name": "orbitdocs-monorepo",
   "private": true,
-  "description": "Open-source, self-deployable API documentation: NestJS \u2192 OpenAPI \u2192 a docs site you deploy anywhere.",
+  "description": "Open-source, self-deployable API documentation: NestJS → OpenAPI → a docs site you deploy anywhere.",
   "license": "MIT",
   "packageManager": "pnpm@11.5.1",
   "engines": {

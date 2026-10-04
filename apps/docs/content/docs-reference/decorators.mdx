@@ -36,6 +36,7 @@ Puts a route in the public reference. With `routes: 'opt-in'` (the default) only
     title: { type: 'string', default: 'summary (@ApiOperation)', description: 'Title, an action in plain words: Create a booking.' },
     description: { type: 'string', default: 'description (@ApiOperation)', description: 'What it does and when to use it. Markdown.' },
     order: { type: 'number', description: 'Position within its group, ascending.' },
+    api: { type: 'string | string[]', description: 'The API id (`apis[].id` in the config) this route belongs to, when one Nest app feeds several API references. Without it, the route appears in every API extracted from the app.' },
     stability: { type: "'stable' | 'beta' | 'alpha' | 'experimental' | 'deprecated'", description: 'Badge in the reference. deprecated also marks the operation deprecated.' },
   }}
 />
@@ -151,6 +152,8 @@ function createOrbitDocument(app: INestApplicationContext, options?: OrbitDocume
     security: { type: 'string[]', description: 'Scheme names required by every kept operation (replaces the operation own security).' },
     standardErrors: { type: 'boolean | { descriptions?: Record<string, string>; extra?: string[] }', default: 'true', description: 'Add the generic errors and the shared error schema.' },
     keepOperationIds: { type: 'boolean', default: 'false', description: 'Keep the original operationId instead of a readable slug.' },
+    api: { type: 'string', description: 'This API id: operations marked for other APIs with @DocsOperation({ api }) are left out.' },
+    omitParameters: { type: "{ in: 'header' | 'query' | 'path' | 'cookie'; name: string }[]", description: 'Parameters removed from every kept operation. Header names match in any case.' },
   }}
 />
 

@@ -129,6 +129,28 @@ describe('filterDocument details', () => {
       { name: 'Idempotency-Key', in: 'header', required: false, description: 'Key.', schema: { type: 'string', example: 'k' } },
     ]);
   });
+  it('removes the parameters omitParameters names, header names in any case', () => {
+    const d = full();
+    d.paths['/bookings']!.post!.parameters = [
+      { name: 'organizationId', in: 'header', required: true, schema: { type: 'string' } },
+      { name: 'organizationId', in: 'query', schema: { type: 'string' } },
+    ];
+    d.paths['/bookings']!.parameters = [{ name: 'OrganizationId', in: 'header', required: true, schema: { type: 'string' } }];
+    const doc = filterDocument(d, { omitParameters: [{ in: 'header', name: 'organizationid' }] });
+    expect(doc.paths['/bookings']!.post!.parameters).toEqual([{ name: 'organizationId', in: 'query', schema: { type: 'string' } }]);
+    expect(doc.paths['/bookings']!.parameters).toEqual([]);
+  });
+  it('keeps operations marked for another API out of this one', () => {
+    const d = full();
+    d.paths['/bookings']!.post![ORBIT_EXTENSION] = { group: 'Bookings', title: 'Create a booking', api: 'payments' };
+    d.paths['/bookings']!.get![ORBIT_EXTENSION] = { group: 'Bookings', title: 'List bookings', api: ['travel', 'payments'] };
+    const travel = filterDocument(d, { api: 'travel' });
+    expect(Object.keys(travel.paths['/bookings'] ?? {})).toEqual(['get']);
+    const payments = filterDocument(d, { api: 'payments' });
+    expect(Object.keys(payments.paths['/bookings'] ?? {}).sort()).toEqual(['get', 'post']);
+    // Without an api id (or without a marker api), every marked operation is kept.
+    expect(Object.keys(filterDocument(d).paths['/bookings'] ?? {}).sort()).toEqual(['get', 'post']);
+  });
 });
 
 describe('buildReferenceModel', () => {
