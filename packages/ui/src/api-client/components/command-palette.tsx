@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 
 import type { RequestDraft } from '../types';
 import { MethodTag } from './rail';
+import { NO_AUTOFILL } from '../../no-autofill';
 
 export interface PaletteAction {
   id: string;
@@ -47,7 +48,7 @@ export function CommandPalette({
             <SearchField aria-label="Search commands" value={query} onChange={setQuery} autoFocus className="oc-palette-search">
               <SearchField.Group>
                 <SearchField.SearchIcon />
-                <SearchField.Input placeholder="Search requests and actions…" />
+                <SearchField.Input placeholder="Search requests and actions…" {...NO_AUTOFILL} name="od-palette-search" />
                 <SearchField.ClearButton />
               </SearchField.Group>
             </SearchField>

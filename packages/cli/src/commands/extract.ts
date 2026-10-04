@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-import { type ApiConfig, specFile } from '@orbitdocs/core';
+import { type ApiConfig, type NestSourceConfig, specFile } from '@orbitdocs/core';
 import type { LoadedConfig } from '@orbitdocs/core/loader';
 import { type FilterOptions, findDocumentationGaps, loadDocument, stableStringify } from '@orbitdocs/openapi';
 
@@ -34,10 +34,11 @@ function filterOptions(api: ApiConfig): FilterOptions {
     standardErrors: api.standardErrors,
     api: api.id,
     ...(api.omitParameters.length ? { omitParameters: api.omitParameters } : {}),
+    ...(api.groups?.length ? { groupOrder: api.groups } : {}),
   };
 }
 
-function runExtractor(cli: string, requestFile: string, cwd: string): Promise<{ operations: number; gaps: string[] }> {
+function runExtractor<T = Array<{ operations: number; gaps: string[] }>>(cli: string, requestFile: string, cwd: string): Promise<T> {
   return new Promise((resolvePromise, reject) => {
     const child = spawn(process.execPath, [cli, requestFile], { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
@@ -58,6 +59,59 @@ export async function extract(loaded: LoadedConfig, options: ExtractOptions = {}
   const accessProblems = writeAccessManifest(loaded);
   if (accessProblems.length) fail(accessProblems.join('\n'));
   const summaries: ExtractSummary[] = [];
+
+  // APIs extracted from the same Nest app share one build and one boot: the app is compiled
+  // once per project and booted once per source, and each API is filtered from that document.
+  const groups = new Map<string, Array<ApiConfig & { source: { nest: NestSourceConfig } }>>();
+  for (const api of config.apis) {
+    if (options.only && api.id !== options.only) continue;
+    if (!('nest' in api.source)) continue;
+    const n = api.source.nest;
+    const key = JSON.stringify([resolve(dir, n.root), n.module, n.export, n.globalPrefix, n.versioning, n.configure, n.env, n.build]);
+    const list = groups.get(key) ?? [];
+    list.push(api as ApiConfig & { source: { nest: NestSourceConfig } });
+    groups.set(key, list);
+  }
+  const built = new Set<string>();
+  const nestResults = new Map<string, { operations: number; gaps: string[] }>();
+  for (const apis of groups.values()) {
+    const nest = apis[0]!.source.nest;
+    const root = resolve(dir, nest.root);
+    const ids = apis.map((a) => a.id).join(', ');
+    if (nest.build && !options.skipBuild && !built.has(`${root}\0${nest.build}`)) {
+      built.add(`${root}\0${nest.build}`);
+      log.step(`${ids}: ${nest.build}`);
+      const code = await runShell(nest.build, root);
+      if (code !== 0) throw new Error(`${ids}: \`${nest.build}\` failed (exit ${code})`);
+    }
+    let cli: string;
+    try {
+      cli = resolveFrom(root, '@orbitdocs/nestjs/extract-cli');
+    } catch {
+      throw new Error(`${ids}: @orbitdocs/nestjs is not installed in ${root}. Run \`npm install @orbitdocs/nestjs\` there.`);
+    }
+    mkdirSync(join(dir, 'openapi'), { recursive: true });
+    const request = {
+      root,
+      module: nest.module,
+      export: nest.export,
+      globalPrefix: nest.globalPrefix,
+      versioning: nest.versioning,
+      configure: nest.configure,
+      env: nest.env,
+      targets: apis.map((api) => ({
+        info: { title: api.title, version: api.version, description: api.description },
+        filter: filterOptions(api),
+        out: specFile(dir, api.id),
+      })),
+    };
+    const requestFile = join(tmpdir(), `orbitdocs-extract-${apis[0]!.id}-${process.pid}.json`);
+    writeFileSync(requestFile, JSON.stringify(request));
+    log.step(`${ids}: extracting from ${nest.module} (preview mode, no providers started)`);
+    const results = await runExtractor(cli, requestFile, root);
+    apis.forEach((api, i) => nestResults.set(api.id, results[i]!));
+  }
+
   for (const api of config.apis) {
     if (options.only && api.id !== options.only) continue;
     const out = specFile(dir, api.id);
@@ -66,35 +120,7 @@ export async function extract(loaded: LoadedConfig, options: ExtractOptions = {}
     let result: { operations: number; gaps: string[] };
 
     if ('nest' in source) {
-      const nest = source.nest;
-      const root = resolve(dir, nest.root);
-      if (nest.build && !options.skipBuild) {
-        log.step(`${api.id}: ${nest.build}`);
-        const code = await runShell(nest.build, root);
-        if (code !== 0) throw new Error(`${api.id}: \`${nest.build}\` failed (exit ${code})`);
-      }
-      let cli: string;
-      try {
-        cli = resolveFrom(root, '@orbitdocs/nestjs/extract-cli');
-      } catch {
-        throw new Error(`${api.id}: @orbitdocs/nestjs is not installed in ${root}. Run \`npm install @orbitdocs/nestjs\` there.`);
-      }
-      const request = {
-        root,
-        module: nest.module,
-        export: nest.export,
-        globalPrefix: nest.globalPrefix,
-        versioning: nest.versioning,
-        configure: nest.configure,
-        env: nest.env,
-        info: { title: api.title, version: api.version, description: api.description },
-        filter: filterOptions(api),
-        out,
-      };
-      const requestFile = join(tmpdir(), `orbitdocs-extract-${api.id}-${process.pid}.json`);
-      writeFileSync(requestFile, JSON.stringify(request));
-      log.step(`${api.id}: extracting from ${nest.module} (preview mode, no providers started)`);
-      result = await runExtractor(cli, requestFile, root);
+      result = nestResults.get(api.id)!;
     } else {
       const raw =
         'file' in source

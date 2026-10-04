@@ -1,10 +1,11 @@
 'use client';
 
-import { Button, SearchField } from '@heroui/react';
+import { Button, ListBox, SearchField, Select } from '@heroui/react';
 import { LuChevronRight as ChevronRight, LuMenu as Menu, LuX as X } from 'react-icons/lu';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useSections } from './sections';
+import { NO_AUTOFILL } from '../../no-autofill';
 
 export interface SidebarGroup {
   name?: string;
@@ -13,6 +14,47 @@ export interface SidebarGroup {
 }
 
 const METHOD_LABEL: Record<string, string> = { delete: 'DEL', options: 'OPT' };
+
+/** An API the reader can switch to (config `navigation.apiSwitcher: 'sidebar'`). */
+export interface SidebarApi {
+  id: string;
+  title: string;
+  description?: string;
+  /** URL of its reference, base path included. */
+  href: string;
+}
+
+/** The sidebar title as a HeroUI Select of the site's APIs; picking one opens its reference. */
+function ApiSwitcher({ apis, current }: { apis: SidebarApi[]; current: string }) {
+  return (
+    <Select
+      aria-label="API"
+      fullWidth
+      variant="secondary"
+      className="od-api-switcher"
+      value={current}
+      onChange={(key) => {
+        const api = apis.find((a) => a.id === String(key));
+        if (api && api.id !== current) window.location.assign(api.href);
+      }}
+    >
+      <Select.Trigger>
+        <Select.Value />
+        <Select.Indicator />
+      </Select.Trigger>
+      <Select.Popover>
+        <ListBox>
+          {apis.map((a) => (
+            <ListBox.Item key={a.id} id={a.id} textValue={a.title}>
+              {a.title}
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
+          ))}
+        </ListBox>
+      </Select.Popover>
+    </Select>
+  );
+}
 
 /**
  * Scalar-style sidebar. Every operation has its own pre-rendered URL
@@ -25,7 +67,12 @@ export function ReferenceSidebar({
   groups,
   hasModels,
   initial,
+  apis,
+  apiId,
 }: {
+  /** Other APIs of the site: shown as a dropdown under the filter. */
+  apis?: SidebarApi[];
+  apiId?: string;
   title: string;
   base: string;
   groups: SidebarGroup[];
@@ -41,6 +88,7 @@ export function ReferenceSidebar({
   const navRef = useRef<HTMLElement>(null);
   const lazy = useSections();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const switcher = Boolean(apiId && apis && apis.length > 1);
 
   // Track the section in view and keep the URL in sync (replaceState: no history spam).
   // The current section is the last one whose top has passed under the header.
@@ -115,11 +163,11 @@ export function ReferenceSidebar({
       </Button>
     </div>
     <aside className="od-sidebar" data-mobile-open={mobileOpen || undefined}>
-      <div className="od-sidebar-title">{title}</div>
+      {switcher ? <ApiSwitcher apis={apis!} current={apiId!} /> : <div className="od-sidebar-title">{title}</div>}
       <SearchField aria-label="Filter operations" value={query} onChange={setQuery} className="od-sidebar-search">
         <SearchField.Group>
           <SearchField.SearchIcon />
-          <SearchField.Input placeholder="Filter operations" />
+          <SearchField.Input placeholder="Filter operations" {...NO_AUTOFILL} name="od-operation-filter" />
           <SearchField.ClearButton />
         </SearchField.Group>
       </SearchField>

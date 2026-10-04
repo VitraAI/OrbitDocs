@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 import type { Environment, Variable } from '../types';
 import { itemFromEvent } from './context-menu';
+import { NO_AUTOFILL } from '../../no-autofill';
 
 export const ENV_COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#EF4444'];
 
@@ -46,8 +47,10 @@ function VariableRows({ variables, onChange }: { variables: Variable[]; onChange
             <Input aria-label="Variable name" className="oc-mono-input" placeholder={isNew ? 'Add variable' : 'name'} value={v.key} onChange={(e) => set(i, { key: e.target.value })} />
             <Input
               aria-label={`Value of ${v.key || 'new variable'}`}
-              className="oc-mono-input"
-              type={v.secret && !reveal ? 'password' : 'text'}
+              className={`oc-mono-input${v.secret && !reveal ? ' od-masked' : ''}`}
+              type="text"
+              {...NO_AUTOFILL}
+              name="od-variable-value"
               placeholder="value"
               value={v.value}
               onChange={(e) => set(i, { value: e.target.value })}

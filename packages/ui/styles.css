@@ -87,6 +87,16 @@
 .od-sidebar-search {
   width: 100%;
 }
+/* Secrets (API keys, tokens) are masked with CSS instead of type="password",
+   which would make browsers autofill saved logins into the page's text fields. */
+.od-masked {
+  -webkit-text-security: disc;
+  text-security: disc;
+}
+/* The sidebar title as the API switcher (navigation.apiSwitcher: 'sidebar'): a HeroUI Select. */
+.od-api-switcher {
+  flex: none;
+}
 .od-sidebar-nav {
   flex: 1;
   overflow-y: auto;
@@ -310,6 +320,7 @@
   text-underline-offset: 3px;
 }
 .od-prose code {
+  overflow-wrap: anywhere;
   padding: 1px 5px;
   border-radius: 4px;
   background: var(--surface-secondary);
@@ -440,7 +451,14 @@
   margin-top: 6px;
   font-size: 13px;
 }
+.od-field-meta > span {
+  min-width: 0;
+  max-width: 100%;
+}
+/* Long examples (tokens, keys, URLs) wrap inside the column instead of widening the page. */
 .od-field-meta code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
   padding: 1px 6px;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -1049,30 +1067,96 @@
   border-right: 1px solid var(--border);
   background: var(--surface);
 }
+.oc-side-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 12px 8px 6px 12px;
+}
 .oc-side-search {
-  margin: 12px 12px 6px;
+  flex: 1;
+  min-width: 0;
 }
 .oc-side-scroll {
   flex: 1;
   min-height: 0;
   padding: 0 8px 16px;
 }
+.oc-collection + .oc-collection {
+  margin-top: 6px;
+}
 .oc-collection-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 8px 2px;
+  gap: 2px;
+  padding-top: 6px;
+}
+/* Collection and folder rows of the request tree. */
+.oc-tree-row {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 6px 4px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
   font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.oc-tree-row:hover {
+  background: color-mix(in oklch, var(--foreground) 5%, transparent);
+}
+.oc-tree-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.oc-tree-collection {
   font-weight: 600;
 }
-.oc-folder-header {
-  padding: 10px 8px 4px;
+.oc-tree-folder {
+  font-weight: 500;
+}
+.oc-tree-folder[data-has-active='true'] .oc-tree-icon {
+  color: var(--accent);
+}
+.oc-tree-chevron {
+  flex: none;
+  opacity: 0.55;
+  transition: transform 0.15s ease;
+}
+.oc-tree-row[aria-expanded='true'] > .oc-tree-chevron {
+  transform: rotate(90deg);
+}
+.oc-tree-icon {
+  flex: none;
+  color: var(--muted);
+}
+.oc-tree-count {
+  flex: none;
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--foreground) 6%, transparent);
   color: var(--muted);
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  line-height: 18px;
+}
+/* Children hang off a guide line under their row's chevron. */
+.oc-tree-children {
+  margin-left: 11px;
+  padding-left: 6px;
+  border-left: 1px solid var(--border);
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-tree-chevron {
+    transition: none;
+  }
 }
 .oc-request-list [role='option'] {
   display: flex;

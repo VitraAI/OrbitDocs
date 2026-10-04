@@ -31,6 +31,16 @@ export interface ExtractResult {
   gaps: string[];
 }
 
+/** One API written from a shared boot: its own info, filter and output file. */
+export interface ExtractTarget {
+  info?: ExtractRequest['info'];
+  filter: FilterOptions;
+  out: string;
+}
+
+/** Several APIs from one app: it is booted once and each target filtered from the same document. */
+export type ExtractManyRequest = Omit<ExtractRequest, 'info' | 'filter' | 'out'> & { targets: ExtractTarget[] };
+
 type NestCore = typeof import('@nestjs/core');
 type NestCommon = typeof import('@nestjs/common');
 type NestSwagger = typeof import('@nestjs/swagger');
@@ -45,6 +55,13 @@ type NestSwagger = typeof import('@nestjs/swagger');
  * share one copy of Nest.
  */
 export async function extract(req: ExtractRequest): Promise<ExtractResult> {
+  const { info, filter, out, ...rest } = req;
+  const [result] = await extractMany({ ...rest, targets: [{ info, filter, out }] });
+  return result!;
+}
+
+/** Boots the module once and writes one filtered document per target. */
+export async function extractMany(req: ExtractManyRequest): Promise<ExtractResult[]> {
   // Lets the app tell an extraction from a real start, e.g. to skip config validation
   // that needs real secrets. Nothing connects in preview mode, so nothing needs them.
   process.env.ORBITDOCS_EXTRACT = '1';
@@ -90,20 +107,22 @@ export async function extract(req: ExtractRequest): Promise<ExtractResult> {
       await (hook as (a: unknown) => unknown)(app);
     }
 
-    const base = new swagger.DocumentBuilder()
-      .setTitle(req.info?.title ?? 'API')
-      .setVersion(req.info?.version ?? '1.0.0');
-    if (req.info?.description) base.setDescription(req.info.description);
-    const full = swagger.SwaggerModule.createDocument(app, base.build(), { deepScanRoutes: true });
-    const doc = filterDocument(full as never, req.filter);
-
-    mkdirSync(dirname(req.out), { recursive: true });
-    writeFileSync(req.out, stableStringify(doc));
-    const operations = Object.values(doc.paths).reduce(
-      (n, item) => n + Object.keys(item).filter((k) => k !== 'parameters').length,
-      0,
-    );
-    return { out: req.out, operations, gaps: findDocumentationGaps(doc) };
+    const full = swagger.SwaggerModule.createDocument(app, new swagger.DocumentBuilder().setTitle('API').setVersion('1.0.0').build(), {
+      deepScanRoutes: true,
+    });
+    return req.targets.map((t) => {
+      const info = Object.fromEntries(
+        Object.entries({ title: t.info?.title, version: t.info?.version, description: t.info?.description }).filter(([, v]) => v !== undefined),
+      );
+      const doc = filterDocument(structuredClone(full) as never, { ...t.filter, info: { ...info, ...t.filter.info } });
+      mkdirSync(dirname(t.out), { recursive: true });
+      writeFileSync(t.out, stableStringify(doc));
+      const operations = Object.values(doc.paths).reduce(
+        (n, item) => n + Object.keys(item).filter((k) => k !== 'parameters').length,
+        0,
+      );
+      return { out: t.out, operations, gaps: findDocumentationGaps(doc) };
+    });
   } finally {
     await app.close().catch(() => undefined);
   }

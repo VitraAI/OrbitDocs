@@ -106,6 +106,7 @@ The plugin writes the resulting CSS to `.orbitdocs/theme.css`. Change the config
     completeness: { type: "'error' | 'warn' | 'off'", default: "'warn'", description: 'What to do when operations lack descriptions, examples or typed success responses. error fails extraction and the build.' },
     standardErrors: { type: 'boolean | { extra?: string[]; descriptions?: Record<string, string> }', default: 'true', description: 'Add the generic error responses (400 with input, 401/403 when secured, 404 with a path parameter, 500) and a shared error schema to every operation. The object form adds codes every operation can return, such as extra: [\'429\'] behind a rate limiter, and rewords the defaults.' },
     omitParameters: { type: "{ in: 'header' | 'query' | 'path' | 'cookie'; name: string }[]", default: '[]', description: 'Parameters removed from every operation of this API, such as a tenant header that callers using an API key never send. Header names match in any case.' },
+    groups: { type: 'string[]', description: 'Order of this API groups in the sidebar and reference, by name. Groups not listed follow, in the order their first operation appears.' },
     access: { type: 'string[]', description: 'Access groups that can read this API reference and spec (private docs). Restricted APIs get no MCP server.' },
     send: { type: 'boolean', default: 'true', description: 'Whether readers can send this API requests from the docs. false disables Test Request in the reference and Send in the API client (also ⌘ Enter, the menus, the command palette and the collection runner). Code samples and Copy as cURL still work, so readers can run requests themselves.' },
     sendDisabledMessage: { type: 'string', default: "'Sending requests is turned off for this API. Copy the request as code and run it yourself.'", description: 'Shown on the disabled buttons when send is false.' },
@@ -148,6 +149,7 @@ The plugin writes the resulting CSS to `.orbitdocs/theme.css`. Change the config
     titleUrl: { type: 'string', default: "'/'", description: 'Where the logo (or site title) in the top bar links to.' },
     header: { type: 'HeaderItem[]', default: '[]', description: 'Top bar items: links, icon links, buttons and menus.' },
     sidebar: { type: 'Link[]', default: '[]', description: 'Links at the bottom of the guides sidebar.' },
+    apiSwitcher: { type: "'sidebar' | 'menu'", default: "'sidebar'", description: 'How readers switch between APIs when there are several. sidebar: the reference sidebar title is a select of the APIs, and API Reference in the top bar links to the first API. menu: API Reference opens a menu of every API.' },
     footer: { type: 'Link[] | FooterConfig', default: '[]', description: 'The footer under landing pages. A list of links is one row; FooterConfig is { description?, columns: { title, links: Link[] }[], social: Link[] (icon required), links: Link[], copyright?: string | false, poweredBy: boolean (default true), builtBy?: { name, url, logo?: string | { light, dark }, text (default "Built by") } }.' },
   }}
 />

@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 
 import type { RunResult } from '../types';
 import { JsonTree } from './json-tree';
+import { NO_AUTOFILL } from '../../no-autofill';
 
 const bytes = (n: number) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
 const tone = (status: number) => (status >= 200 && status < 300 ? 'success' : status >= 300 && status < 400 ? 'accent' : status >= 400 && status < 500 ? 'warning' : 'danger');
@@ -140,7 +141,7 @@ export function ResponsePanel({ result, sending, wrap, sendDisabled }: { result?
               <SearchField aria-label="Search response" value={query} onChange={setQuery} className="oc-response-search">
                 <SearchField.Group>
                   <SearchField.SearchIcon />
-                  <SearchField.Input placeholder="Filter keys and values" />
+                  <SearchField.Input placeholder="Filter keys and values" {...NO_AUTOFILL} name="od-response-filter" />
                   <SearchField.ClearButton />
                 </SearchField.Group>
               </SearchField>

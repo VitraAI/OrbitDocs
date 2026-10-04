@@ -11,6 +11,7 @@ import {
   ReferenceProvider,
   ReferenceSidebar,
   SectionsProvider,
+  type SidebarApi,
   type SecuritySchemeView,
   ServerCard,
 } from './client/index';
@@ -56,6 +57,8 @@ export interface ApiReferenceProps {
    * Without it, every section is in the page.
    */
   sectionsUrl?: string;
+  /** The site's APIs: with more than one, the sidebar shows a dropdown to switch between them. */
+  apis?: SidebarApi[];
 }
 
 export interface ReferenceContent {
@@ -82,7 +85,7 @@ function schemeViews(model: ReferenceModel): SecuritySchemeView[] {
  * intro, group headers and an index of the rest); the other sections load
  * from `<sectionsUrl>/<file>.json` and render with the same component.
  */
-export async function ApiReference({ model, base, active, specUrl, openapiVersion, hideModels, client, sendDisabled, content, personalize, samplesUrl, sectionsUrl }: ApiReferenceProps) {
+export async function ApiReference({ model, base, active, specUrl, openapiVersion, hideModels, client, sendDisabled, content, personalize, samplesUrl, sectionsUrl, apis }: ApiReferenceProps) {
   const serverUrl = model.servers[0]?.url ?? '';
   const schemes = schemeViews(model);
   const languages = SAMPLE_LANGUAGES.map((l) => ({ id: l.id, label: l.label }));
@@ -108,6 +111,8 @@ export async function ApiReference({ model, base, active, specUrl, openapiVersio
         <ReferenceSidebar
           title={model.title}
           base={base}
+          apis={apis}
+          apiId={model.id}
           initial={active ?? 'introduction'}
           hasModels={models.length > 0}
           groups={model.groups.map((g) => ({

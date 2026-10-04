@@ -55,7 +55,9 @@ const exampleless = (s: Schema) =>
   (Array.isArray(s.examples) && s.examples.length > 0) ||
   s.enum !== undefined ||
   s.default !== undefined ||
-  s.type === 'boolean';
+  s.type === 'boolean' ||
+  // A file field (multipart upload or download) has no meaningful example.
+  (s as { format?: string }).format === 'binary';
 
 export function findDocumentationGaps(document: Document): string[] {
   const schemas = (document.components?.schemas ?? {}) as Record<
@@ -139,8 +141,11 @@ export function findDocumentationGaps(document: Document): string[] {
           gaps.push(`${where}: ${code} response has no description`);
         if (!code.startsWith('2') || code === '204') continue;
         const schema = response.content?.['application/json']?.schema;
-        if (!schema) gaps.push(`${where}: ${code} response has no schema`);
-        else walk(where, schema, code, true, new Set());
+        // A file download (PDF, CSV, ZIP, image…) documents its media type and a binary schema.
+        const file = Object.entries(response.content ?? {}).some(([type, media]) => type !== 'application/json' && media?.schema);
+        // A DELETE that answers with an empty body is normal; anything else should say what it returns.
+        if (!schema && !file && method !== 'delete') gaps.push(`${where}: ${code} response has no schema`);
+        else if (schema) walk(where, schema, code, true, new Set());
       }
     }
   }

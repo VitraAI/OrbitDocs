@@ -136,6 +136,11 @@ const api = z.object({
    * callers using `security` never send. Header names match case-insensitively.
    */
   omitParameters: z.array(z.object({ in: z.enum(['header', 'query', 'path', 'cookie']), name: z.string().min(1) })).default([]),
+  /**
+   * Order of this API's groups (tags) in the sidebar and reference. Groups not
+   * listed follow, in the order their first operation appears.
+   */
+  groups: z.array(z.string().min(1)).optional(),
   /** Access groups that can read this API's reference (private docs). */
   access: z.array(z.string()).optional(),
   /**
@@ -458,6 +463,13 @@ export const configSchema = z.object({
       /** Links at the bottom of the guides sidebar. */
       sidebar: z.array(link).default([]),
       /**
+       * How readers switch between APIs when there are several. `sidebar`: the
+       * reference sidebar's title is a select of the APIs, and
+       * "API Reference" in the top bar links to the first API. `menu`: "API
+       * Reference" in the top bar opens a menu of every API.
+       */
+      apiSwitcher: z.enum(['sidebar', 'menu']).default('sidebar'),
+      /**
        * The footer under landing pages: a list of links (one row), or columns
        * with a tagline, social icons, bottom links and a copyright line.
        */
@@ -492,7 +504,7 @@ export const configSchema = z.object({
         ])
         .default([]),
     })
-    .default({ guides: { text: 'Guides', url: '/' }, titleUrl: '/', header: [], sidebar: [], footer: [] }),
+    .default({ guides: { text: 'Guides', url: '/' }, titleUrl: '/', header: [], sidebar: [], apiSwitcher: 'sidebar', footer: [] }),
   search: z
     .object({
       enabled: z.boolean().default(true),

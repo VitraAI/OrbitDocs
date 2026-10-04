@@ -92,7 +92,10 @@ export function orbitLayoutOptions(
   const apiLinks: LinkItemType[] =
     apis.length === 1
       ? [{ text: 'API Reference', url: `/reference/${apis[0]!.id}`, active: 'nested-url' }]
-      : apis.length > 1
+      : apis.length > 1 && config.navigation.apiSwitcher === 'sidebar'
+        ? // The reference sidebar has the API dropdown (see reference.tsx).
+          [{ text: 'API Reference', url: `/reference/${apis[0]!.id}`, active: 'none' }]
+        : apis.length > 1
         ? [
             {
               type: 'menu',

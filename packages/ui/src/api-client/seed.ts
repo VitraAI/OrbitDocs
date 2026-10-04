@@ -111,10 +111,11 @@ export function clientSeed(model: ReferenceModel, options: ClientSeedOptions = {
       postResponseScript: '',
     },
     requests: model.operations.map((op) => requestFromOperation(op, model.id, collectionId)),
+    // One environment per server, shared by every API that uses it (see mergeSeed).
     environments: servers.map((s, i) => ({
-      id: `${collectionId}:env:${i}`,
+      id: `server:${s.url}`,
       name: s.description ?? s.url,
-      collectionId,
+      collectionIds: [collectionId],
       color: /prod|live/i.test(`${s.description} ${s.url}`) ? '#EF4444' : ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6'][i % 4],
       production: /prod|live/i.test(`${s.description} ${s.url}`),
       variables: [
@@ -146,28 +147,59 @@ export function mergeSeed(ws: Workspace, seed: ClientSeed): Workspace {
     // Sending follows the config, whatever a saved workspace says.
     existingCollection ? { ...existingCollection, name: seed.collection.name, folders: seed.collection.folders, sendDisabled: seed.collection.sendDisabled } : seed.collection,
   ];
-  // Seeded environments: the reader's values win, but fields added to the seed later
-  // (colour, production flag, new variables) are filled in.
-  const seededById = new Map(seed.environments.map((e) => [e.id, e] as const));
-  const merged = ws.environments.map((e) => {
-    const s = seededById.get(e.id);
-    if (!s) return e;
-    const keys = new Set(e.variables.map((v) => v.key));
-    return {
-      ...s,
-      ...e,
-      color: e.color ?? s.color,
-      production: e.production ?? s.production,
-      variables: [...e.variables, ...s.variables.filter((v) => !keys.has(v.key))],
-    };
-  });
-  const envIds = new Set(ws.environments.map((e) => e.id));
-  const environments = [...merged, ...seed.environments.filter((e) => !envIds.has(e.id))];
+  const { environments, activeEnvironmentId } = mergeEnvironments(ws, seed);
   return {
     ...ws,
     collections,
     requests: [...others, ...generated, ...custom],
     environments,
-    activeEnvironmentId: ws.activeEnvironmentId && environments.some((e) => e.id === ws.activeEnvironmentId) ? ws.activeEnvironmentId : environments[0]?.id,
+    activeEnvironmentId: activeEnvironmentId && environments.some((e) => e.id === activeEnvironmentId) ? activeEnvironmentId : environments[0]?.id,
   };
+}
+
+const baseUrlOf = (e: Environment) => e.variables.find((v) => v.key === 'baseUrl')?.value;
+
+/**
+ * Seeded environments are one per server, shared by the APIs that use it: a
+ * second API on the same server adds itself to `collectionIds` and its
+ * variables. The reader's values win; fields added to the seed later (colour,
+ * production flag, new variables) are filled in. Workspaces saved by earlier
+ * versions had one copy per API (`<collection>:env:<n>`); those fold into the
+ * shared environment for their server, keeping the reader's values.
+ */
+function mergeEnvironments(ws: Workspace, seed: ClientSeed): { environments: Environment[]; activeEnvironmentId?: string } {
+  const legacyPrefix = `${seed.collection.id}:env:`;
+  const legacy = ws.environments.filter((e) => e.id.startsWith(legacyPrefix));
+  const environments = ws.environments.filter((e) => !e.id.startsWith(legacyPrefix));
+  let activeEnvironmentId = ws.activeEnvironmentId;
+  for (const s of seed.environments) {
+    const copies = legacy.filter((l) => baseUrlOf(l) === baseUrlOf(s));
+    const index = environments.findIndex((e) => e.id === s.id);
+    const base = index >= 0 ? environments[index]! : copies[0];
+    let next: Environment;
+    if (!base) next = s;
+    else {
+      const keys = new Set(base.variables.map((v) => v.key));
+      // A value the reader typed into an old per-API copy fills an empty one here.
+      const variables = [...base.variables, ...s.variables.filter((v) => !keys.has(v.key))].map((v) => {
+        if (v.value) return v;
+        const typed = copies.flatMap((c) => c.variables).find((c) => c.key === v.key && c.value);
+        return typed ? { ...v, value: typed.value } : v;
+      });
+      const { collectionId: _, ...rest } = base;
+      next = {
+        ...s,
+        ...rest,
+        id: s.id,
+        collectionIds: [...new Set([...(base.collectionIds ?? []), ...(s.collectionIds ?? [])])],
+        color: base.color ?? s.color,
+        production: base.production ?? s.production,
+        variables,
+      };
+    }
+    if (index >= 0) environments[index] = next;
+    else environments.push(next);
+    if (copies.some((c) => c.id === activeEnvironmentId)) activeEnvironmentId = s.id;
+  }
+  return { environments, activeEnvironmentId };
 }

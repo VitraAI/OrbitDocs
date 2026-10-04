@@ -140,6 +140,15 @@ describe('filterDocument details', () => {
     expect(doc.paths['/bookings']!.post!.parameters).toEqual([{ name: 'organizationId', in: 'query', schema: { type: 'string' } }]);
     expect(doc.paths['/bookings']!.parameters).toEqual([]);
   });
+  it('orders groups by groupOrder, unlisted groups after in first-seen order', () => {
+    const d = full();
+    d.paths['/bookings']!.get![ORBIT_EXTENSION] = { group: 'Bookings', title: 'List bookings' };
+    d.paths['/bookings']!.post![ORBIT_EXTENSION] = { group: 'Payments', title: 'Create a booking' };
+    d.paths['/flights'] = { get: { [ORBIT_EXTENSION]: { group: 'Flights', title: 'List flights' }, responses: { '200': { description: 'OK' } } } };
+    expect(filterDocument(d).tags!.map((t) => t.name)).toEqual(['Bookings', 'Payments', 'Flights']);
+    const doc = filterDocument(d, { groupOrder: ['Flights', 'Missing'] });
+    expect(doc.tags!.map((t) => t.name)).toEqual(['Flights', 'Bookings', 'Payments']);
+  });
   it('keeps operations marked for another API out of this one', () => {
     const d = full();
     d.paths['/bookings']!.post![ORBIT_EXTENSION] = { group: 'Bookings', title: 'Create a booking', api: 'payments' };
@@ -196,6 +205,30 @@ describe('exampleFor', () => {
 });
 
 describe('findDocumentationGaps', () => {
+  it('accepts file downloads and binary upload fields', () => {
+    const gaps = findDocumentationGaps({
+      openapi: '3.1.0',
+      info: { title: 'T', version: '1' },
+      paths: {
+        '/reports/{id}': {
+          get: {
+            description: 'Download a report.',
+            parameters: [{ name: 'id', in: 'path', required: true, description: 'Report id.', example: 'r_1', schema: { type: 'string' } }],
+            responses: { '200': { description: 'The PDF.', content: { 'application/pdf': { schema: { type: 'string', format: 'binary' } } } } },
+          },
+          post: {
+            description: 'Upload a file.',
+            requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { file: { type: 'string', format: 'binary', description: 'The file.' } } } } } },
+            responses: { '204': { description: 'Done.' } },
+          },
+          // An empty-bodied DELETE is fine; an untyped PUT is not.
+          delete: { description: 'Delete it.', responses: { '200': { description: 'Deleted.' } } },
+          put: { description: 'Rename it.', responses: { '200': { description: 'Renamed.' } } },
+        },
+      },
+    } as never);
+    expect(gaps).toEqual(['PUT /reports/{id}: 200 response has no schema']);
+  });
   it('reports missing descriptions and examples', () => {
     const gaps = findDocumentationGaps(filterDocument(full()));
     expect(gaps).toContain('GET /bookings: no description');

@@ -6,6 +6,7 @@ import { LuEye as Eye, LuEyeOff as EyeOff } from 'react-icons/lu';
 
 import { LanguageMenu } from './language-menu';
 import { useReference } from './store';
+import { NO_AUTOFILL } from '../../no-autofill';
 
 export function ServerCard() {
   const { servers, server, setServer } = useReference();
@@ -51,13 +52,16 @@ export function AuthCard() {
         <span id="od-auth-label">{label}</span>
         <Input
           aria-labelledby="od-auth-label"
-          className="od-auth-input"
+          className={`od-auth-input${reveal ? '' : ' od-masked'}`}
           variant="secondary"
-          type={reveal ? 'text' : 'password'}
+          // Masked with CSS, not type="password": a password field makes browsers
+          // treat the page as a login form and autofill a username into the filter.
+          type="text"
+          {...NO_AUTOFILL}
+          name="od-credential"
           placeholder={scheme.type === 'apiKey' ? 'Value' : 'Token'}
           value={credentials[scheme.name] ?? ''}
           onChange={(e) => setCredential(scheme.name, e.target.value)}
-          autoComplete="off"
         />
         <Button isIconOnly size="sm" variant="ghost" aria-label={reveal ? 'Hide' : 'Show'} onPress={() => setReveal((r) => !r)}>
           {reveal ? <EyeOff size={14} /> : <Eye size={14} />}

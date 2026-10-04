@@ -45,6 +45,8 @@ export interface FilterOptions {
    * callers never send. Header names match case-insensitively.
    */
   omitParameters?: Array<{ in: 'header' | 'query' | 'path' | 'cookie'; name: string }>;
+  /** Group (tag) names in the order to list them. Groups not listed follow, in first-seen order. */
+  groupOrder?: string[];
 }
 
 export class DanglingReferenceError extends Error {
@@ -162,6 +164,14 @@ export function filterDocument(full: Document, options: FilterOptions = {}): Doc
     ...(full.tags ?? []).filter((t) => groupOrder.includes(t.name)),
     ...groupOrder.filter((name) => !declaredTags.has(name)).map((name) => ({ name })),
   ];
+  if (options.groupOrder?.length) {
+    const rank = (name: string) => {
+      const i = options.groupOrder!.indexOf(name);
+      return i === -1 ? options.groupOrder!.length : i;
+    };
+    // Array.prototype.sort is stable, so unlisted groups keep their order.
+    tags.sort((a, b) => rank(a.name) - rank(b.name));
+  }
 
   const schemas: Record<string, Schema> = {};
   for (const name of [...used].sort()) schemas[name] = allSchemas[name]!;

@@ -110,7 +110,7 @@ export function ApiClient({ seeds, storageKey = 'orbitdocs:client', initialReque
   const draft = ws.requests.find((r) => r.id === activeId) ?? openTabs[0];
   const collection = ws.collections.find((c) => c.id === draft?.collectionId) ?? ws.collections[0];
   const environment = ws.environments.find((e) => e.id === ws.activeEnvironmentId);
-  const envs = useMemo(() => ws.environments.filter((e) => !e.collectionId || e.collectionId === collection?.id), [ws.environments, collection?.id]);
+  const envs = useMemo(() => ws.environments.filter((e) => (e.collectionIds ? e.collectionIds.includes(collection?.id ?? '') : !e.collectionId || e.collectionId === collection?.id)), [ws.environments, collection?.id]);
   const vars = useMemo(() => scope(ws.globals, environment), [ws.globals, environment]);
   /** Why a request can't be sent (its API has `send: false`); requests the reader adds to that collection follow it. */
   const sendOffFor = useCallback((r: RequestDraft) => (ws.collections.find((c) => c.id === r.collectionId) ?? ws.collections[0])?.sendDisabled, [ws.collections]);

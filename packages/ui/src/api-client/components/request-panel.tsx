@@ -11,6 +11,7 @@ import type { ClientFeatures } from '../settings';
 import type { AuthDraft, BodyMode, Collection, Environment, RequestDraft, Variable } from '../types';
 import { scope } from '../variables';
 import { KVEditor } from './kv-editor';
+import { NO_AUTOFILL } from '../../no-autofill';
 
 const SNIPPETS: Array<{ id: string; label: string; target: string; client: string }> = [
   { id: 'curl', label: 'cURL', target: 'shell', client: 'curl' },
@@ -52,7 +53,7 @@ function TextInput({ label, value, onChange, secret }: { label: string; value: s
   return (
     <TextField value={value} onChange={onChange} className="oc-field">
       <Label>{label}</Label>
-      <Input type={secret ? 'password' : 'text'} className="oc-mono-input" />
+      <Input type="text" className={`oc-mono-input${secret ? ' od-masked' : ''}`} {...NO_AUTOFILL} name="od-auth-field" />
     </TextField>
   );
 }

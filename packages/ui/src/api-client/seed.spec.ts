@@ -8,7 +8,7 @@ const seed: ClientSeed = {
   requests: [
     { id: 't:one', collectionId: 'api:t', name: 'One', method: 'GET', url: '{{baseUrl}}/one', params: [], headers: [], body: { mode: 'none', raw: '', form: [] }, auth: { type: 'inherit' }, preRequestScript: '', postResponseScript: '', operation: 't/one' },
   ],
-  environments: [{ id: 'api:t:env:0', name: 'Production', collectionId: 'api:t', color: '#EF4444', production: true, variables: [{ key: 'baseUrl', value: 'https://x', enabled: true }, { key: 'apiKey', value: '', enabled: true, secret: true }] }],
+  environments: [{ id: 'server:https://x', name: 'Production', collectionIds: ['api:t'], color: '#EF4444', production: true, variables: [{ key: 'baseUrl', value: 'https://x', enabled: true }, { key: 'apiKey', value: '', enabled: true, secret: true }] }],
 };
 const empty: Workspace = { version: 1, collections: [], requests: [], globals: [], environments: [], history: [] };
 
@@ -16,7 +16,7 @@ describe('mergeSeed', () => {
   it('adds everything to an empty workspace', () => {
     const ws = mergeSeed(empty, seed);
     expect(ws.requests).toHaveLength(1);
-    expect(ws.activeEnvironmentId).toBe('api:t:env:0');
+    expect(ws.activeEnvironmentId).toBe('server:https://x');
   });
 
   it('keeps edits and custom requests, drops removed operations', () => {
@@ -39,13 +39,44 @@ describe('mergeSeed', () => {
   it('fills fields added to the seed later without overwriting the reader', () => {
     const old: Workspace = {
       ...empty,
-      environments: [{ id: 'api:t:env:0', name: 'Prod (mine)', collectionId: 'api:t', variables: [{ key: 'baseUrl', value: 'https://mine', enabled: true }] }],
+      environments: [{ id: 'server:https://x', name: 'Prod (mine)', collectionIds: ['api:t'], variables: [{ key: 'baseUrl', value: 'https://mine', enabled: true }] }],
     };
     const env = mergeSeed(old, seed).environments[0]!;
     expect(env.name).toBe('Prod (mine)');
     expect(env.production).toBe(true);
     expect(env.color).toBe('#EF4444');
     expect(env.variables.map((v) => `${v.key}=${v.value}`)).toEqual(['baseUrl=https://mine', 'apiKey=']);
+  });
+
+  it('shares one environment between APIs on the same server', () => {
+    const other: ClientSeed = {
+      ...seed,
+      collection: { ...seed.collection, id: 'api:u', name: 'U' },
+      requests: [],
+      environments: [{ ...seed.environments[0]!, collectionIds: ['api:u'], variables: [...seed.environments[0]!.variables, { key: 'token', value: '', enabled: true, secret: true }] }],
+    };
+    const ws = mergeSeed(mergeSeed(empty, seed), other);
+    expect(ws.environments).toHaveLength(1);
+    expect(ws.environments[0]!.collectionIds).toEqual(['api:t', 'api:u']);
+    expect(ws.environments[0]!.variables.map((v) => v.key)).toEqual(['baseUrl', 'apiKey', 'token']);
+  });
+
+  it('folds the per-API copies of older workspaces into the shared environment', () => {
+    const old: Workspace = {
+      ...empty,
+      environments: [
+        { id: 'api:t:env:0', name: 'Production', collectionId: 'api:t', variables: [{ key: 'baseUrl', value: 'https://x', enabled: true }, { key: 'apiKey', value: 'k1', enabled: true, secret: true }] },
+        { id: 'mine', name: 'Staging', variables: [{ key: 'baseUrl', value: 'https://staging', enabled: true }] },
+      ],
+      activeEnvironmentId: 'api:t:env:0',
+    };
+    const ws = mergeSeed(old, seed);
+    expect(ws.environments.map((e) => e.id)).toEqual(['mine', 'server:https://x']);
+    const shared = ws.environments[1]!;
+    expect(shared.collectionId).toBeUndefined();
+    expect(shared.collectionIds).toEqual(['api:t']);
+    expect(shared.variables.find((v) => v.key === 'apiKey')?.value).toBe('k1');
+    expect(ws.activeEnvironmentId).toBe('server:https://x');
   });
 
   it('takes the API\'s send setting from the seed, over what the saved workspace says', () => {

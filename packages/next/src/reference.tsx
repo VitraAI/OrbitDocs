@@ -2,6 +2,7 @@ import { type OrbitDocsConfig, sendDisabledReason } from '@orbitdocs/core';
 import { allCodeSamples, ApiReference, type ExtraContent, plainText, type ReferenceContent, referenceSection, sectionFiles } from '@orbitdocs/ui';
 import type { ComponentType } from 'react';
 
+import { readableApis } from './layout';
 import { orbitMdxComponents } from './mdx';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -104,6 +105,14 @@ function referenceContent(config: OrbitDocsConfig, apiId: string, source?: Refer
   return out;
 }
 
+/** The APIs the reference sidebar's dropdown offers (`navigation.apiSwitcher: 'sidebar'`). */
+function sidebarApis(config: OrbitDocsConfig, apiId: string) {
+  if (config.navigation.apiSwitcher !== 'sidebar') return undefined;
+  const apis = readableApis(config, `/reference/${apiId}`);
+  if (apis.length < 2) return undefined;
+  return apis.map((a) => ({ id: a.id, title: a.title ?? a.id, description: a.description?.split('\n')[0], href: `${config.output.basePath}/reference/${a.id}/` }));
+}
+
 export async function ReferencePage({
   config,
   params,
@@ -130,6 +139,7 @@ export async function ReferencePage({
       content={referenceContent(config, api.id, content)}
       samplesUrl={`${config.output.basePath}/reference-samples/${api.id}.json`}
       sectionsUrl={`${base}/sections`}
+      apis={sidebarApis(config, api.id)}
     />
   );
 }

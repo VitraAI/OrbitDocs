@@ -175,7 +175,11 @@ describe('a partially restricted API', () => {
 });
 
 describe('the top bar', () => {
-  const withAdmin = { ...config, apis: [...config.apis, { ...config.apis[0]!, id: 'admin', title: 'Admin API' }] };
+  const withAdmin = {
+    ...config,
+    navigation: { ...config.navigation, apiSwitcher: 'menu' as const },
+    apis: [...config.apis, { ...config.apis[0]!, id: 'admin', title: 'Admin API' }],
+  };
   const apiMenu = (readerOf?: string) => JSON.stringify(orbitLayoutOptions(withAdmin, { readerOf }).links);
 
   it('lists only the APIs every reader may open on shared pages', () => {
@@ -188,5 +192,13 @@ describe('the top bar', () => {
     expect(readableApis(withAdmin, '/~/g1').map((a) => a.id)).toEqual(['public', 'admin']);
     expect(apiMenu('/reference/admin')).toContain('Admin API');
     expect(apiMenu('/~/nope')).not.toContain('Admin API');
+  });
+
+  it('links to the first API when the sidebar switches APIs (the default)', () => {
+    const sidebar = { ...withAdmin, navigation: { ...withAdmin.navigation, apiSwitcher: 'sidebar' as const } };
+    const links = JSON.stringify(orbitLayoutOptions(sidebar, { readerOf: '/reference/admin' }).links);
+    expect(links).toContain('"url":"/reference/public"');
+    expect(links).not.toContain('Admin API');
+    expect(links).not.toContain('"type":"menu"');
   });
 });

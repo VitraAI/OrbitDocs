@@ -60,6 +60,8 @@ export interface Environment {
   name: string;
   /** Collection it belongs to; undefined = available everywhere. */
   collectionId?: string;
+  /** Seeded environments: the collections whose APIs use this server. */
+  collectionIds?: string[];
   variables: Variable[];
   /** Dot colour in the environment picker (hex). */
   color?: string;
