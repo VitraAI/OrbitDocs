@@ -84,6 +84,31 @@ Some features need the Nest extraction step. For a file or URL source, OrbitDocs
 | `title`, `description`, `version` from the config | Yes | Yes |
 | Completeness report | Yes | Yes |
 
+## One Nest app, several APIs
+
+One Nest app can feed several API references. Point each API at the same app, and give every route its API with `@DocsOperation({ api })`:
+
+```ts title="docs/orbitdocs.config.ts"
+apis: [
+  {
+    id: 'payments',
+    title: 'Payments API',
+    source: { nest: { module: 'dist/app.module.js', build: 'nest build' } },
+  },
+  {
+    id: 'accounts',
+    title: 'Accounts API',
+    source: { nest: { module: 'dist/app.module.js', build: 'nest build' } },
+  },
+],
+```
+
+```ts title="src/payments/payments.controller.ts"
+@DocsOperation({ api: 'payments', group: 'Payments', title: 'Create a payment' })
+```
+
+`api` takes one id or a list, for a route that belongs to more than one API. A route without `api` appears in every API extracted from the app. Extraction builds and boots the app once for all of them; see [Several APIs from one app](/nestjs/extraction#several-apis-from-one-app).
+
 ## Two Nest apps
 
 Each Nest source has its own `root` and `module`, so one docs app can document several Nest apps, for example in a monorepo:
@@ -108,7 +133,7 @@ Each `root` needs `@orbitdocs/nestjs` installed. Extract one at a time with `orb
 
 ## What changes with several APIs
 
-- **Top bar.** **API Reference** becomes a menu. Each item shows the API's title and the first line of its description.
+- **Switching APIs.** The reference sidebar's title becomes a select of every API, and **API Reference** in the top bar links to the first one. With `navigation.apiSwitcher: 'menu'`, **API Reference** is a menu instead, with each API's title and the first line of its description. See [Switch between APIs](/customization/navigation-bar#switch-between-apis).
 - **API client.** `/client` has one collection per API, with its own environments.
 - **Search.** Results show the API's title and group as a breadcrumb.
 - **llms.txt.** Each API gets its own section.

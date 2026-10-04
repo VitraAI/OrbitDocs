@@ -11,7 +11,7 @@ Each API in `orbitdocs.config.ts` becomes a collection named after the API's tit
 
 | Collection part | Comes from |
 | --- | --- |
-| Folders | The reference's groups (tags), in the same order. Operations without a group go under **Requests**. |
+| Folders | The reference's groups (tags), in the same order. Operations without a group are listed after the folders. |
 | One request per operation | Named after the operation's title |
 | URL | `{{baseUrl}}` plus the path, with example values for path parameters |
 | Params and headers | Every query parameter and header from the spec. Required ones and ones with an example start switched on. |
@@ -36,6 +36,20 @@ Each time the client loads, it merges the latest spec into the saved workspace:
   Once a reader changes a generated request, later spec changes don't reach it. There is no reset button; clearing the site's data in the browser resets the whole workspace.
 </Callout>
 
+## The collections panel
+
+The collections panel shows your collections as a tree. Each collection, and each folder in it, is a row with a request count. Click a row to open or close it.
+
+| What | Behavior |
+| --- | --- |
+| Starting state | Only the collection and folder of the open request are expanded. With no request open, a single collection starts open with its first folder. |
+| Opening a request | From a tab, the command palette or a link, its collection and folder open so the request is in view. |
+| **Collapse all folders** | The button next to the search box closes every folder and keeps the collections open. When every folder is closed, it becomes **Expand all folders**. |
+| Searching | Every collection and folder with a match is expanded; the rest is hidden. **Collapse all folders** is off while you search. |
+| Remembered | Which rows are open is saved in the browser, under `orbitdocs:client:tree`. |
+
+Requests without a folder are listed after the folders of their collection.
+
 ## Find a request
 
 The search box at the top of the collections panel filters by name, method or URL. Press ⌘ / to jump to it. The command palette (⌘ K) also searches every request, including folder names.
@@ -50,7 +64,7 @@ Opened requests appear as tabs in the top bar. Close a tab with its **×** or a 
 | Duplicate | **Duplicate request** in the **Send** menu, or the command palette | A copy named `<name> (copy)` |
 | Rename | Type in the name field above the URL bar | |
 
-Requests you create or duplicate are your own. They never change when the spec changes. New requests are listed under **Requests**; a duplicate stays in the folder of the original.
+Requests you create or duplicate are your own. They never change when the spec changes. New requests are listed after the folders of their collection; a duplicate stays in the folder of the original.
 
 ## Saving
 

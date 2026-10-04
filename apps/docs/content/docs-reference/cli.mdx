@@ -92,7 +92,7 @@ npx orbitdocs extract [--api <id>] [--skip-build]
 
 For each API:
 
-- **`nest` source:** runs `build` in `root` (unless skipped), then loads the compiled module in Nest preview mode (no provider starts, so nothing connects to a database) and builds the document with the app's own `@nestjs/swagger`.
+- **`nest` source:** runs `build` in `root` (unless skipped), then loads the compiled module in Nest preview mode (no provider starts, so nothing connects to a database) and builds the document with the app's own `@nestjs/swagger`. APIs from the same Nest app (the same `source.nest`, apart from `routes`) share one build and one boot, and each is filtered from that document. See [Several APIs from one app](/nestjs/extraction#several-apis-from-one-app).
 - **`file` source:** reads the file (JSON or YAML).
 - **`url` source:** fetches the URL.
 

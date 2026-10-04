@@ -7,7 +7,7 @@ Extraction turns your compiled Nest app into `openapi/<api id>.json`, the file t
 
 ## What extraction does
 
-`orbitdocs extract` runs this for each API with a `source.nest`. `orbitdocs dev` and `orbitdocs build` run it for you.
+`orbitdocs extract` runs this for each API with a `source.nest`. APIs that come from the same Nest app share one build and one boot; see [Several APIs from one app](#several-apis-from-one-app). `orbitdocs dev` and `orbitdocs build` run it for you.
 
 <Steps>
 <Step>
@@ -52,6 +52,25 @@ Extraction turns your compiled Nest app into `openapi/<api id>.json`, the file t
 › travel: extracting from dist/app.module.js (preview mode, no providers started)
 ✓ travel: 12 operations → /work/orbit-travel/docs/openapi/travel.json
 ```
+
+### Several APIs from one app
+
+When one Nest app feeds several API references, the expensive steps run once. APIs whose `source.nest` points at the same app (same `root`, `module`, `export`, `globalPrefix`, `versioning`, `configure`, `env` and `build`; `routes` may differ) are extracted together:
+
+- **Build** runs once.
+- **Load**, **Boot in preview mode**, **Apply route settings** and **Build the document** run once, in one child process.
+- **Filter** and **Write** run once per API, so each API keeps its own `routes`, `@DocsOperation({ api })` markers, `groups` order, `servers`, `security` and spec file.
+
+```txt title="Terminal"
+› payments, accounts: nest build
+› payments, accounts: extracting from dist/app.module.js (preview mode, no providers started)
+✓ payments: 18 operations → /work/acme/docs/openapi/payments.json
+✓ accounts: 9 operations → /work/acme/docs/openapi/accounts.json
+```
+
+Each extra API from the same app adds only its own filtering, not another build and boot. APIs whose Nest settings differ boot separately, but the same `build` command in the same `root` still runs only once. With `--api <id>`, only that API is extracted.
+
+Give each route its API with `@DocsOperation({ api: 'payments' })`. A route without `api` appears in every API extracted from the app. See [Multiple APIs](/api-reference/multiple-apis#one-nest-app-several-apis).
 
 ## Source options
 

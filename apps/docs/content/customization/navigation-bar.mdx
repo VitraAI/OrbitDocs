@@ -11,7 +11,7 @@ From left to right:
 
 1. Your logo, or the site title when there is no logo. It links to `navigation.titleUrl` (default `/`). See [Branding](/customization/branding).
 2. **Guides**, linking to `/`. Rename it, point it elsewhere, or hide it with `navigation.guides`.
-3. **API Reference**. One API gets a link to `/reference/<id>`; several APIs get a menu with each API's title and the first line of its description. With [private docs](/private-docs), an API limited to some groups is listed only on pages its readers see: not on public pages, but on its own reference and on the guides served to its readers.
+3. **API Reference**. One API gets a link to `/reference/<id>`. With several APIs it links to the first one, and readers switch APIs from the reference sidebar's title; `navigation.apiSwitcher: 'menu'` makes it a menu instead. See [Switch between APIs](#switch-between-apis). With [private docs](/private-docs), an API limited to some groups is listed only on pages its readers see: not on public pages, but on its own reference and on the guides served to its readers.
 4. **API Client**, when you have at least one API and `client.enabled` is on.
 5. Your `navigation.header` items, in order.
 6. **Ask AI**, when the config has an `ai` section. See [Ask AI](/ai).
@@ -36,6 +36,21 @@ export default defineConfig({
 ```
 
 `guides: false` removes the link.
+
+## Switch between APIs
+
+With more than one API, `navigation.apiSwitcher` sets where readers switch between them:
+
+- **`'sidebar'`** (default): the reference sidebar's title is a select of every API, and **API Reference** in the top bar links to the first API.
+- **`'menu'`**: **API Reference** in the top bar opens a menu with each API's title and the first line of its description. The sidebar's title is the current API.
+
+```ts title="orbitdocs.config.ts"
+navigation: {
+  apiSwitcher: 'menu',
+},
+```
+
+With [private docs](/private-docs), both list only the APIs the page's readers may open.
 
 ## Add header items
 
@@ -120,6 +135,7 @@ banner: {
   type={{
     'navigation.guides': { type: 'false | { text?: string; url?: string }', description: 'The Guides link in the top bar.', default: "{ text: 'Guides', url: '/' }" },
     'navigation.header': { type: 'HeaderItem[]', description: 'Links, icon links, buttons and menus in the top bar.', default: '[]' },
+    'navigation.apiSwitcher': { type: "'sidebar' | 'menu'", description: 'Where readers switch between several APIs: the reference sidebar title (a select), or a menu on API Reference in the top bar.', default: "'sidebar'" },
     'navigation.sidebar': { type: 'Link[]', description: 'Links at the bottom of the sidebar. See the Sidebar page.', default: '[]' },
     'site.github': { type: 'string (URL)', description: 'Repository link shown as a GitHub icon.' },
     'banner.content': { type: 'string', description: 'Banner text (required when banner is set).' },

@@ -167,6 +167,14 @@ function extract(request: ExtractRequest): Promise<ExtractResult>
 
 The function behind `orbitdocs extract`. It boots a compiled module in preview mode and writes the filtered document. The CLI calls it through `@orbitdocs/nestjs/extract-cli`; you rarely need it directly. See [Extraction](/nestjs/extraction).
 
+## extractMany
+
+```ts
+function extractMany(request: ExtractManyRequest): Promise<ExtractResult[]>
+```
+
+Boots the module once and writes one document per entry in `targets`. `ExtractManyRequest` is `ExtractRequest` without `info`, `filter` and `out`, plus `targets`: each `ExtractTarget` has its own `info`, `filter` and `out`. Results come back in the order of `targets`. The CLI uses it when several APIs share one Nest app; `extract` is `extractMany` with one target. See [Several APIs from one app](/nestjs/extraction#several-apis-from-one-app).
+
 ## Exported types
 
-`DocsOperationOptions`, `CodeSample`, `MountOrbitDocsOptions`, `OrbitDocumentOptions`, `ExtractRequest`, `ExtractResult`, and from `@orbitdocs/openapi`: `ORBIT_EXTENSION` (`'x-orbitdocs'`), `OrbitMarker`, `Stability`.
+`DocsOperationOptions`, `CodeSample`, `MountOrbitDocsOptions`, `OrbitDocumentOptions`, `ExtractRequest`, `ExtractManyRequest`, `ExtractTarget`, `ExtractResult`, and from `@orbitdocs/openapi`: `ORBIT_EXTENSION` (`'x-orbitdocs'`), `OrbitMarker`, `Stability`.
