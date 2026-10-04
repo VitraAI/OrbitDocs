@@ -1,6 +1,6 @@
 {
   "name": "@orbitdocs/nestjs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OrbitDocs for NestJS: @Docs* decorators, preview-mode spec extraction, and serving the built docs from your app.",
   "license": "MIT",
   "author": "Vitra.ai (https://vitra.ai)",

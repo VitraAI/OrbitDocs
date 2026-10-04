@@ -1,5 +1,19 @@
 # @orbitdocs/openapi
 
+## 0.2.0
+
+### Minor Changes
+
+- f0882a8: One Nest app can feed several API references: `@DocsOperation({ api: 'payments' })` puts a route in that API only (routes without `api` stay in every API). New `omitParameters` on an API removes parameters its callers never send, such as a tenant header that an API key makes unnecessary.
+
+  `standardErrors` also takes `{ extra, descriptions }` in the config, e.g. `extra: ['429']` to document a rate limit on every operation.
+
+- f0bd3ea: New `apis[].groups` option: the order of an API's groups in the sidebar and reference. Groups not listed follow in the order their first operation appears.
+
+### Patch Changes
+
+- f0bd3ea: Documentation gaps no longer report file downloads (a non-JSON response with a schema, such as a PDF or CSV) as missing a response schema, or binary file fields as missing an example. A DELETE with an empty body is not reported either.
+
 ## 0.1.0
 
 ### Initial release

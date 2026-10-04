@@ -1,6 +1,6 @@
 {
   "name": "@orbitdocs/auth",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Private docs for OrbitDocs: access rules, SSO (Google, Microsoft, Okta, Auth0, Clerk, Keycloak), product-session reuse (Supabase, Clerk, Firebase, Appwrite), personalization and audit.",
   "license": "MIT",
   "author": "Vitra.ai (https://vitra.ai)",

@@ -1,5 +1,16 @@
 # @orbitdocs/platform
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [f0882a8]
+- Updated dependencies [f0bd3ea]
+- Updated dependencies [f0bd3ea]
+  - @orbitdocs/openapi@0.2.0
+  - @orbitdocs/ai@0.2.0
+  - @orbitdocs/auth@0.2.0
+
 ## 0.1.0
 
 ### Initial release
