@@ -1,0 +1,121 @@
+---
+title: How it works
+description: Extraction, the docs app, the build output and the three ways to serve the site.
+---
+
+OrbitDocs has two halves. A CLI extracts an OpenAPI document from your Nest app. A Next.js app, the docs app, renders that document and your MDX guides. This page explains each step so you know what runs where.
+
+```txt
+ Nest project                        docs/ (Next.js app)
+ ─────────────                       ─────────────────────────────────────
+ src/*.controller.ts  ── nest build ─▶ dist/app.module.js
+                                        │
+                     orbitdocs extract  │  preview mode: no providers start
+                                        ▼
+                                     openapi/<api id>.json
+ content/*.mdx ────────────────────▶ next build ─▶ out/  (static files)
+ reference/<api id>/*.mdx ─────────▶            └▶ .next/ (server mode)
+```
+
+## 1. Extraction
+
+`orbitdocs extract` writes `openapi/<api id>.json` for every API in `orbitdocs.config.ts`. For a NestJS source it:
+
+1. Runs your `build` command, for example `nest build`, unless you pass `--skip-build`.
+2. Starts a child Node.js process in your Nest project and loads the compiled module, for example `dist/app.module.js`.
+3. Boots it with `NestFactory.create(AppModule, { preview: true })`. Nest scans modules and controllers but never instantiates providers. Constructors that open a database, cache or queue connection never run.
+4. Applies `globalPrefix`, `versioning` and your optional `configure(app)` hook, so paths match `main.ts`.
+5. Calls your own `SwaggerModule.createDocument`. Every `@nestjs/swagger` decorator and the Swagger CLI plugin count.
+6. Keeps the routes you chose with [`routes`](/nestjs#choose-which-routes-appear), gives each one a readable id such as `create-a-booking`, adds standard error responses and removes unused schemas.
+7. Writes the spec, plus a public copy at `public/openapi/<api id>.json` for the **Download OpenAPI Document** link.
+
+Because it reads the compiled output, extraction sees exactly what Swagger sees at runtime. Read [Extraction](/nestjs/extraction) for every option and for troubleshooting.
+
+<Callout title="Not using NestJS?">
+  An API can also come from an OpenAPI 3.x or Swagger 2.0 file (`source: { file }`) or URL (`source: { url }`). Extraction then loads, upgrades and validates the document instead. See [Multiple APIs](/api-reference/multiple-apis).
+</Callout>
+
+## 2. Preview mode
+
+`orbitdocs dev` runs extraction once, then starts `next dev`. It then watches your API:
+
+- With a `build` command, it watches your Nest source folder (`sourceRoot` in `nest-cli.json`, default `src/`). On a change it rebuilds and re-extracts.
+- Without one, it watches the folder of the compiled module. Run `nest start --watch` next to it.
+
+Guides in `content/` reload in the browser as you save. After an API change, the terminal prints `reference updated — reload the page`.
+
+## 3. The docs app
+
+`orbitdocs init` writes a normal Next.js App Router app into `docs/`. Nothing is hidden in a framework: each route is a small file that calls an OrbitDocs component.
+
+| Route | Renders |
+| --- | --- |
+| `/` | `content/index.mdx`, as a guide or as a [landing page](/writing/landing-pages) |
+| `/<slug>` | Every other file in `content/` |
+| `/reference/<api id>/` | The API reference, one page per API |
+| `/reference/<api id>/<operation>/` | The same page, scrolled to that operation, with its own title |
+| `/reference/<api id>/models/` | The same page, scrolled to the Models section |
+| `/client/` | The standalone [API client](/api-client) |
+| `/llms.txt`, `/llms-full.txt` | Indexes for LLMs ([llms.txt](/ai/llms-txt)) |
+| `/md/<slug>/content.md` | Each guide as Markdown, for **Copy page** and AI tools |
+| `/api/search` | The search index, built once and searched in the browser |
+
+[Project structure](/get-started/project-structure) explains every file. The config in `orbitdocs.config.ts` drives the layout, theme, navigation and every feature. See [Configuration](/docs-reference/configuration).
+
+## 4. The build
+
+`orbitdocs build` runs, in order:
+
+1. `orbitdocs extract` for every API. With `completeness: 'error'`, a documentation gap stops the build here.
+2. `orbitdocs check`. A broken `op:` link, `<Endpoint>` or `reference/` file stops the build here.
+3. `next build`.
+
+With `output.mode: 'static'` (the default), the result is plain files in `docs/out/`:
+
+```txt
+out/
+├── index.html
+├── quickstart/index.html
+├── reference/travel/index.html
+├── reference/travel/create-a-booking/index.html   one per operation, with that operation rendered
+├── reference/travel/models/index.html
+├── reference/travel/sections/bookings.json         other operations, loaded as the reader scrolls
+├── reference-samples/travel.json                  code samples, loaded on demand
+├── client/index.html
+├── openapi/travel.json                            the spec, for download
+├── api/search                                     the search index
+├── llms.txt
+├── llms-full.txt
+├── md/quickstart/content.md
+├── icon.png
+├── orbitdocs-access.json                          internal: private docs rules
+├── orbitdocs-ai.json                              internal: Ask AI and MCP index
+├── _next/                                         scripts and styles
+└── 404.html
+```
+
+Every page is pre-rendered, so search engines and link previews see real content. The two `orbitdocs-*.json` files are for the server that serves the site. `mountOrbitDocs` and `proxy.ts` answer 404 for them.
+
+## The three output modes
+
+You serve the same docs in one of three ways. You choose with `output.mode` in the config, plus where you host it.
+
+| Mode | Config | Where it runs | Private docs and Ask AI |
+| --- | --- | --- | --- |
+| **Static** | `output: { mode: 'static' }` | Any static host: Vercel, Netlify, GitHub Pages, S3, nginx | Not enforced. A static host serves every file. |
+| **Next server** | `output: { mode: 'server' }` | Vercel, Docker, any Node.js host | Yes, through `proxy.ts` |
+| **Served by Nest** | `output: { mode: 'static', basePath: '/docs' }` | Your own Nest app, with [`mountOrbitDocs`](/nestjs/serve-from-nest) | Yes, `mountOrbitDocs` enforces them |
+
+<Callout type="warn" title="Private docs need a server">
+  `access` rules only protect pages when a server checks each request. Use server mode or serve the static build from Nest. `orbitdocs build` prints a warning when you combine `access` with a plain static build.
+</Callout>
+
+`output.basePath` sets the path the site lives under, such as `/docs`. It must match where you serve it. Read [Deploy](/deploy) to choose.
+
+## Next steps
+
+<Cards>
+  <Card title="Project structure" href="/get-started/project-structure" description="Every file in the docs app, explained." />
+  <Card title="Extraction" href="/nestjs/extraction" description="Every extraction option and how to fix common errors." />
+  <Card title="Deploy" href="/deploy" description="Choose an output mode and a host." />
+</Cards>

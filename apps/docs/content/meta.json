@@ -1,0 +1,18 @@
+{
+  "title": "Docs",
+  "pages": [
+    "get-started",
+    "nestjs",
+    "writing",
+    "api-reference",
+    "api-client",
+    "customization",
+    "private-docs",
+    "ai",
+    "sdks",
+    "deploy",
+    "platform",
+    "docs-reference",
+    "help"
+  ]
+}

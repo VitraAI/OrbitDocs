@@ -1,0 +1,164 @@
+---
+title: Providers and keys
+description: Connect Ask AI to OpenAI, Anthropic, Google or any OpenAI-compatible endpoint, keep the key on your server, and tune the rate limit.
+---
+
+Ask AI calls an LLM with your own key. You choose the provider and model in `orbitdocs.config.ts`. The key stays in an environment variable on the server that serves the docs.
+
+## Choose a provider
+
+<Tabs items={['Anthropic', 'OpenAI', 'Google', 'OpenAI-compatible']}>
+<Tab value="Anthropic">
+
+```ts title="orbitdocs.config.ts"
+ai: {
+  provider: 'anthropic',
+  model: 'claude-sonnet-5-5',
+  apiKeyEnv: 'ANTHROPIC_API_KEY',
+},
+```
+
+Create a key in the Anthropic Console.
+
+</Tab>
+<Tab value="OpenAI">
+
+```ts title="orbitdocs.config.ts"
+ai: {
+  provider: 'openai',
+  model: 'gpt-5-mini',
+  apiKeyEnv: 'OPENAI_API_KEY',
+},
+```
+
+Create a key in the OpenAI platform dashboard.
+
+</Tab>
+<Tab value="Google">
+
+```ts title="orbitdocs.config.ts"
+ai: {
+  provider: 'google',
+  model: 'gemini-3-flash',
+  apiKeyEnv: 'GOOGLE_GENERATIVE_AI_API_KEY',
+},
+```
+
+Create a Gemini API key in Google AI Studio.
+
+</Tab>
+<Tab value="OpenAI-compatible">
+
+```ts title="orbitdocs.config.ts"
+ai: {
+  provider: 'openai-compatible',
+  model: 'llama3.3',
+  baseUrl: 'http://localhost:11434/v1',
+  apiKeyEnv: 'OLLAMA_API_KEY',
+},
+```
+
+Use this for Ollama, vLLM, OpenRouter, LiteLLM or any server that speaks the OpenAI Chat Completions API. `baseUrl` is required and usually ends in `/v1`. The key is sent as `Authorization: Bearer <key>`.
+
+</Tab>
+</Tabs>
+
+| `provider` | Calls | `baseUrl` |
+| --- | --- | --- |
+| `anthropic` | Anthropic's API | Optional: a proxy or gateway URL |
+| `openai` | OpenAI's API | Optional: a proxy or gateway URL |
+| `google` | Google's Gemini API | Optional: a proxy or gateway URL |
+| `openai-compatible` | Any OpenAI Chat Completions server | Required |
+
+`model` is passed to the provider as is. Use any model id your provider accepts. A fast, inexpensive model is usually enough: answers come from a few passages, not from the model's own knowledge.
+
+<Callout type="warn" title="The key variable must be set, even for local models">
+Ask AI fails with `<VAR> is not set (API key for Ask AI)` when `apiKeyEnv` is empty. Servers that need no key, such as Ollama, still need the variable: set it to any value.
+</Callout>
+
+## Keep the key safe
+
+- The config holds only the variable name. `.orbitdocs/ai.json` and the build hold no key.
+- The key is read on the server for each answer and never sent to the browser.
+- To rotate it, change the environment variable and restart the server. No rebuild is needed.
+
+Where to set it depends on what serves the docs:
+
+| Served by | Set the key in |
+| --- | --- |
+| Nest (`mountOrbitDocs`) | Your Nest app's environment, or pass `ai: { env }` (below). |
+| Next server mode | The environment of `next start`: your Vercel project, Docker container or host. |
+| Self-hosted platform | The project's **Settings → Environment**. See [Site environment variables](/platform/publishing#site-environment-variables). |
+
+## Rate limits
+
+Each reader can ask 30 questions per 10 minutes. The 31st gets `429 Too many questions. Try again in a few minutes.` Readers are counted by IP address, taken from `X-Forwarded-For`, then `X-Real-IP`.
+
+With Nest you can change the limit:
+
+```ts title="src/main.ts"
+mountOrbitDocs(app, {
+  root: join(__dirname, '../docs/out'),
+  path: '/docs',
+  ai: { rateLimit: 60, env: process.env },
+});
+```
+
+`mountOrbitDocs` `ai` options:
+
+- `rateLimit`: questions per reader per 10 minutes (default `30`).
+- `env`: where to read `apiKeyEnv` from (default `process.env`).
+- `ai: false` turns Ask AI and MCP off even when the build has an AI index.
+
+In Next server mode the limit is fixed at 30.
+
+<Callout type="warn" title="Without a proxy, readers share one limit">
+The limit counts by the `X-Forwarded-For` or `X-Real-IP` header. When no proxy sets them, every reader is counted as the same one, and 30 questions per 10 minutes apply to everyone together. Put the docs behind a proxy or load balancer that sets `X-Forwarded-For`.
+</Callout>
+
+Limits are kept in memory per server process. Several instances each keep their own count. Your provider's own limits and spending caps apply on top; set a monthly budget with your provider.
+
+## Track questions with onAsk
+
+`createAi` from `@orbitdocs/ai` takes an `onAsk` callback, called for every question with the number of passages found. Zero passages means your docs don't cover the question, which tells you what to write next. The self-hosted platform uses it for its built-in analytics (see [Analytics](/platform/analytics)).
+
+`mountOrbitDocs` and `orbitProxy` don't expose `onAsk`. To use it, serve the AI routes with your own handler:
+
+```ts title="src/docs-ai.ts"
+import { readFileSync } from 'node:fs';
+
+import { type AiManifest, createAi } from '@orbitdocs/ai';
+
+const manifest = JSON.parse(readFileSync('docs/out/orbitdocs-ai.json', 'utf8')) as AiManifest;
+
+export const ai = createAi({
+  manifest,
+  rateLimit: 30,
+  onAsk: ({ question, sources }) => {
+    console.log(JSON.stringify({ event: 'docs_question', question, sources }));
+  },
+});
+
+// ai.handle(request: Request) answers /_ai/* and /mcp[/<api>] and returns undefined for anything else.
+```
+
+`createAi` options:
+
+| Option | Default | |
+| --- | --- | --- |
+| `manifest` | (required) | The AI index from the build (`orbitdocs-ai.json`). |
+| `access` | none | The access manifest (`orbitdocs-access.json`), so answers respect private docs. |
+| `auth` | none | The handler from `createAuth` in `@orbitdocs/auth`, to identify readers. |
+| `env` | `process.env` | Where the API key is read. |
+| `rateLimit` | `30` | Questions per reader per 10 minutes. |
+| `onAsk` | none | `({ question, sources, request }) => void`. Errors in it are ignored. |
+
+Without `access` and `auth`, every page is treated as public. Pass both when your docs are private.
+
+## Next steps
+
+<Cards>
+  <Card title="Ask AI" href="/ai" description="What readers see and how answers are grounded." />
+  <Card title="MCP servers" href="/ai/mcp" description="Connect coding agents to your docs and API." />
+  <Card title="Environment variables" href="/docs-reference/environment-variables" description="Every variable the docs server reads." />
+</Cards>

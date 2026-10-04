@@ -1,0 +1,122 @@
+---
+title: Mock server
+description: Run a mock of your API from its spec that validates every request, add stateful handlers, and offer it to readers as an environment in the API client.
+---
+
+`orbitdocs mock` serves a mock of your API, built from the extracted spec. Responses come from your examples and schemas. Requests that don't match the spec are rejected with a list of every problem. Frontend and SDK developers can build against your API before it ships, and their code is checked against the contract as they go.
+
+The mock is built on [Scalar's mock server](https://github.com/scalar/scalar).
+
+## Start the mock
+
+```bash
+npx orbitdocs extract          # the mock reads openapi/<api>.json
+npx orbitdocs mock             # first API, http://localhost:4010
+npx orbitdocs mock --api billing --port 5000
+```
+
+| Flag | Default | |
+| --- | --- | --- |
+| `--api <id>` | the first API in the config | Which API to mock. One API per process. |
+| `-p, --port <port>` | `mock.port`, else `4010` | Port to listen on. |
+
+The mock works without a `mock` section in the config, with the defaults below. It keeps running until you press <kbd>Ctrl C</kbd>.
+
+## What it returns
+
+```bash
+curl -H 'x-api-key: anything' http://localhost:4010/v1/bookings/bk_123
+```
+
+- **Responses**: the example of the operation's success response, or a value generated from its schema.
+- **Status codes**: the first success response. Ask for another defined one with `Prefer: code=404`.
+- **Named examples**: pick one with `Prefer: example=<name>`.
+- **Validation**: path, query, header and cookie parameters and JSON bodies are checked against the spec. A mismatch returns `422` with `{ "error": "Request validation failed", "violations": [...] }`.
+- **Auth**: operations with security need credentials of the right shape: a non-empty API key, `Bearer <token>`, or a well-formed `Basic` header. Any value passes; a missing one returns `401`.
+- **CORS** is open to every origin, so browser apps and the API client can call it.
+- **The spec** is served at `/openapi.json` and `/openapi.yaml`.
+
+## Add stateful handlers
+
+Static examples can't show that a booking you create appears in the list. Handlers can. A handler is JavaScript for one operation, keyed by its slug (the last part of its reference URL):
+
+```ts title="orbitdocs.config.ts"
+mock: {
+  handlers: {
+    'create-a-booking': "return store.create('bookings', { id: 'bk_' + faker.string.alphanumeric(6), status: 'pending', ...req.body })",
+    'list-bookings': "return { data: store.list('bookings'), page: { nextCursor: null, hasMore: false } }",
+    'get-a-booking': "return store.get('bookings', req.params.id)",
+    'cancel-a-booking': "return store.update('bookings', req.params.id, { status: 'cancelled' })",
+  },
+},
+```
+
+With several APIs, key a handler as `<api>/<slug>` (for example `travel/create-a-booking`) to target one API. A plain slug applies to every API that has that operation.
+
+### What a handler can use
+
+| Name | What it is |
+| --- | --- |
+| `req.body` | The parsed body (JSON, form or text). |
+| `req.params` | Path parameters by name. |
+| `req.query` | Query parameters by name. |
+| `req.headers` | Request headers. |
+| `res` | The spec's example response for each status code, such as `res['200']`. |
+| `store` | An in-memory store: `list(collection)`, `get(collection, id)`, `create(collection, data)`, `update(collection, id, data)`, `delete(collection, id)`, `clear(collection?)`. `create` adds an `id` (a UUID) when the data has none. |
+| `faker` | [Faker](https://fakerjs.dev) for realistic values: `faker.person.fullName()`, `faker.string.uuid()`. |
+
+The handler's return value is the response body. If it returns nothing, the spec's example is used.
+
+### Status codes from the store
+
+The status code follows what the handler did with the store:
+
+| Store call | Status |
+| --- | --- |
+| `get` | `200`, or `404` when nothing was found |
+| `update` | `200`, or `404` when nothing was found |
+| `delete` | `204`, or `404` when nothing was found |
+| `create` | `201` |
+| `list` or none | `200` |
+
+When a handler does several, the first match in the order get, update, delete, create, list decides.
+
+<Callout type="info">
+Handlers run in a QuickJS sandbox. They can't reach the file system, the network or Node. The store lives in memory and is empty again after a restart. A handler that throws returns `500` with the error message.
+</Callout>
+
+## Offer the mock in the API client
+
+With a `mock` section in the config, readers get a **Mock server** environment in the API client and a "Mock server" entry in the reference's server menu. Its credentials are pre-filled with `mock-credentials`, which the mock accepts.
+
+- During `orbitdocs dev`, it points at `http://localhost:<mock.port>`.
+- In a production build, it appears only when you set `mock.url`, the address of a mock you host. A localhost URL is never shipped to readers.
+- `mock.client: false` keeps the mock out of the client and the reference.
+
+```ts title="orbitdocs.config.ts"
+mock: {
+  url: 'https://mock.acme.com',
+},
+```
+
+To host it, run `orbitdocs mock` on a server that has the docs app and its extracted spec, behind HTTPS.
+
+## Options
+
+<TypeTable
+  type={{
+    port: { type: 'number', description: 'Port for orbitdocs mock.', default: '4010' },
+    validate: { type: 'boolean', description: 'Reject requests that do not match the spec with 422.', default: 'true' },
+    handlers: { type: 'Record<string, string>', description: 'JavaScript per operation, keyed <slug> or <api>/<slug>.', default: '{}' },
+    client: { type: 'boolean', description: 'Add a Mock server environment to the API client and the reference.', default: 'true' },
+    url: { type: 'string (URL)', description: 'Where readers reach a hosted mock. Without it, the environment only exists in development.' },
+  }}
+/>
+
+## Next steps
+
+<Cards>
+  <Card title="SDK contract tests" href="/sdks/testing" description="Run every operation through the SDK against the mock." />
+  <Card title="Environments" href="/api-client/environments" description="How readers switch between servers in the API client." />
+  <Card title="Lint your spec" href="/sdks/linting" description="Check the spec the mock is built from." />
+</Cards>

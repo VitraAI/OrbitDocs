@@ -1,0 +1,459 @@
+---
+title: Configuration
+description: Every key in orbitdocs.config.ts, with its type, default and what it does.
+---
+
+`orbitdocs.config.ts` sits in the docs app folder. The CLI and the Next plugin both load it and validate it with one schema. This page lists every key.
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme API' },
+  apis: [{ id: 'payments', source: { nest: { module: 'dist/app.module.js', build: 'nest build' } } }],
+});
+```
+
+## Loading and validation
+
+- **File names**, checked in this order in the current folder: `orbitdocs.config.ts`, `orbitdocs.config.mts`, `orbitdocs.config.js`, `orbitdocs.config.mjs`. Run the CLI in the docs app folder.
+- **`defineConfig`** from `@orbitdocs/next/config` (or `@orbitdocs/core`) only adds types. It returns the object unchanged.
+- **Validation** runs on every CLI command and every Next build. All problems are listed at once, each with its path:
+
+```text
+Invalid orbitdocs config:
+  - apis.0.id: lowercase letters, digits and dashes
+  - output.basePath: empty or /segment[/segment]
+```
+
+Extra checks after the schema:
+
+| Check | Error |
+| --- | --- |
+| Every group named in `access.rules` and `apis[].access` exists in `access.groups` (or is `*`) | `access: unknown group(s) …` |
+| `access` has at least one of `providers` or `appSession` | `access: add at least one sign-in provider, or an appSession` |
+| API ids are unique | `apis: duplicate id …` |
+
+Defaults below are applied when a key is left out. "required" means the key has no default.
+
+## Top level
+
+<TypeTable
+  type={{
+    site: { type: 'object', required: true, description: 'Site title, description, URL, logo, favicon, repository link and text direction.' },
+    theme: { type: 'object', description: 'Color preset, accent, default color scheme, theme switch, its hotkey and layout widths.' },
+    apis: { type: 'ApiConfig[]', default: '[]', description: 'The APIs to document. Each gets a reference at /reference/<id>.' },
+    navigation: { type: 'object', description: 'The Guides link, top bar items, sidebar links and footer links.' },
+    search: { type: 'object', description: 'Search on or off, its hotkey, suggested links, delay and filters.' },
+    banner: { type: 'object', description: 'An announcement bar above the header. Off when omitted.' },
+    redirects: { type: 'Redirect[]', default: '[]', description: 'Old URLs that forward to new ones.' },
+    layout: { type: 'object', description: 'Fumadocs layout, sidebar, tabs, table of contents, breadcrumb and page actions.' },
+    codeBlocks: { type: 'object', default: '{}', description: 'Shiki themes and default language of code blocks in MDX.' },
+    client: { type: 'object', description: 'Defaults for the API client at /client.' },
+    access: { type: 'object', description: 'Private docs: groups, rules and sign-in. Off when omitted.' },
+    ai: { type: 'object', description: 'Ask AI and the MCP servers. Off when omitted.' },
+    sdks: { type: 'object', description: 'SDK generation with orbitdocs sdk. Off when omitted.' },
+    mock: { type: 'object', description: 'The mock server of orbitdocs mock. Uses its defaults when omitted.' },
+    lint: { type: 'object', default: "{ failOn: 'error' }", description: 'Spectral settings for orbitdocs lint.' },
+    output: { type: 'object', default: "{ mode: 'static', basePath: '' }", description: 'Output mode and base path.' },
+  }}
+/>
+
+## site
+
+<TypeTable
+  type={{
+    title: { type: 'string', required: true, description: 'Site name in the header, page titles and llms.txt. At least one character.' },
+    description: { type: 'string', description: 'Short description for metadata and llms.txt.' },
+    url: { type: 'string (URL)', description: 'Public URL of the deployed site, used for absolute links such as in llms.txt.' },
+    logo: { type: 'string | { light: string; dark: string }', description: 'Logo path or URL. Give light and dark to switch with the color scheme.' },
+    favicon: { type: 'string', default: "'/icon.png'", description: 'Browser tab icon: a path in public/ or a URL. Also used on the sign-in pages.' },
+    github: { type: 'string (URL)', description: 'Repository link shown in the header.' },
+    dir: { type: "'ltr' | 'rtl'", default: "'ltr'", description: 'Text direction. rtl for right-to-left languages; sets dir on <html> and in Fumadocs.' },
+  }}
+/>
+
+## theme
+
+<TypeTable
+  type={{
+    preset: { type: "'orbit' | 'neutral' | 'black' | 'vitepress' | 'dusk' | 'catppuccin' | 'ocean' | 'purple' | 'solar' | 'emerald' | 'ruby' | 'aspen' | 'shadcn'", default: "'orbit'", description: 'Color preset. orbit uses the HeroUI palette everywhere; the others are Fumadocs presets.' },
+    accent: { type: 'string', description: 'Accent color, any CSS color. Overrides the preset primary color.' },
+    defaultMode: { type: "'light' | 'dark' | 'system'", default: "'system'", description: 'Color scheme on first visit.' },
+    'switch.enabled': { type: 'boolean', default: 'true', description: 'Show the theme switch in the header.' },
+    'switch.mode': { type: "'light-dark' | 'light-dark-system'", default: "'light-dark'", description: 'Two-way switch, or three-way with a System option.' },
+    'widths.layout': { type: 'string', description: 'Maximum layout width, any CSS length. Sets --fd-layout-width.' },
+    'widths.sidebar': { type: 'string', description: 'Sidebar width. Sets --fd-sidebar-width.' },
+    'widths.toc': { type: 'string', description: 'Table of contents width. Sets --fd-toc-width.' },
+    hotKey: { type: 'string (one character) | false', default: "'d'", description: 'Key that toggles light and dark mode when pressed on its own. false turns it off.' },
+  }}
+/>
+
+The plugin writes the resulting CSS to `.orbitdocs/theme.css`. Change the config, not that file.
+
+## apis[]
+
+<TypeTable
+  type={{
+    id: { type: 'string', required: true, description: 'Stable id: lowercase letters, digits and dashes, starting with a letter or digit. Used in URLs (/reference/<id>), op:<id>/<operation> links and the spec file name (openapi/<id>.json). Must be unique.' },
+    title: { type: 'string', description: 'Title in the reference. Overrides the spec info.title.' },
+    description: { type: 'string', description: 'Introduction in the reference (Markdown). Overrides the spec info.description.' },
+    version: { type: 'string', description: 'Version shown in the reference header.', default: 'the spec info.version' },
+    source: { type: '{ nest } | { file } | { url }', required: true, description: 'Where the spec comes from. Exactly one of the three.' },
+    servers: { type: '{ url: string; description?: string }[]', description: 'Replaces the spec servers. The first is the default in the API client.' },
+    securitySchemes: { type: 'Record<string, object>', description: 'OpenAPI security schemes merged into components.securitySchemes.' },
+    security: { type: 'string[]', description: 'Scheme names applied to every documented operation (Nest sources replace the operation own security).' },
+    completeness: { type: "'error' | 'warn' | 'off'", default: "'warn'", description: 'What to do when operations lack descriptions, examples or typed success responses. error fails extraction and the build.' },
+    standardErrors: { type: 'boolean', default: 'true', description: 'Add the generic error responses (400 with input, 401/403 when secured, 404 with a path parameter, 500) and a shared error schema to every operation.' },
+    access: { type: 'string[]', description: 'Access groups that can read this API reference and spec (private docs). Restricted APIs get no MCP server.' },
+  }}
+/>
+
+### source
+
+<TypeTable
+  type={{
+    nest: { type: 'object', description: 'Extract the spec from a NestJS app in preview mode. See the table below.' },
+    file: { type: 'string', description: 'Path to a JSON or YAML OpenAPI file, relative to the docs app. Copied to openapi/<id>.json on extract.' },
+    url: { type: 'string (URL)', description: 'URL of an OpenAPI document, fetched on every extract.' },
+  }}
+/>
+
+### source.nest
+
+<TypeTable
+  type={{
+    module: { type: 'string', required: true, description: 'Compiled module file, relative to root, for example dist/app.module.js.' },
+    export: { type: 'string', default: "'AppModule'", description: 'Exported module class name.' },
+    routes: { type: "'opt-in' | 'all'", default: "'opt-in'", description: 'opt-in: only routes marked with @DocsOperation. all: every route @nestjs/swagger documents; hide one with @ApiExcludeEndpoint() or @DocsHidden(). In both modes @ApiOperation gives the title and @ApiTags the group.' },
+    build: { type: 'string', description: 'Command that compiles the app before extraction, for example nest build. Runs in root. Skipped when omitted.' },
+    root: { type: 'string', default: "'..'", description: 'Nest project root, relative to the docs app.' },
+    globalPrefix: { type: 'string', description: 'Mirrors app.setGlobalPrefix() in main.ts.' },
+    'versioning.type': { type: "'uri'", default: "'uri'", description: 'Mirrors app.enableVersioning(). Only URI versioning is supported.' },
+    'versioning.prefix': { type: 'string', default: "'v'", description: 'Version prefix in the URL.' },
+    'versioning.defaultVersion': { type: 'string', description: 'Version for routes without @Version().' },
+    configure: { type: 'string', description: 'Compiled file exporting configure(app) for anything else main.ts does that changes routes. Format path#exportName; the export defaults to configure.' },
+    env: { type: 'Record<string, string>', default: '{}', description: 'Environment variables set before the module loads, as placeholders for required config. Real environment values win.' },
+  }}
+/>
+
+## navigation
+
+<TypeTable
+  type={{
+    guides: { type: 'false | { text?: string; url?: string }', default: "{ text: 'Guides', url: '/' }", description: 'The Guides link in the top bar. Point it at your first guide when the home page is a landing page. false hides it.' },
+    titleUrl: { type: 'string', default: "'/'", description: 'Where the logo (or site title) in the top bar links to.' },
+    header: { type: 'HeaderItem[]', default: '[]', description: 'Top bar items: links, icon links, buttons and menus.' },
+    sidebar: { type: 'Link[]', default: '[]', description: 'Links at the bottom of the guides sidebar.' },
+    footer: { type: 'Link[] | FooterConfig', default: '[]', description: 'The footer under landing pages. A list of links is one row; FooterConfig is { description?, columns: { title, links: Link[] }[], social: Link[] (icon required), links: Link[], copyright?: string | false, poweredBy: boolean (default true), builtBy?: { name, url, logo?: string | { light, dark }, text (default "Built by") } }.' },
+  }}
+/>
+
+### Link
+
+<TypeTable
+  type={{
+    text: { type: 'string', required: true, description: 'Label.' },
+    url: { type: 'string', required: true, description: 'Target URL, absolute or a site path.' },
+    external: { type: 'boolean', default: 'true for absolute URLs', description: 'Open in a new tab.' },
+    icon: { type: 'string', description: 'Lucide icon name, such as Github or BookOpen.' },
+    description: { type: 'string', description: 'Second line of text, shown in menus.' },
+  }}
+/>
+
+### HeaderItem
+
+Every header item takes `on: 'menu' | 'nav' | 'all'` to show it only in the navbar, only in the mobile menu, or in both. Links, icon links and buttons also take `active: 'url' | 'nested-url' | 'none'`: when the item is highlighted, on its exact URL (default), also on pages under it, or never.
+
+<TypeTable
+  type={{
+    "type: 'main'": { type: 'Link', description: 'A plain link. The default when type is omitted.' },
+    "type: 'icon'": { type: 'Link & { icon: string }', description: 'An icon-only link. icon is required.' },
+    "type: 'button'": { type: 'Link & { secondary?: boolean }', description: 'A button. secondary uses the quieter style.' },
+    "type: 'menu'": { type: '{ text: string; icon?: string; items: Link[] }', description: 'A dropdown menu of links.' },
+  }}
+/>
+
+## search
+
+<TypeTable
+  type={{
+    enabled: { type: 'boolean', default: 'true', description: 'Show search.' },
+    hotKey: { type: 'string (one character)', default: "'k'", description: 'k opens search with Cmd/Ctrl+K. Any other key opens it when pressed on its own, for example /.' },
+    links: { type: '{ text: string; url: string }[]', default: '[]', description: 'Suggested links shown before the reader types.' },
+    delayMs: { type: 'number', description: 'Milliseconds to wait after the reader stops typing before searching.' },
+    tags: { type: 'boolean', default: 'false', description: 'Filters under the search box: Guides and one per API.' },
+    allowClear: { type: 'boolean', default: 'true', description: 'With tags: the reader can clear the filter to search everything.' },
+  }}
+/>
+
+## banner
+
+<TypeTable
+  type={{
+    content: { type: 'string', required: true, description: 'Banner text.' },
+    id: { type: 'string', default: "'banner'", description: 'Remembers dismissal. Change it to show a dismissed banner again.' },
+    dismissible: { type: 'boolean', default: 'true', description: 'Show a close button.' },
+    variant: { type: "'normal' | 'rainbow'", default: "'normal'", description: 'Banner style.' },
+    url: { type: 'string', description: 'Makes the whole banner a link.' },
+    height: { type: 'string', default: "'3rem'", description: 'Banner height, any CSS length.' },
+    rainbowColors: { type: 'string[]', description: 'Colors of the rainbow variant.' },
+    changeLayout: { type: 'boolean', default: 'true', description: 'Push the sticky navbar and sidebar down by the banner height while it shows, so the banner never covers them. `false` lets the banner scroll over the navbar.' },
+  }}
+/>
+
+## redirects[]
+
+<TypeTable
+  type={{
+    from: { type: 'string', required: true, description: 'Old path, starting with /. A trailing * matches everything below it.' },
+    to: { type: 'string', required: true, description: 'New path or URL. A trailing * receives what the from * matched.' },
+    permanent: { type: 'boolean', default: 'true', description: '301 when true, 302 when false.' },
+  }}
+/>
+
+Server mode answers with real HTTP redirects. Static builds get an HTML redirect page per rule without `*`, plus `out/_redirects` for Netlify and Cloudflare Pages. See [Deploy](/deploy).
+
+## layout
+
+<TypeTable
+  type={{
+    type: { type: "'notebook' | 'docs' | 'flux' | 'glass' | 'home'", default: "'notebook'", description: 'Fumadocs layout for guides.' },
+    navMode: { type: "'top' | 'auto'", default: "'top'", description: 'Notebook: navbar across the top, or beside the sidebar.' },
+    tabMode: { type: "'navbar' | 'sidebar' | 'top' | 'auto'", default: "'navbar'", description: 'Root folders as tabs. Notebook uses navbar or sidebar; docs uses top or auto.' },
+    tabs: { type: 'false | { title: string; url: string; description?: string; icon?: string }[]', description: 'Your own tabs instead of one per root folder. false shows none.' },
+    transparentNav: { type: "'always' | 'top' | 'none'", default: "'none'", description: 'Transparent navbar always, only at the top of the page, or never.' },
+    'sidebar.enabled': { type: 'boolean', default: 'true', description: 'Show the sidebar. false: no sidebar on wide screens in any layout; small screens keep the menu.' },
+    'sidebar.collapsible': { type: 'boolean', default: 'true', description: 'Let readers collapse the sidebar.' },
+    'sidebar.defaultOpenLevel': { type: 'number', default: '0', description: 'Folders open by default down to this depth.' },
+    'sidebar.prefetch': { type: 'boolean', default: 'true', description: 'Prefetch pages linked from the sidebar.' },
+    'sidebar.banner': { type: 'string', description: 'Plain text shown above the page tree.' },
+    'toc.enabled': { type: 'boolean', default: 'true', description: 'Show the table of contents.' },
+    'toc.style': { type: "'normal' | 'clerk' | 'block'", default: "'clerk'", description: 'Table of contents style.' },
+    'toc.single': { type: 'boolean', default: 'false', description: 'Highlight only one heading at a time.' },
+    'breadcrumb.enabled': { type: 'boolean', default: 'true', description: 'Show the breadcrumb.' },
+    'breadcrumb.includeRoot': { type: 'boolean', default: 'false', description: 'Include the root in the breadcrumb.' },
+    'breadcrumb.includePage': { type: 'boolean', default: 'false', description: 'Include the current page in the breadcrumb.' },
+    'breadcrumb.includeSeparator': { type: 'boolean', default: 'false', description: 'Include the sidebar separator above the page.' },
+    footer: { type: 'boolean', default: 'true', description: 'Previous and next links at the bottom of guide pages.' },
+    full: { type: 'boolean', default: 'false', description: 'Pages use the full width, with no table of contents column.' },
+    lastUpdated: { type: 'boolean', default: 'true', description: 'Show the Last updated date from Git.' },
+    editOnGithub: { type: '{ owner: string; repo: string; branch?: string; dir?: string }', description: "Show an Edit on GitHub link. branch defaults to 'main', dir to 'docs/content'." },
+    pageActions: { type: "('copy-markdown' | 'open-in-chatgpt' | 'open-in-claude')[]", default: 'all three', description: 'Buttons on every guide page. [] hides them.' },
+  }}
+/>
+
+## codeBlocks
+
+<TypeTable
+  type={{
+    themes: { type: '{ light: string; dark: string }', default: "github-light / github-dark", description: 'Shiki themes for light and dark mode.' },
+    defaultLanguage: { type: 'string', default: "'plaintext'", description: 'Language of a code block without one.' },
+  }}
+/>
+
+Applies to guides and `reference/` MDX. Other Shiki options go in `lib/source.ts`; see [Code blocks](/customization/code-blocks).
+
+React-only Fumadocs options (slots, custom link items, a search dialog, TOC header and footer) are not config keys; they go in `lib/overrides.tsx`. See [All Fumadocs options](/customization/fumadocs-options).
+
+## client
+
+Defaults for the API client. Readers can change their own copy in the client settings.
+
+<TypeTable
+  type={{
+    enabled: { type: 'boolean', default: 'true', description: 'Turn the API client on.' },
+    layout: { type: "'stacked' | 'side-by-side'", default: "'side-by-side'", description: 'Request and response side by side, or stacked.' },
+    density: { type: "'compact' | 'comfortable'", default: "'comfortable'", description: 'Spacing.' },
+    accent: { type: 'string (hex)', default: 'the site accent', description: 'Accent color of the client.' },
+    'features.scripts': { type: 'boolean', default: 'true', description: 'Pre-request and test scripts.' },
+    'features.runner': { type: 'boolean', default: 'true', description: 'The collection runner.' },
+    'features.history': { type: 'boolean', default: 'true', description: 'Request history.' },
+    'features.import': { type: 'boolean', default: 'true', description: 'Importing collections.' },
+    'features.environments': { type: 'boolean', default: 'true', description: 'Environments and variables.' },
+  }}
+/>
+
+## access
+
+Private docs. Enforced by the server that serves the docs: `mountOrbitDocs`, Next server mode or the platform. See [Private docs](/private-docs).
+
+<TypeTable
+  type={{
+    mode: { type: "'public' | 'private'", default: "'public'", description: 'private: every page needs sign-in. public: only pages matched by rules or access frontmatter do.' },
+    groups: { type: 'Record<string, AccessGroup>', default: '{}', description: 'Named groups of readers.' },
+    rules: { type: '{ path: string; groups: string[] }[]', default: '[]', description: 'Paths (with *) that only some groups can read. path starts with /. groups has at least one entry; * means any signed-in reader. Among rules the first match wins; a page also needs its frontmatter access and its API needs apis[].access (the stricter wins).' },
+    providers: { type: 'SsoProvider[]', default: '[]', description: 'Single sign-on buttons on the login page.' },
+    appSession: { type: 'AppSession', description: 'Reuse the sign-in of your own product.' },
+    'session.secretEnv': { type: 'string', default: "'ORBITDOCS_AUTH_SECRET'", description: 'Environment variable with the session signing secret (32+ characters).' },
+    'session.maxAgeHours': { type: 'number', default: '12', description: 'How long a reader stays signed in.' },
+    'loginPage.title': { type: 'string', description: 'Login page heading.' },
+    'loginPage.description': { type: 'string', description: 'Text under the heading.' },
+    'personalization.url': { type: 'string (URL)', description: 'Called after sign-in with the reader; may return extra groups and values to pre-fill, such as an API key.' },
+    'personalization.secretEnv': { type: 'string', description: 'Environment variable with the HMAC secret that signs the call (x-orbitdocs-signature). Required with url.' },
+    'audit.file': { type: 'string', description: 'Append sign-ins, sign-outs and denials as JSON lines to this file.' },
+    'audit.webhookUrl': { type: 'string (URL)', description: 'POST each audit event to this URL.' },
+  }}
+/>
+
+### AccessGroup
+
+<TypeTable
+  type={{
+    emails: { type: 'string[]', default: '[]', description: 'Exact email addresses.' },
+    domains: { type: 'string[]', default: '[]', description: 'Whole email domains, such as acme.com.' },
+    idpGroups: { type: 'string[]', default: '[]', description: 'Group names from the identity provider or your app session (its groups claim).' },
+  }}
+/>
+
+### SsoProvider
+
+Fields every preset shares (all are OpenID Connect underneath):
+
+<TypeTable
+  type={{
+    type: { type: "'google' | 'microsoft' | 'okta' | 'auth0' | 'clerk' | 'keycloak'", required: true, description: 'The preset.' },
+    id: { type: 'string', default: 'the type', description: 'URL-safe id (a-z, 0-9, -), used in the callback URL /_auth/callback/<id>.' },
+    name: { type: 'string', default: 'the brand name', description: 'Button label: Continue with <name>.' },
+    clientId: { type: 'string', required: true, description: 'OAuth client id.' },
+    clientSecretEnv: { type: 'string', required: true, description: 'Environment variable that holds the client secret.' },
+    scopes: { type: 'string[]', default: "['openid', 'email', 'profile']", description: 'Requested scopes.' },
+    groupsClaim: { type: 'string', default: "'groups'", description: 'Token claim that lists the reader groups, matched against idpGroups.' },
+    issuer: { type: 'string (URL)', default: 'derived from the preset', description: 'Override the issuer URL (custom domains, tests).' },
+  }}
+/>
+
+Fields per preset:
+
+| `type` | Extra fields |
+| --- | --- |
+| `google` | `hostedDomain?`: only accept accounts of this Google Workspace domain. |
+| `microsoft` | `tenantId` (required): the Microsoft Entra ID directory (tenant) ID. |
+| `okta` | `domain` (required), such as `acme.okta.com`. `authorizationServer?`: a custom authorization server id such as `default`; omit for the org server. |
+| `auth0` | `domain` (required), such as `acme.us.auth0.com`. |
+| `clerk` | `domain` (required): the Clerk Frontend API domain, such as `clerk.acme.com`. |
+| `keycloak` | `url` (required, URL), such as `https://auth.acme.com`. `realm` (required). |
+
+### AppSession
+
+Fields every adapter shares:
+
+<TypeTable
+  type={{
+    type: { type: "'supabase' | 'clerk' | 'firebase' | 'appwrite'", required: true, description: 'Where your product keeps its sessions.' },
+    name: { type: 'string', default: "'<site title> account'", description: 'Button label on the login page: Continue with <name>.' },
+    loginUrl: { type: 'string (URL)', required: true, description: 'Your product sign-in page. Readers without a session go there and come back.' },
+    returnParam: { type: 'string', default: "'redirect_to'", description: 'Query parameter your sign-in page reads to send the reader back.' },
+    logoutUrl: { type: 'string (URL)', description: 'Where Sign out goes.' },
+    cookie: { type: 'string', default: 'the product cookie name', description: 'Cookie that holds the session.' },
+    groupsClaim: { type: 'string', description: 'Claim (dot path) that lists the reader groups.' },
+  }}
+/>
+
+| `type` | Extra fields |
+| --- | --- |
+| `supabase` | `projectUrl` (required, URL): `https://<ref>.supabase.co` or your custom domain. `jwtSecretEnv?`: for legacy projects with a shared JWT secret, the variable that holds it; otherwise the project's public keys are used. |
+| `clerk` | `domain` (required): the Clerk Frontend API domain. `secretKeyEnv?`: variable with the Clerk secret key, to look up the email when the session token has none. |
+| `firebase` | `projectId` (required). |
+| `appwrite` | `endpoint` (required, URL), such as `https://cloud.appwrite.io/v1`. `projectId` (required). |
+
+## ai
+
+Ask AI and the MCP servers. They run on the server that serves the docs. See [Ask AI](/ai).
+
+<TypeTable
+  type={{
+    provider: { type: "'openai' | 'anthropic' | 'google' | 'openai-compatible'", required: true, description: 'LLM provider.' },
+    model: { type: 'string', required: true, description: 'Model id, for example claude-sonnet-5-5 or gpt-5-mini.' },
+    apiKeyEnv: { type: 'string', required: true, description: 'Environment variable that holds the API key. Required for every provider.' },
+    baseUrl: { type: 'string (URL)', description: 'Base URL for openai-compatible (Ollama, vLLM, OpenRouter, Azure OpenAI), or a proxy for the others.' },
+    'askAi.enabled': { type: 'boolean', default: 'true', description: 'Show Ask AI.' },
+    'askAi.greeting': { type: 'string', description: 'Shown before the first question.' },
+    'askAi.suggestions': { type: 'string[]', default: '[]', description: 'Starter questions.' },
+    'askAi.instructions': { type: 'string', description: 'Extra instructions for the assistant: tone, product names, what not to answer.' },
+    'askAi.maxSources': { type: 'number (1-20)', default: '6', description: 'Most passages sent with each question.' },
+    'mcp.docs': { type: 'boolean', default: 'true', description: 'Docs MCP server at <base>/mcp: search and read guides and API references.' },
+    'mcp.apis': { type: 'boolean | string[]', default: 'true', description: 'API MCP server at <base>/mcp/<api id>, one tool per operation. A list limits it to those API ids.' },
+    'mcp.tools': { type: "'per-operation' | 'search-execute'", default: "'per-operation'", description: 'per-operation: a tool per operation. search-execute: two tools, for large APIs.' },
+  }}
+/>
+
+## sdks
+
+SDK generation with `orbitdocs sdk`. TypeScript uses @hey-api/openapi-ts; the other languages use openapi-generator, which needs Java 11 or later. See [SDKs](/sdks).
+
+<TypeTable
+  type={{
+    apis: { type: 'string[]', default: 'every API', description: 'API ids to build SDKs for.' },
+    samples: { type: 'boolean', default: 'true', description: 'Show SDK code samples in the API reference.' },
+    typescript: { type: '{ package: string; out?: string; version?: string }', description: 'package is the npm package name. version defaults to 0.1.0.' },
+    python: { type: '{ package: string; project?: string; out?: string; version?: string }', description: 'package is the import name; project the distribution name (default: package with _ replaced by -).' },
+    go: { type: '{ module: string; package?: string; out?: string; version?: string }', description: 'module is the module path, such as github.com/acme/acme-go. package defaults to its last segment.' },
+    java: { type: '{ groupId: string; artifactId: string; package: string; out?: string; version?: string }', description: 'Maven coordinates and the base package.' },
+    csharp: { type: '{ package: string; out?: string; version?: string }', description: 'NuGet package name. Targets net8.0.' },
+    php: { type: '{ namespace: string; package?: string; out?: string; version?: string }', description: 'PHP namespace and Composer package name.' },
+  }}
+/>
+
+Every language takes `out`: the output folder relative to the docs app, default `sdks/<api id>/<language>`. `{api}` in `out` or a package name is replaced by the API id; without it, several APIs each get `<out>/<api id>`. See [Several APIs](/sdks#several-apis).
+
+## mock
+
+The mock server of `orbitdocs mock`. See [Mock server](/sdks/mock-server).
+
+<TypeTable
+  type={{
+    port: { type: 'number', default: '4010', description: 'Port of orbitdocs mock.' },
+    validate: { type: 'boolean', default: 'true', description: 'Reject requests that do not match the spec with 422.' },
+    handlers: { type: 'Record<string, string>', default: '{}', description: 'Custom responses by operation (<api>/<operation slug> or <operation slug>): JavaScript run in a sandbox with store, faker, req and res.' },
+    client: { type: 'boolean', default: 'true', description: 'Add a Mock server environment to the API client and the reference: in orbitdocs dev, or always when url is set.' },
+    url: { type: 'string (URL)', default: 'http://localhost:<port> in development only', description: 'Where readers reach a hosted mock.' },
+  }}
+/>
+
+## lint
+
+Settings for `orbitdocs lint`. See [Linting](/sdks/linting).
+
+<TypeTable
+  type={{
+    ruleset: { type: 'string', description: 'A Spectral ruleset file (.spectral.yaml), relative to the docs app. Used instead of the built-in OpenAPI rules.' },
+    failOn: { type: "'error' | 'warn' | 'info' | 'hint'", default: "'error'", description: 'Lowest severity that fails the command.' },
+  }}
+/>
+
+## output
+
+See [Deploy](/deploy) for what each mode is for.
+
+<TypeTable
+  type={{
+    mode: { type: "'static' | 'server'", default: "'static'", description: 'static: plain files in out/ for any host or for Nest. server: a Next server (Vercel, containers), needed for private docs and Ask AI without Nest.' },
+    basePath: { type: 'string', default: "''", description: 'Path the site is served under, such as /docs. Empty, or /segment with more /segments; no trailing slash.' },
+  }}
+/>
+
+## Page frontmatter
+
+Guide pages in `content/` accept:
+
+<TypeTable
+  type={{
+    title: { type: 'string', required: true, description: 'Page title, used in the sidebar and as the heading.' },
+    description: { type: 'string', description: 'Shown under the title and in search and metadata.' },
+    icon: { type: 'string', description: 'Icon name for the sidebar.' },
+    full: { type: 'boolean', description: 'Use the full page width.' },
+    access: { type: 'string[]', description: 'Access groups that can read the page (private docs). Unknown groups fail extraction.' },
+    layout: { type: "'docs' | 'landing'", description: 'landing renders the page full width with landing components and leaves it out of the sidebar.' },
+  }}
+/>
+
+Operation content pages in `reference/<api>/` accept:
+
+<TypeTable
+  type={{
+    title: { type: 'string', description: 'Optional heading.' },
+    position: { type: "'before-parameters' | 'after-description' | 'after-responses' | 'aside'", description: 'Where the content goes in the operation.' },
+    replace: { type: 'boolean', description: 'index.mdx only: replace the spec description instead of adding to it.' },
+  }}
+/>

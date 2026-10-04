@@ -1,0 +1,269 @@
+@import 'tailwindcss';
+@import '@heroui/styles';
+
+@source '../node_modules/@heroui/react/dist';
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Vercel-style: neutral greys, black (white in dark) primary, thin borders, small radii. */
+:root,
+.light {
+  --radius: 0.375rem;
+  --background: #ffffff;
+  --foreground: #171717;
+  --surface: #ffffff;
+  --surface-foreground: #171717;
+  --surface-secondary: #fafafa;
+  --surface-secondary-foreground: #171717;
+  --surface-tertiary: #f2f2f2;
+  --overlay: #ffffff;
+  --overlay-foreground: #171717;
+  --muted: #666666;
+  --border: #ebebeb;
+  --separator: #ebebeb;
+  --default: #f2f2f2;
+  --default-foreground: #171717;
+  --accent: #171717;
+  --accent-foreground: #ffffff;
+  --focus: #0070f3;
+  --link: #0070f3;
+  --field-background: #ffffff;
+  --field-border: #ebebeb;
+  --field-border-width: 1px;
+  --success: #0a7a3d;
+  --od-blue: #0070f3;
+  --od-dot-ready: #50e3c2;
+  --od-dot-building: #f5a623;
+  --od-dot-error: #ee0000;
+  --od-header: rgba(255, 255, 255, 0.72);
+  --od-slash: #d4d4d4;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --surface: #0a0a0a;
+  --surface-foreground: #ededed;
+  --surface-secondary: #111111;
+  --surface-secondary-foreground: #ededed;
+  --surface-tertiary: #1a1a1a;
+  --overlay: #111111;
+  --overlay-foreground: #ededed;
+  --muted: #a1a1a1;
+  --border: #242424;
+  --separator: #242424;
+  --default: #1a1a1a;
+  --default-foreground: #ededed;
+  --accent: #ededed;
+  --accent-foreground: #0a0a0a;
+  --field-background: #0a0a0a;
+  --field-border: #2e2e2e;
+  --success: #45d483;
+  --od-header: rgba(10, 10, 10, 0.68);
+  --od-slash: #333333;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Geist, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono {
+  font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Vercel's status dot. */
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--muted);
+}
+.dot[data-s='ready'],
+.dot[data-s='succeeded'],
+.dot[data-s='live'] {
+  background: var(--od-dot-ready);
+}
+.dot[data-s='warning'] {
+  background: var(--od-dot-building);
+}
+.dot[data-s='building'],
+.dot[data-s='running'],
+.dot[data-s='queued'] {
+  background: var(--od-dot-building);
+  animation: dot-pulse 1.2s ease-in-out infinite;
+}
+.dot[data-s='failed'],
+.dot[data-s='error'] {
+  background: var(--od-dot-error);
+}
+.dot[data-s='removed'],
+.dot[data-s='cancelled'] {
+  background: #8f8f8f;
+}
+@keyframes dot-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* A hairline in the logo's blue-to-violet across the very top. */
+.od-brandline {
+  height: 2px;
+  background: linear-gradient(90deg, #00a3ff 0%, #2f6bff 40%, #6d3cf5 75%, #a24bf2 100%);
+}
+
+.od-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(47, 107, 255, 0.12), rgba(109, 60, 245, 0.12));
+  color: #3b4fe0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.dark .od-badge {
+  background: linear-gradient(135deg, rgba(47, 107, 255, 0.22), rgba(109, 60, 245, 0.22));
+  color: #a9b6ff;
+}
+
+/* The sticky, translucent tab bar. */
+.od-tabbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid var(--border);
+  background: var(--od-header);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  transition: box-shadow 200ms;
+}
+.od-tabbar[data-stuck] {
+  box-shadow: 0 8px 24px -16px rgba(0, 0, 0, 0.18);
+}
+.dark .od-tabbar[data-stuck] {
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+}
+/* The mark slides in once the breadcrumb row has scrolled away. */
+.od-tabbar-mark {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 0;
+  margin-left: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.85);
+  transition:
+    width 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    margin 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 180ms,
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.od-tabbar[data-stuck] .od-tabbar-mark {
+  width: 28px;
+  margin: 0 6px 0 4px;
+  opacity: 1;
+  transform: none;
+}
+
+/* Header tabs: muted text; a highlight follows the pointer, a line marks the page. */
+.navtab {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+  white-space: nowrap;
+  transition: color 150ms;
+}
+.navtab:hover,
+.navtab[data-active] {
+  color: var(--foreground);
+}
+.navtab:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -8px;
+  border-radius: 10px;
+}
+.navtab-hover {
+  position: absolute;
+  top: 7px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--default);
+  pointer-events: none;
+  transition:
+    left 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 150ms;
+}
+.navtab-line {
+  position: absolute;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--foreground);
+  pointer-events: none;
+  transition:
+    left 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Lists in bordered boxes, rows divided by hairlines. */
+.list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.list > * + * {
+  border-top: 1px solid var(--border);
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+/* Settings panels: body + a footer strip with the note and the button. */
+.setting {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.setting-danger {
+  border-color: color-mix(in oklab, var(--danger) 45%, var(--border));
+}
+.setting-danger .setting-footer {
+  border-top-color: color-mix(in oklab, var(--danger) 30%, var(--border));
+  background: color-mix(in oklab, var(--danger) 6%, var(--surface));
+}
+.setting-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 10px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-secondary);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.button {
+  font-weight: 500;
+}

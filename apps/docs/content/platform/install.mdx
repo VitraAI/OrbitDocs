@@ -1,0 +1,196 @@
+---
+title: Install the platform
+description: Run the platform with Docker Compose on your machine or a server, create the first admin and get HTTPS working.
+---
+
+The platform ships as a Docker Compose stack in `apps/platform`: Postgres, the platform and Caddy. You configure it with one `.env` file. This page takes you from a clone to a signed-in dashboard.
+
+## Before you start
+
+| You need | Notes |
+| --- | --- |
+| Docker with Compose v2.24 or newer | The stack loads `.env` with `env_file`, which needs a recent Compose. |
+| About 2 GB of free disk | The platform image is about 830 MB; its build needs more while it runs. |
+| Ports `80` and `443` free | Caddy listens on both. Postgres is also published on host port `5433`. |
+| For a server: a domain | Point the domain **and** its wildcard at the server, for example `docs.acme.com` and `*.docs.acme.com`. |
+
+## Install with Docker Compose
+
+<Steps>
+<Step>
+
+**Get the code:**
+
+```bash
+git clone https://github.com/VitraAI/OrbitDocs
+cd OrbitDocs/apps/platform
+```
+
+</Step>
+<Step>
+
+**Create the `.env` file:**
+
+```bash
+cp .env.example .env
+```
+
+</Step>
+<Step>
+
+**Fill in the required values:**
+
+```bash title="apps/platform/.env"
+PLATFORM_SECRET=3f9c…            # openssl rand -hex 32
+ADMIN_EMAIL=you@acme.com
+ADMIN_PASSWORD=a-long-password
+PLATFORM_DOMAIN=docs.acme.com    # leave as localhost to try it locally
+POSTGRES_PASSWORD=change-me      # before the first start
+```
+
+Compose reads `.env` for the values in `docker-compose.yml`, and the platform container loads the whole file. Any variable you add, such as an SSO client secret, reaches the platform.
+
+</Step>
+<Step>
+
+**Start the stack:**
+
+```bash
+docker compose up -d
+```
+
+The first start builds the platform image from the repository, which takes a few minutes. Database migrations run on every start.
+
+</Step>
+<Step>
+
+**Sign in.** Open `https://docs.acme.com` (or `https://localhost`) and sign in with `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+
+</Step>
+<Step>
+
+**Create a project** with **Add New…** on the overview. The project's site lives at `https://<slug>.docs.acme.com` once something is published. Continue with [Publishing](/platform/publishing).
+
+</Step>
+</Steps>
+
+<Callout type="warn" title="Never commit .env">
+  It holds the platform secret, the admin password and any SSO or Git secrets. `.env.example` is the template to commit.
+</Callout>
+
+<Callout type="warn" title="PLATFORM_SECRET is for life">
+  It signs sessions and encrypts the Git tokens stored in the database. If you change it, everyone is signed out and every Git token must be entered again.
+  The platform refuses to start when it is shorter than 32 characters.
+</Callout>
+
+## The first admin
+
+On every start, the platform checks `ADMIN_EMAIL` and `ADMIN_PASSWORD`:
+
+- No user with that email: it creates one with that password and makes it a platform admin.
+- The user exists: it makes that user an admin. The password is **not** changed.
+
+So you can leave both set. Changing `ADMIN_PASSWORD` later does not reset an existing account's password. Platform admins are owners of every project and see the **Users** and **Activity** pages.
+
+## Settings
+
+The values you will most often set:
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `PLATFORM_SECRET` | none (required) | 32+ random characters. Signs sessions and encrypts stored Git tokens. |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | none | The first admin. Both must be set. |
+| `PLATFORM_DOMAIN` | `localhost` | Dashboard host. Sites live on its subdomains. |
+| `PLATFORM_URL` | `https://<PLATFORM_DOMAIN>` | The dashboard's public URL, used in webhook URLs, invitations and commit statuses. |
+| `POSTGRES_PASSWORD` | `orbitdocs` | Password of the bundled Postgres. Set it before the first start. |
+| `PLATFORM_SSO` | none | Dashboard SSO presets as JSON. See [Team and access](/platform/team). |
+| `SCIM_TOKEN` | none | Turns on SCIM at `/scim/v2`. |
+| `SITE_OUTBOUND_ALLOW` | none | Internal hosts hosted sites may reach, such as a Keycloak on your network. See [Outbound requests](/platform/publishing#outbound-requests). |
+| `BUILD_CONCURRENCY` | `1` | Git sync builds each platform instance runs at once. |
+| `BUILD_TIMEOUT_MS` | `900000` | Time limit for each build step (clone, install, build), in milliseconds. |
+
+Every variable, with where it is read, is on [Environment variables](/docs-reference/environment-variables#platform).
+
+### Secrets for hosted sites
+
+Hosted sites never read the platform's environment. A site's sign-in, personalization hook and Ask AI get their secrets from that project's **Settings → Environment**, which keeps them encrypted per project. The session secret is derived per project from `PLATFORM_SECRET`, so you don't set one. See [Site environment variables](/platform/publishing#site-environment-variables).
+
+Don't add `OKTA_CLIENT_SECRET`, `ANTHROPIC_API_KEY` and the like to this `.env` for a site: the site can't see them. Git sync builds get their own variables under **Settings → Git → Build Environment Variables**. See [Git sync](/platform/git-sync#build-environment).
+
+## Try it on your machine
+
+Leave `PLATFORM_DOMAIN=localhost`. The dashboard is at `https://localhost` and sites at `https://<project>.localhost`. Browsers resolve `*.localhost` to your machine, so no DNS is needed.
+
+Public certificate authorities don't issue for `localhost`, so Caddy signs those certificates with its own authority. Trust its root certificate once to remove the browser warning:
+
+<Tabs items={['macOS', 'Linux (Debian/Ubuntu)', 'Windows']}>
+<Tab value="macOS">
+
+```bash
+docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain caddy-root.crt
+```
+
+</Tab>
+<Tab value="Linux (Debian/Ubuntu)">
+
+```bash
+docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
+sudo cp caddy-root.crt /usr/local/share/ca-certificates/caddy-root.crt
+sudo update-ca-certificates
+```
+
+</Tab>
+<Tab value="Windows">
+
+```powershell
+docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
+Import-Certificate -FilePath .\caddy-root.crt -CertStoreLocation Cert:\LocalMachine\Root
+```
+
+</Tab>
+</Tabs>
+
+Restart the browser afterwards. Firefox keeps its own trust store; import the file under **Settings → Privacy & Security → Certificates**.
+
+<Callout type="info">
+  The root certificate lives in the `caddy` volume. It stays the same until you delete that volume (`docker compose down -v`).
+</Callout>
+
+## Put it on a server
+
+1. Create DNS records for the platform domain and its wildcard, both pointing at the server: `docs.acme.com` and `*.docs.acme.com`.
+2. Open ports `80` and `443`. Caddy needs both to get certificates.
+3. Set `PLATFORM_DOMAIN=docs.acme.com` in `.env` and run `docker compose up -d`.
+
+Caddy gets a certificate the first time each host is visited. It only asks for hosts the platform knows: the platform domain, existing project subdomains and verified custom domains. The first request to a new host takes a few seconds longer.
+
+<Callout type="warn" title="Close the Postgres port">
+  `docker-compose.yml` publishes Postgres on host port `5433` for local tools. On a server, remove the `ports` entry of the `postgres` service, or firewall the port.
+</Callout>
+
+### Use your own Postgres
+
+Point the platform at an existing database: set `DATABASE_URL` in `.env`, then remove the `postgres` service and the platform's `depends_on` from `docker-compose.yml`.
+
+## Run it without Docker
+
+For working on the platform itself:
+
+```bash
+pnpm install && pnpm build                           # from the repository root, Node 22
+cd apps/platform && docker compose up -d postgres && cd ../..   # Postgres on localhost:5433
+pnpm --filter @orbitdocs/platform-web build          # the dashboard (static export)
+cd apps/platform
+PLATFORM_SECRET=$(openssl rand -hex 32) ADMIN_EMAIL=you@acme.com ADMIN_PASSWORD=dev-password-123 pnpm dev
+```
+
+Without Docker the defaults change: the domain is `localhost:8080`, the dashboard is at `http://localhost:8080` and sites at `http://<project>.localhost:8080`. `DATABASE_URL` defaults to `postgres://orbitdocs:orbitdocs@localhost:5433/orbitdocs` and `DATA_DIR` to `./data`.
+
+## Next steps
+
+<Cards>
+  <Card title="Publishing" href="/platform/publishing" description="Create a project, a token, and publish the first build." />
+  <Card title="Git sync" href="/platform/git-sync" description="Build and preview from GitHub or GitLab." />
+  <Card title="Operations" href="/platform/operations" description="Backups, upgrades and scaling." />
+</Cards>

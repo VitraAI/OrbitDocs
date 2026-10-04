@@ -1,0 +1,236 @@
+---
+title: Private docs
+description: Decide who can read which pages and APIs, and let readers sign in with company SSO or the account they already have in your product.
+---
+
+Private docs let you keep some or all of your docs behind a sign-in. Staff can sign in with company SSO; customers can reuse the session they already have in your product. You decide who reads what with groups and rules in `orbitdocs.config.ts`.
+
+<Cards>
+  <Card title="Company SSO" href="/private-docs/sso" description="Google, Microsoft Entra ID, Okta, Auth0, Clerk and Keycloak, step by step." />
+  <Card title="Your product's session" href="/private-docs/app-session" description="Reuse a Supabase, Clerk, Firebase or Appwrite sign-in." />
+  <Card title="Access rules" href="/private-docs/access-rules" description="Groups, rules per page, folder and API, and personalization." />
+  <Card title="Audit log" href="/private-docs/audit-log" description="Sign-ins, sign-outs and denials as JSON lines or webhooks." />
+</Cards>
+
+## Private docs need a server
+
+A static host serves every file to anyone. So access is enforced by the server that serves the docs. It checks every request before a page, a spec or a search index leaves it.
+
+| Output mode | Private docs | How |
+| --- | --- | --- |
+| Static build served by your **Nest app** | Yes | `mountOrbitDocs(app, { root })` checks every request. See [Serve from Nest](/nestjs/serve-from-nest). |
+| **Next server mode** (`output.mode: 'server'`) on Vercel, Docker or any Node host | Yes | The `proxy.ts` that `orbitdocs init` created checks every request. See [Server mode](/deploy/server-mode). |
+| The **self-hosted platform** | Yes | The platform reads the build's access rules and enforces them. See [Platform](/platform). |
+| Static build on Netlify, GitHub Pages, S3, nginx… | **No** | Every file is public. `orbitdocs build` prints a warning when `access` meets a static build. |
+
+<Callout type="error" title="A static host ignores access rules">
+If you deploy a static build with `access` to a plain static host, every page is public, including the ones you restricted. Serve it from Nest, run Next in server mode, or use the platform.
+</Callout>
+
+For Next server mode, `proxy.ts` looks like this:
+
+```ts title="proxy.ts"
+import { orbitProxy } from '@orbitdocs/next/proxy';
+
+export default orbitProxy();
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image).*)'],
+};
+```
+
+Without `access` (and without `ai`) in the config, the proxy lets every request through, so it is safe to keep.
+
+## Set up private docs
+
+<Steps>
+<Step>
+
+### Add an access section
+
+This example keeps most docs public, restricts `/internal` to staff, and offers both kinds of sign-in:
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme' },
+  access: {
+    mode: 'public',
+    groups: {
+      staff: { domains: ['acme.com'] },
+      partners: { emails: ['pat@partner.io'], idpGroups: ['partner-devs'] },
+    },
+    rules: [{ path: '/internal/*', groups: ['staff'] }],
+    providers: [
+      { type: 'google', clientId: '1234.apps.googleusercontent.com', clientSecretEnv: 'GOOGLE_CLIENT_SECRET', hostedDomain: 'acme.com' },
+    ],
+    appSession: {
+      type: 'supabase',
+      projectUrl: 'https://abcd1234.supabase.co',
+      loginUrl: 'https://app.acme.com/login',
+    },
+  },
+  output: { mode: 'server', basePath: '' },
+});
+```
+
+You need at least one SSO provider or an `appSession`. The config fails to load otherwise.
+
+</Step>
+<Step>
+
+### Set the session secret
+
+Signed-in readers get a signed session cookie. Set the secret on the server that serves the docs:
+
+```bash title=".env"
+ORBITDOCS_AUTH_SECRET=<at least 32 random characters, e.g. from `openssl rand -hex 32`>
+GOOGLE_CLIENT_SECRET=<from Google Cloud>
+```
+
+While the secret is missing or shorter than 32 characters, sign-in and every restricted page fail with an error that names the variable.
+
+</Step>
+<Step>
+
+### Register the callback URL
+
+Each SSO provider needs the callback URL of your docs: `https://docs.acme.com/_auth/callback/<provider id>`. [Company SSO](/private-docs/sso) shows where to add it for each provider.
+
+</Step>
+<Step>
+
+### Build and serve
+
+```bash
+npx orbitdocs build
+```
+
+`orbitdocs build` (and `extract`) writes the access rules to `.orbitdocs/access.json`. It never contains a secret, only environment variable names. The build copies it to `orbitdocs-access.json`, which the server reads and never serves.
+
+Serve the build from Nest or run it in server mode, then open a restricted page. You land on the sign-in page.
+
+</Step>
+</Steps>
+
+## How a request is checked
+
+1. Requests to `/_auth/*` are the sign-in routes (below). They are always public, like `/_next/*`, `/favicon.ico`, `/icon.svg` and `/robots.txt`.
+2. Otherwise the server finds the first config rule whose path matches, plus the page's frontmatter `access` and its API's `apis[].access`. The reader must satisfy all of them, so the stricter one always wins. If none applies, the page is public in `public` mode and needs sign-in in `private` mode.
+3. A reader satisfies a group list when they are in one of its groups. `*` means any signed-in reader.
+4. A signed-out reader asking for a page is sent to `/_auth/login?next=<page>`. Data requests (the search index, a spec, a Markdown file) get a plain `401`.
+5. A signed-in reader without access gets a "You don't have access to this page" screen, with a link to sign in with another account.
+
+`public` and `private` modes:
+
+- `mode: 'public'` (default): only pages matched by a rule, by `access` frontmatter or by `apis[].access` need sign-in.
+- `mode: 'private'`: every page needs sign-in. Rules can still narrow some pages to some groups.
+
+<Callout type="warn" title="Who can sign in">
+In `private` mode with groups defined, only readers who belong to at least one group can sign in. In every other case, anyone the provider authenticates can sign in. For example, Google without `hostedDomain` accepts any Google account. In `public` mode that only grants pages open to `*`; in `private` mode without groups it grants everything.
+</Callout>
+
+## Sign-in routes
+
+All routes live under the base path, so `/docs/_auth/login` when `output.basePath` is `/docs`.
+
+| Route | What it does |
+| --- | --- |
+| `GET /_auth/login?next=<path>` | The sign-in page. Readers already signed in to your product go straight back to `next`. |
+| `GET /_auth/start/<id>` | Starts SSO with provider `<id>` (PKCE, state and nonce). |
+| `GET /_auth/callback/<id>` | The OpenID Connect callback. Register this URL with the provider. |
+| `GET /_auth/app?next=<path>` | Sends the reader to your product's `loginUrl`. |
+| `GET /_auth/logout` | Clears the session. Product-session readers go on to your `logoutUrl`. |
+| `GET /_auth/me` | The signed-in reader as JSON, or `401`. Used by the user menu and personalization. |
+
+`next` must be a path on the same site, so the sign-in flow can't redirect readers to another domain.
+
+## Sessions
+
+The docs keep no database. After sign-in, the reader's email, name, groups and personalization are put in a signed cookie:
+
+- `od_session`: an HS256 JWT signed with the session secret. `HttpOnly`, `SameSite=Lax`, `Secure` on HTTPS, scoped to the base path. It expires after `session.maxAgeHours`.
+- `od_flow`: short-lived state for one SSO round trip (10 minutes).
+
+```ts title="orbitdocs.config.ts"
+access: {
+  // …
+  session: { secretEnv: 'DOCS_SESSION_SECRET', maxAgeHours: 8 },
+},
+```
+
+<Callout type="info" title="Group changes apply at the next sign-in">
+Groups are computed at sign-in and stored in the cookie. If you change `groups` or a reader's IdP groups, they keep their old access until the session expires or they sign in again. Changing the secret signs everyone out.
+</Callout>
+
+Readers signed in through your product's session are different: the docs verify your product's cookie again at least every 5 minutes. See [Your product's session](/private-docs/app-session).
+
+## Customize the sign-in page
+
+```ts title="orbitdocs.config.ts"
+access: {
+  // …
+  loginPage: {
+    title: 'Sign in to Acme docs',
+    description: 'Use your Acme account or company SSO.',
+  },
+},
+```
+
+The page shows your product's button first (when `appSession` is set), then "or", then one button per SSO provider. It shows your `site.logo` (the `light` and `dark` images follow the reader's system theme; `site.title` without a logo) and uses `theme.accent`. The favicon is `site.favicon`, or the app's `icon.png`; the Apple touch icon is `apple-icon.png`. The logo and both icons are served to signed-out readers too, even in `private` mode. The "no access" page looks the same.
+
+## Behind a proxy
+
+The callback URL and the `Secure` cookie flag come from the request's origin. The server reads `X-Forwarded-Proto` and `X-Forwarded-Host`, then `Host`. If your proxy rewrites them, set the public URL:
+
+<Tabs items={['Nest', 'Next server mode']}>
+<Tab value="Nest">
+
+```ts title="src/main.ts"
+mountOrbitDocs(app, {
+  root: join(__dirname, '../docs/out'),
+  path: '/docs',
+  auth: { publicUrl: 'https://api.acme.com' },
+});
+```
+
+</Tab>
+<Tab value="Next server mode">
+
+```ts title="proxy.ts"
+export default orbitProxy({ publicUrl: 'https://docs.acme.com' });
+```
+
+`orbitProxy` also takes `appDir`, the folder that holds `.orbitdocs/access.json`, when the server's working directory isn't the docs app.
+
+</Tab>
+</Tabs>
+
+`mountOrbitDocs` supports the Express adapter only. `auth: false` turns private docs off even when the build has access rules.
+
+## Access options
+
+<TypeTable
+  type={{
+    mode: { type: "'public' | 'private'", description: 'private: every page needs sign-in. public: only matched pages do.', default: "'public'" },
+    groups: { type: 'Record<string, { emails?: string[]; domains?: string[]; idpGroups?: string[] }>', description: 'Who belongs to each group. See Access rules.', default: '{}' },
+    rules: { type: 'Array<{ path: string; groups: string[] }>', description: 'Paths that only some groups can read. First matching rule wins; frontmatter access and apis[].access apply on top (stricter wins).', default: '[]' },
+    providers: { type: 'SsoProvider[]', description: 'Single sign-on buttons. See Company SSO.', default: '[]' },
+    appSession: { type: 'AppSession', description: "Reuse your product's sign-in. See Your product's session." },
+    'session.secretEnv': { type: 'string', description: 'Environment variable with the cookie signing secret (32+ characters).', default: "'ORBITDOCS_AUTH_SECRET'" },
+    'session.maxAgeHours': { type: 'number', description: 'Session lifetime in hours.', default: '12' },
+    'loginPage.title': { type: 'string', description: 'Sign-in page heading.', default: "'Sign in to read the docs'" },
+    'loginPage.description': { type: 'string', description: 'Sign-in page text.', default: "'These docs are private. Sign in to continue.'" },
+    personalization: { type: '{ url: string; secretEnv: string }', description: 'Hook called after sign-in. See Access rules.' },
+    audit: { type: '{ file?: string; webhookUrl?: string }', description: 'Sign-in events. See Audit log.' },
+  }}
+/>
+
+## Next steps
+
+<Cards>
+  <Card title="Company SSO" href="/private-docs/sso" description="Set up Google, Entra ID, Okta, Auth0, Clerk or Keycloak." />
+  <Card title="Access rules" href="/private-docs/access-rules" description="Restrict pages, folders and APIs to groups." />
+  <Card title="Server mode" href="/deploy/server-mode" description="Deploy the docs as a Next server." />
+</Cards>

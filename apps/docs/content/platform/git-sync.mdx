@@ -1,0 +1,249 @@
+---
+title: Git sync
+description: Connect a GitHub or GitLab repository so pushes publish the site and every pull or merge request gets a preview.
+---
+
+With Git sync the platform builds the docs itself. A push to the production branch publishes the site. Every pull request (GitHub) or merge request (GitLab) gets a preview site, a commit status and a comment with its link. Self-managed GitLab and GitHub Enterprise work too.
+
+## Connect a repository
+
+<Steps>
+<Step>
+
+**Create an access token** the platform can use to clone and report back:
+
+| Provider | Token |
+| --- | --- |
+| GitLab | A project access token with the `api` scope. |
+| GitHub | A fine-grained token with **Contents: read**, **Commit statuses: write** and **Pull requests: write** on the repository. |
+
+The token is stored encrypted with `PLATFORM_SECRET` (AES-256-GCM) and never shown again.
+
+</Step>
+<Step>
+
+**Fill in Settings → Git** in the project (admin role):
+
+| Field | Default | What it is |
+| --- | --- | --- |
+| Provider | GitLab | `GitLab` or `GitHub`. |
+| Repository / Project | required | `owner/repo` (GitHub) or `group/project` (GitLab). |
+| Production Branch | `main` | Pushes to this branch publish production. |
+| Access Token | none | The token from step 1. Leave blank to keep the saved one. |
+| API URL | `https://api.github.com` or `https://gitlab.com/api/v4` | Your instance's API for self-managed GitLab or GitHub Enterprise. The clone URL and the dashboard's **Repository** link are derived from it. |
+
+Then **Build & Output Settings**:
+
+| Field | Default | What it is |
+| --- | --- | --- |
+| Root Directory | `docs` | The docs app folder inside the repository. |
+| Install Command | empty (automatic) | Empty installs from the lockfiles, see [Automatic install](#automatic-install). A command you enter runs in the root directory instead. |
+| Build Command | `npx orbitdocs build` | Runs in the root directory. |
+| Output Directory | `out` | The static build, relative to the root directory. |
+| Clone URL | derived | Set it when the clone URL can't be derived from the API URL, such as a mirror. Clear the field to derive it again. |
+
+Select **Connect**. After connecting, **Build Environment Variables** appears on the same page; see [Build environment](#build-environment).
+
+</Step>
+<Step>
+
+**Add the webhook** the page now shows (a URL and a secret):
+
+<Tabs items={['GitHub', 'GitLab']}>
+<Tab value="GitHub">
+
+In the repository: **Settings → Webhooks → Add webhook**.
+
+- Payload URL: the URL shown, `https://docs.acme.com/api/git/<project id>/webhook`.
+- Content type: `application/json`.
+- Secret: the secret shown.
+- Events: **Pushes** and **Pull requests**.
+
+GitHub's first `ping` event is accepted and ignored.
+
+</Tab>
+<Tab value="GitLab">
+
+In the project: **Settings → Webhooks → Add new webhook**.
+
+- URL: the URL shown, `https://docs.acme.com/api/git/<project id>/webhook`.
+- Secret token: the secret shown.
+- Triggers: **Push events** and **Merge request events**.
+
+</Tab>
+</Tabs>
+
+</Step>
+<Step>
+
+**Push a commit** to the production branch. The build appears under **Builds**, and the site goes live when it succeeds.
+
+</Step>
+</Steps>
+
+## Automatic install
+
+`orbitdocs build` compiles your Nest app, one folder above the docs app, to extract the spec, so both apps need their dependencies. With an empty **Install Command**, the platform installs every folder from the repository root down to the root directory that has a lockfile, top-down:
+
+| Lockfile | Command |
+| --- | --- |
+| `pnpm-lock.yaml` | `pnpm install --frozen-lockfile` |
+| `yarn.lock` with `.yarnrc.yml` (Yarn 2+) | `yarn install --immutable` |
+| `yarn.lock` (Yarn 1) | `yarn install --frozen-lockfile` |
+| `package-lock.json` or `npm-shrinkwrap.json` | `npm ci` |
+| `bun.lock` or `bun.lockb` | `bun install --frozen-lockfile` |
+
+- **A workspace** (`pnpm-workspace.yaml`, or `workspaces` in `package.json`) is installed once, at its root, which covers the apps inside it.
+- **Separate apps**, such as `package-lock.json` in the repository root and another in `docs/`, are each installed: the Nest app first, then the docs app.
+- **No lockfile** above the docs app: the docs app and its parent folder get `npm install` when they have a `package.json`.
+
+The build log starts with the folders it installs, such as `Install: automatic, from ., docs`. The platform image has npm, pnpm and Yarn (through Corepack); Bun is not included, so set your own install command for Bun or add it to the image.
+
+Your Nest app is then compiled by `orbitdocs build` through `build` in your docs config (`nest build`, set by `orbitdocs init`). To do something else, enter your own install command; it replaces the automatic install and runs in the root directory.
+
+## What each event does
+
+| Event | Result |
+| --- | --- |
+| Push to the production branch | Builds and publishes production. Commit status on the pushed commit. |
+| Push to another branch | Ignored. |
+| Branch deleted | Ignored. |
+| Pull or merge request opened or reopened | Builds a preview at `<project>--pr-12.<domain>` (GitHub) or `<project>--mr-12.<domain>` (GitLab). Comments its link. |
+| New commits pushed to an open request | Builds the preview again and replaces it. Comments the new link. |
+| Request edited without new commits | Ignored (GitLab title or label changes, for example). |
+| Request merged or closed | Removes the preview and cancels its waiting build. The merge's push publishes production. |
+
+### Commit statuses and comments
+
+The platform reports on each commit as `OrbitDocs`:
+
+| Moment | Status | Description |
+| --- | --- | --- |
+| Queued | pending | `Queued` |
+| Started | running (GitHub shows pending) | `Building the docs` |
+| Published | success | `Published` or `Preview ready`, linking to the site |
+| Failed | failed | `Docs build failed`, linking to the project's **Builds** tab |
+
+When a preview is ready, the request gets a comment: **Docs preview** for the short commit hash, with the URL, and a table with every spec's Spectral errors and warnings. Each row says whether the spec matches a registry revision (`r4 (unchanged)`) or is `changed`. When the lint gate is on and a spec has errors, the comment says production will refuse it. The success status adds the error count, such as `Preview ready · 2 lint errors`.
+
+```md title="Preview comment"
+📘 **Docs preview** for 5e50d3c8: https://payments--mr-7.docs.acme.com/
+
+| API | Spectral lint | Registry |
+| --- | --- | --- |
+| `payments` v2.4.0 | ✗ 1 error, 5 warnings | changed |
+| `users` v1.0.0 | ✓ No problems | r4 (unchanged) |
+```
+
+Previews never add registry revisions; their lint counts are also shown on the deployment and the build in the dashboard. Without a token, nothing is reported back, and only public repositories can be cloned.
+
+## How a build runs
+
+1. Clone the repository into `DATA_DIR/builds/<build id>` and check out the exact commit. The token is given to Git for the clone and fetch only, as an HTTP header in Git's environment. It is never in the clone URL, the log or `.git/config`, so install and build commands can't read it.
+2. Install (automatically, or with your install command), then run the build command in the root directory, with the [build environment](#build-environment).
+3. Publish the output directory and the specs in `<root directory>/openapi/`, exactly like `orbitdocs publish`. The base path comes from the build's `.orbitdocs/build.json`. The log ends with each spec's lint counts.
+4. Delete the build folder.
+
+Each step is killed after `BUILD_TIMEOUT_MS` (default 15 minutes). The log streams into **Builds**; select a build to read it, with each spec's lint counts above the log. The token and the values of build environment variables (6 characters or longer) are masked as `***` in the log.
+
+The platform image includes Node 22, `git`, npm, pnpm and Yarn (through Corepack). Builds run inside the platform container.
+
+## Build environment
+
+Install and build commands don't get the platform's environment, so `PLATFORM_SECRET`, `DATABASE_URL`, `ADMIN_PASSWORD`, SSO client secrets and the secrets of hosted sites never reach them. They get only:
+
+| Variables | From |
+| --- | --- |
+| `PATH`, `HOME`, `TMPDIR`, `TMP`, `TEMP`, `LANG`, `LANGUAGE`, `LC_ALL`, `LC_CTYPE`, `TZ`, `USER`, `LOGNAME`, `SHELL`, `TERM` | The platform's environment, when set. |
+| `NODE_EXTRA_CA_CERTS`, `NODE_VERSION`, `SSL_CERT_FILE`, `SSL_CERT_DIR` | The platform's environment, when set. |
+| `npm_config_cache`, `npm_config_registry`, `npm_config_prefix` (any case), `COREPACK_HOME`, `COREPACK_ENABLE_DOWNLOAD_PROMPT`, `COREPACK_ENABLE_STRICT`, `PNPM_HOME`, `YARN_CACHE_FOLDER`, `BUN_INSTALL` | The platform's environment, when set. |
+| `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` (any case) | The platform's environment, when set. |
+| Your build environment variables | **Settings → Git → Build Environment Variables**. |
+| `CI=true`, `ORBITDOCS_PLATFORM_BUILD=1`, `GIT_TERMINAL_PROMPT=0` | Always set; build variables can't change them. |
+
+`NODE_ENV` is not passed from the platform: its `production` would make `npm ci` skip the devDependencies the build needs. Set it as a build variable if your build wants it.
+
+**Build environment variables** are for values your build needs, such as an API base URL or a private registry token:
+
+- Add a name and a value, then **Add**. Adding an existing name replaces its value, after a confirmation: the old value can't be shown or restored.
+- Removing a variable (the trash icon) also asks first.
+- Values are encrypted with `PLATFORM_SECRET` (AES-256-GCM). The dashboard and the API list names only; a value is never shown again.
+- Names use letters, digits and `_`, and don't start with a digit. `CI`, `ORBITDOCS_PLATFORM_BUILD`, `GIT_TERMINAL_PROMPT`, `PATH` and `HOME` are reserved. Up to 100 variables of 16 KB each.
+- Changes are written to the audit log as `git.configured`, with the names added (`+NAME`) or removed (`-NAME`), never the values.
+
+Through the API, `PATCH /api/projects/<slug>/git` takes `env`: a string sets a variable, `null` removes it, and variables left out stay as they are.
+
+```json title="PATCH /api/projects/payments/git"
+{ "env": { "API_BASE_URL": "https://api.acme.com", "OLD_FLAG": null } }
+```
+
+<Callout type="warn" title="Only connect repositories you trust">
+  Install and build commands run inside the platform container. They can't read the platform's secrets, but they run with the container's network access and can read the build environment variables you set, so a malicious build command could still misuse those or reach internal services.
+  Connect repositories whose pushers you already trust with production.
+</Callout>
+
+## The build queue
+
+Builds wait in a queue kept in the platform's own Postgres ([pg-boss](https://github.com/timgit/pg-boss), in its own `pgboss` schema). Nothing is lost on a restart, and several platform instances can share the work.
+
+| Behavior | Detail |
+| --- | --- |
+| Queue name | `orbitdocs-builds` |
+| One build per target | Production and each request preview are separate targets. A target builds one commit at a time across all instances; different targets build in parallel. |
+| Newer commit wins | A newer commit cancels the build still waiting for the same target (status `cancelled`). |
+| Concurrency | Each instance runs `BUILD_CONCURRENCY` builds at once (default 1). |
+| Crash recovery | A worker sends a heartbeat every 60 seconds. If an instance dies mid-build, the job goes back on the queue and runs again, up to 2 retries, 15 seconds apart. The log starts with `Attempt 2: the previous worker stopped mid-build.` |
+| Out of retries | The job moves to `orbitdocs-builds-dead` and the build is marked `failed`. |
+
+Build statuses: `queued`, `running`, `succeeded`, `failed`, `cancelled`. The **Builds** tab shows the 50 newest.
+
+## Self-managed GitLab and GitHub Enterprise
+
+Set the API URL to your instance's API. The clone URL and the dashboard's **Repository** link are derived from it:
+
+| API URL | Clone URL | Repository link |
+| --- | --- | --- |
+| `https://gitlab.acme.com/api/v4` | `https://gitlab.acme.com/<group>/<project>.git` | `https://gitlab.acme.com/<group>/<project>` |
+| `https://acme.com/gitlab/api/v4` (under a path) | `https://acme.com/gitlab/<group>/<project>.git` | `https://acme.com/gitlab/<group>/<project>` |
+| `https://github.acme.com/api/v3` (GitHub Enterprise Server) | `https://github.acme.com/<owner>/<repo>.git` | `https://github.acme.com/<owner>/<repo>` |
+| `https://api.acme.ghe.com` (GitHub Enterprise Cloud with data residency) | `https://acme.ghe.com/<owner>/<repo>.git` | `https://acme.ghe.com/<owner>/<repo>` |
+
+A **Clone URL** you set wins over the derived one, and the **Repository** link follows it. A local path (for testing) has no **Repository** link.
+
+The token is sent to HTTPS clone URLs as HTTP Basic authentication (`x-access-token` on GitHub, `oauth2` on GitLab).
+
+## Disconnect
+
+**Disconnect** in **Settings → Git**, after a confirmation, removes the settings, the stored token, the webhook secret and the build environment variables. Existing deployments stay. Remove the webhook in your provider too.
+
+## Test webhooks locally
+
+The repository has two scripts for trying Git sync without a real provider:
+
+```bash title="apps/platform"
+node scripts/mock-gitlab.mjs   # a stand-in GitLab API on http://localhost:8092/api/v4
+node scripts/webhook.mjs <webhook url> <secret> gitlab push main <sha> "Update docs"
+node scripts/webhook.mjs <webhook url> <secret> gitlab mr open 42 feature <sha> "Add guide"
+node scripts/webhook.mjs <webhook url> <secret> github pr opened 7 feature <sha>
+```
+
+The mock records the statuses and comments it receives at `GET http://localhost:8092/calls`.
+
+## Troubleshooting
+
+| Symptom | Cause |
+| --- | --- |
+| Webhook returns 401 `Bad X-Gitlab-Token` or `Bad X-Hub-Signature-256` | The secret in the provider doesn't match the one on the Git settings page. |
+| Webhook returns 404 `No Git sync for this project` | The project was disconnected, or the URL has the wrong project id. |
+| Build fails at `git clone` | The token can't read the repository, or the clone URL is wrong. |
+| `Compiled module not found` in the log | The Nest app wasn't built. Set `build` (`nest build`) in your docs config, or check `module`. If the log shows no install for the Nest app's folder, it has no lockfile: commit one or set your own install command. See [Automatic install](#automatic-install). |
+| A build can't find a variable that is set on the platform | Builds don't see the platform's environment. Add it under **Build Environment Variables**. See [Build environment](#build-environment). |
+| No commit status or comment | No token is saved, or it lacks the write permissions. The platform logs the provider's error. |
+
+## Next steps
+
+<Cards>
+  <Card title="Publishing" href="/platform/publishing" description="Deployments, previews and rollback." />
+  <Card title="Operations" href="/platform/operations" description="Scale build workers across instances." />
+  <Card title="Domains" href="/platform/domains" description="Serve production on your own domain." />
+</Cards>

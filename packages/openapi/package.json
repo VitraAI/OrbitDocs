@@ -1,0 +1,47 @@
+{
+  "name": "@orbitdocs/openapi",
+  "version": "0.1.0",
+  "description": "OrbitDocs spec pipeline: filter documented operations, standard errors, completeness checks, reference model.",
+  "license": "MIT",
+  "author": "Vitra.ai (https://vitra.ai)",
+  "homepage": "https://github.com/VitraAI/OrbitDocs/tree/main/packages/openapi#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VitraAI/OrbitDocs.git",
+    "directory": "packages/openapi"
+  },
+  "bugs": {
+    "url": "https://github.com/VitraAI/OrbitDocs/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@scalar/openapi-parser": "^0.29.10",
+    "@scalar/openapi-upgrader": "^0.4.1"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

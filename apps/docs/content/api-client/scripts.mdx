@@ -1,0 +1,180 @@
+---
+title: Scripts and tests
+description: Run JavaScript before a request and after its response, with a Postman-compatible pm object, assertions and tests.
+---
+
+Each request has two scripts. The **pre-request** script runs before the request is sent; it can add headers or set variables. The **post-response** script runs after the response arrives; it can run tests and save values for the next request. Scripts use a `pm` object compatible with the common parts of Postman's.
+
+## Write a script
+
+Open a request and pick the **Scripts** tab. It shows both editors.
+
+```js title="Pre-request"
+pm.request.headers.upsert({ key: 'Idempotency-Key', value: crypto.randomUUID() });
+```
+
+```js title="Post-response"
+pm.test('status is 201', () => pm.response.to.have.status(201));
+pm.test('booking is confirmed', () => {
+  pm.expect(pm.response.json().status).to.equal('confirmed');
+});
+pm.environment.set('bookingId', pm.response.json().id);
+```
+
+Send the request. The response panel shows **Tests 2/2**, and the next request can use `{{bookingId}}`.
+
+**Insert snippet** above each editor adds ready-made lines:
+
+| Pre-request | Post-response |
+| --- | --- |
+| Set a request ID header | Test: status is 2xx |
+| Add an Idempotency-Key | Test: body is JSON |
+| Save a timestamp variable | Test: faster than 500 ms |
+| | Save response id to `{{id}}` |
+| | Log the response |
+
+## How scripts run
+
+1. The request is built: variables resolved, auth applied.
+2. The pre-request script runs. Changes to `pm.request` are applied.
+3. Variables set by the script are resolved again in the URL, headers and body.
+4. The request is sent.
+5. The post-response script runs with `pm.response`.
+6. Variable changes are saved, and tests and logs appear in the response panel.
+
+A script can use `await`; the whole script runs as an async function. It has 5 seconds to finish. An error in the pre-request script stops the request. An error in the post-response script is logged to **Console**.
+
+Scripts run in a separate Web Worker, created for each run. They can't reach the page, its DOM or its `localStorage`.
+
+## The pm object
+
+### Variables
+
+| Object | Reads and writes |
+| --- | --- |
+| `pm.environment` | The active environment. Changes are saved. |
+| `pm.collectionVariables` | The same as `pm.environment`. |
+| `pm.globals` | Globals. Changes are saved. |
+| `pm.variables` | Request variables. They win over the environment, and in the [runner](/api-client/runner-and-history) they carry to the next request. |
+
+Each has the same methods:
+
+| Method | Does |
+| --- | --- |
+| `get(key)` | Returns the value, or `undefined` |
+| `set(key, value)` | Sets a value. Objects are saved as JSON. |
+| `unset(key)` | Removes the variable |
+| `has(key)` | `true` when the variable exists |
+| `toObject()` | All variables as an object |
+| `replaceIn(text)` | Replaces `{{name}}` in `text` with values from this scope |
+
+New variables created by `set` are not secret. Mark them secret in **Environments** if needed.
+
+### pm.request
+
+Available in both scripts. Changes only matter in the pre-request script.
+
+| Member | Type |
+| --- | --- |
+| `pm.request.url` | String, read and write |
+| `pm.request.method` | String, read and write |
+| `pm.request.body` | String, read and write. Objects are saved as JSON. |
+| `pm.request.headers.get(name)` | Header value. Names are case-insensitive. |
+| `pm.request.headers.has(name)` | Boolean |
+| `pm.request.headers.add({ key, value })` | Adds a header |
+| `pm.request.headers.upsert({ key, value })` | Adds or replaces a header |
+| `pm.request.headers.remove(name)` | Removes a header |
+| `pm.request.headers.toObject()` | All headers |
+
+### pm.response
+
+Available in the post-response script.
+
+| Member | Value |
+| --- | --- |
+| `pm.response.code` | Status code, such as `201` |
+| `pm.response.status` | Status text, such as `Created` |
+| `pm.response.responseTime` | Milliseconds |
+| `pm.response.responseSize` | Bytes |
+| `pm.response.headers.get(name)`, `.has(name)`, `.toObject()` | Response headers, case-insensitive |
+| `pm.response.text()` | The body as a string |
+| `pm.response.json()` | The body parsed as JSON. Throws if it isn't JSON. |
+
+### pm.info
+
+`pm.info.eventName` (`prerequest` or `test`), `pm.info.requestName` and `pm.info.requestId`.
+
+## Tests
+
+`pm.test(name, fn)` records a test. It passes when `fn` returns without throwing, or when the promise it returns resolves.
+
+```js title="Post-response"
+pm.test('returns a list', () => {
+  const body = pm.response.json();
+  pm.expect(body).to.have.property('data');
+  pm.expect(body.data).to.be.an('array');
+});
+
+pm.test('first booking has an id', async () => {
+  pm.expect(pm.response.json().data[0].id).to.match(/^bk_/);
+});
+```
+
+Results appear in the **Tests** tab of the response, in the order you declared them, with the failure message. In the runner, a failed test marks the request as failed.
+
+### pm.expect
+
+`pm.expect(value)` returns a Chai-style assertion. `expect(value)` works too.
+
+| Assertion | Passes when |
+| --- | --- |
+| `.equal(v)`, `.equals(v)` | `value === v` |
+| `.eql(v)` | Deeply equal |
+| `.a(type)`, `.an(type)` | Type is `string`, `number`, `boolean`, `object`, `array`, `null` or `undefined` |
+| `.above(n)`, `.greaterThan(n)` | `value > n` |
+| `.below(n)`, `.lessThan(n)` | `value < n` |
+| `.least(n)`, `.most(n)` | `value >= n`, `value <= n` |
+| `.include(v)`, `.contain(v)` | A string contains `v`, an array has an item equal to `v`, or an object has `v`'s keys and values |
+| `.property(name)`, `.property(name, v)` | The object has the property, optionally equal to `v` |
+| `.lengthOf(n)`, `.length(n)` | `value.length === n` |
+| `.match(regex)` | The string matches |
+| `.oneOf(list)` | Equal to an item of `list` |
+| `.ok`, `.true`, `.false`, `.null`, `.undefined`, `.exist`, `.empty` | The value is truthy, `true`, `false`, `null`, `undefined`, not null, or empty |
+
+`.not` negates the next assertion. The words `to`, `be`, `been`, `is`, `that`, `which`, `and`, `has`, `have`, `with`, `at`, `of`, `same`, `does` and `deep` only make it read well: `pm.expect(n).to.be.at.least(1)`.
+
+### Response assertions
+
+`pm.response.to` adds three response checks:
+
+```js
+pm.response.to.have.status(200);
+pm.response.to.have.header('content-type');
+pm.response.to.have.jsonBody('data.0.id'); // JSON body with this dot path
+```
+
+`pm.expect(pm.response).to.have.status(200)` works the same way.
+
+## Logs
+
+`console.log`, `console.info`, `console.warn`, `console.error` and `console.debug` write to the **Console** tab of the response. Objects are printed as JSON.
+
+## Differences from Postman
+
+The `pm` object covers the parts listed on this page. Notably:
+
+- There is no `pm.sendRequest`, `pm.cookies`, `pm.iterationData` or `pm.execution`.
+- `pm.collectionVariables` is the active environment, not a separate scope.
+- Collections have no scripts of their own; scripts live on each request.
+
+## Turn scripts off
+
+Set `client.features.scripts: false` in the config to hide the **Scripts** tab on your site. See [Customizing](/api-client/customizing).
+
+## Next steps
+
+<Cards>
+  <Card title="Runner and history" href="/api-client/runner-and-history" description="Run a whole collection with its tests." />
+  <Card title="Environments" href="/api-client/environments" description="Where saved variables go." />
+  <Card title="Requests" href="/api-client/requests" description="Build the request your script changes." />
+</Cards>

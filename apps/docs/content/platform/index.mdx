@@ -1,0 +1,87 @@
+---
+title: Self-hosted platform
+description: One place for every docs site in your company, on your own servers. Publishing, previews, a spec registry, teams, domains, analytics and an audit log.
+---
+
+The CLI is enough for one team publishing one site. The platform is an optional app you run yourself when many teams publish many sites. It hosts every site, builds them from Git, keeps every spec version and controls who can change what.
+
+It is part of the same MIT-licensed repository. There is no hosted version and no paid tier.
+
+## What it adds
+
+| | |
+| --- | --- |
+| **Projects** | Each docs site is a project, served at `<project>.<your domain>`. |
+| **Publishing** | `orbitdocs publish` from CI, or Git sync. The five newest production builds are kept; roll back in one click. |
+| **Previews** | Every pull or merge request gets its own site, linked from a comment and removed when it closes. |
+| **Registry** | Every published version of every API spec, linted with Spectral. Optionally block a publish on lint errors. |
+| **Teams** | Owner, admin, editor and viewer roles per project. Sign in with a password or the same SSO presets as private docs. |
+| **SCIM** | Okta, Entra ID and other identity providers create and deactivate users. |
+| **Domains** | Your own domain per project, with HTTPS certificates issued automatically. |
+| **Analytics** | Built-in (no cookies), or Plausible, Umami or PostHog; plus what readers ask Ask AI and which questions the docs don't cover. |
+| **Audit log** | Sign-ins, publishes, rollbacks, role changes, tokens, domains and provisioning. |
+
+Private docs and Ask AI work on hosted sites exactly as they do in your Nest app. The platform serves them with the same code as `mountOrbitDocs`.
+
+## Architecture
+
+`docker compose up` starts three containers:
+
+| Container | Image | Job |
+| --- | --- | --- |
+| `postgres` | `postgres:17-alpine` | Users, projects, deployments, the registry, analytics, the audit log and the build queue. |
+| `platform` | Built from `apps/platform/Dockerfile` | One Node process: the API, the dashboard, site hosting and the Git sync build workers. Listens on `8080`. |
+| `caddy` | `caddy:2-alpine` | Terminates HTTPS on ports `80` and `443` and gets certificates on demand. |
+
+```text
+                    ┌──────────── caddy :443 ────────────┐
+ docs.acme.com ────▶│ dashboard + API                     │
+ payments.docs… ───▶│ hosted site (project "payments")    ├──▶ platform :8080 ──▶ postgres
+ docs.payments.io ─▶│ hosted site (verified custom domain)│        │
+                    └─────────────────────────────────────┘        └──▶ /data (sites, builds)
+```
+
+The platform decides what to serve from the `Host` header:
+
+- The platform domain (or `www.` in front of it) is the dashboard and API.
+- `<project>.<domain>` is the project's live production build.
+- `<project>--<label>.<domain>` is a preview, such as `payments--mr-42.docs.acme.com`.
+- Any other host is looked up in the project's verified custom domains.
+
+Published sites are plain files under `DATA_DIR` (`/data` in the container). The database holds everything else.
+
+## Core ideas
+
+- **Project.** One docs site. Its slug is its subdomain and can't contain `--`, which is reserved for previews.
+- **Deployment.** One uploaded build, either production or a preview with a label like `mr-42`.
+- **Build.** A Git sync job: clone, install, build, publish. It produces a deployment.
+- **Registry version.** One revision of one API spec, stored when a production publish changes it.
+
+The platform hosts **static** builds (`output.mode: 'static'`). It adds the server part itself: access checks, Ask AI, MCP and analytics.
+
+## Minimal example
+
+```bash title="Terminal"
+git clone https://github.com/VitraAI/OrbitDocs && cd OrbitDocs/apps/platform
+cp .env.example .env        # set PLATFORM_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD
+docker compose up -d
+```
+
+Open `https://localhost`, sign in as the admin, create a project, then publish from your docs app:
+
+```bash
+ORBITDOCS_TOKEN=odp_… npx orbitdocs publish --platform https://localhost
+```
+
+## Next steps
+
+<Cards>
+  <Card title="Install" href="/platform/install" description="Run the platform with Docker Compose, locally or on a server." />
+  <Card title="Publishing" href="/platform/publishing" description="Projects, tokens, orbitdocs publish, deployments and rollback." />
+  <Card title="Git sync" href="/platform/git-sync" description="Build from GitHub or GitLab, with a preview per pull request." />
+  <Card title="Domains" href="/platform/domains" description="Custom domains with automatic HTTPS." />
+  <Card title="Team and access" href="/platform/team" description="Roles, invitations, dashboard SSO and SCIM." />
+  <Card title="Registry" href="/platform/registry" description="Every version of every spec, linted." />
+  <Card title="Analytics" href="/platform/analytics" description="Page views, referrers and what readers ask." />
+  <Card title="Operations" href="/platform/operations" description="Scaling, backups, upgrades and the build queue." />
+</Cards>

@@ -1,0 +1,11 @@
+---
+title: Bookings
+---
+
+A booking moves through three states:
+
+<Steps>
+<Step>**pending**: seats are being held.</Step>
+<Step>**confirmed**: seats are yours; a `booking.confirmed` webhook is sent. Choose seats or correct names with Update a booking (`booking.changed`).</Step>
+<Step>**cancelled**: seats are released; a `booking.cancelled` webhook is sent.</Step>
+</Steps>

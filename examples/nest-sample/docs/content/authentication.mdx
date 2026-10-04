@@ -1,0 +1,79 @@
+---
+title: Authentication
+description: API keys or OAuth access tokens, where they go and how to keep them safe.
+---
+
+Every request carries one credential: an **API key** or an **OAuth access token**.
+Either works on every endpoint; only [Create an access token](op:travel/create-an-access-token)
+takes neither.
+
+## API keys
+
+Send your key in the `x-api-key` header on every request:
+
+```http
+GET /v1/destinations HTTP/1.1
+Host: api.orbit-travel.example
+x-api-key: otk_live_…
+```
+
+| Key prefix  | Environment | Charges |
+| ----------- | ----------- | ------- |
+| `otk_test_` | Sandbox     | No      |
+| `otk_live_` | Production  | Yes     |
+
+## OAuth access tokens
+
+Server-to-server integrations can use an OAuth 2.0 client instead of a key.
+Exchange the client id and secret for a token with the client credentials grant
+(a form-encoded body), then send the token as `Authorization: Bearer …`:
+
+<Tabs items={['Get a token', 'Use it']}>
+<Tab value="Get a token">
+
+```bash
+curl -X POST http://localhost:3010/v1/oauth/token \
+  -d grant_type=client_credentials \
+  -d client_id=oc_test_orbit_demo \
+  -d client_secret=ocs_test_5e8d2a7c9b1f \
+  -d scope="bookings:read bookings:write"
+```
+
+```json
+{ "access_token": "oat_test_…", "token_type": "Bearer", "expires_in": 3600, "scope": "bookings:read bookings:write" }
+```
+
+</Tab>
+<Tab value="Use it">
+
+```bash
+curl http://localhost:3010/v1/bookings \
+  -H "Authorization: Bearer oat_test_…"
+```
+
+</Tab>
+</Tabs>
+
+Tokens last an hour (`expires_in`); ask for a new one before then. Token errors
+use the OAuth shape, `{ "error": "invalid_client", "error_description": "…" }`.
+
+<Callout type="warn" title="Keep credentials on the server">
+  Never ship a key or client secret in a browser or mobile app. Anyone who can
+  read it can book on your account.
+</Callout>
+
+A missing or wrong credential returns `401` with the standard [error body](/reference/travel/models).
+
+## Rate limits
+
+Each key or token can make **60 requests a minute**. Every response says where
+you stand:
+
+| Header                  | Meaning                                  |
+| ----------------------- | ---------------------------------------- |
+| `X-RateLimit-Limit`     | Requests allowed per minute.             |
+| `X-RateLimit-Remaining` | Requests left in the current window.     |
+| `X-RateLimit-Reset`     | When the window resets, in Unix seconds. |
+
+Over the limit you get `429` with a `Retry-After` header: wait that many seconds,
+then retry.

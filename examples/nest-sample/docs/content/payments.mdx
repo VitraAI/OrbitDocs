@@ -1,0 +1,76 @@
+---
+title: Payments and idempotency
+description: Charge a booking by card, wallet or bank transfer, and retry safely.
+---
+
+A booking is paid with one call to <Endpoint api="travel" op="pay-for-a-booking" />.
+The body's `type` picks the payment method, and each method has its own fields:
+
+<Tabs items={['Card', 'Wallet', 'Bank transfer']}>
+<Tab value="Card">
+
+```json
+{ "type": "card", "token": "tok_visa_4242", "saveCard": true }
+```
+
+Card tokens come from Orbit.js; raw card numbers are never accepted. In test
+mode, `tok_chargeDeclined` is declined.
+
+</Tab>
+<Tab value="Wallet">
+
+```json
+{ "type": "wallet", "wallet": "apple_pay", "token": "wlt_applepay_8b21f0" }
+```
+
+</Tab>
+<Tab value="Bank transfer">
+
+```json
+{ "type": "bank_transfer", "accountHolderName": "Ada Lovelace", "country": "DE" }
+```
+
+The payment stays `pending`; `method.bankTransfer` holds the IBAN, the reference
+to quote and the date to pay by.
+
+</Tab>
+</Tabs>
+
+Every shape also takes `metadata`: up to 20 string pairs of your own, returned on
+the payment and in its webhooks.
+
+## Outcomes
+
+| `status`    | What happened                          | Webhook             |
+| ----------- | -------------------------------------- | ------------------- |
+| `succeeded` | The card or wallet was charged.        | `payment.succeeded` |
+| `failed`    | It was declined; see `failureCode`.    | `payment.failed`    |
+| `pending`   | Waiting for a bank transfer to arrive. | none yet            |
+
+A declined payment is still created (status `201`) so you can show `failureMessage`;
+pay again with a new `Idempotency-Key`. Refund all or part of a succeeded payment with
+[Refund a payment](op:travel/refund-a-payment).
+
+## Idempotency keys
+
+Networks drop responses. Without protection, retrying a payment could charge twice,
+so the `Idempotency-Key` header is **required** here:
+
+```bash
+curl -X POST http://localhost:3010/v1/bookings/bk_9Rz4Wt/payments \
+  -H "x-api-key: otk_test_4f9a2c1b8e7d6a5f" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 8e03978e-40d5-43e8-bc93-6894a57f9324" \
+  -d '{"type":"card","token":"tok_visa_4242"}'
+```
+
+<Steps>
+<Step>Make one key per payment attempt, a UUID for example, and store it with your order before you call.</Step>
+<Step>On a timeout or a `5xx`, retry with the **same** key and body. You get the first payment back, with `Idempotent-Replayed: true`.</Step>
+<Step>Only use a new key for a new attempt, such as after a decline. Reusing a key with a different body returns `422`.</Step>
+</Steps>
+
+<Callout title="Bookings take a key too">
+  [Create a booking](op:travel/create-a-booking) accepts the same optional header,
+  so a retried booking never reserves seats twice.
+</Callout>

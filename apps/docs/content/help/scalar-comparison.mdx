@@ -1,0 +1,76 @@
+---
+title: OrbitDocs vs Scalar
+description: An honest feature comparison, including where Scalar is the better choice.
+---
+
+Scalar makes an excellent open-source API reference and API client, plus a hosted platform with docs, a registry, SDKs and MCP. OrbitDocs covers the same ground, but every part runs on your own infrastructure under the MIT license. This page compares the two as fairly as we can.
+
+<Callout type="info">
+  Scalar changes quickly. The Scalar column reflects its public offering as of October 2026. Check Scalar's own docs before deciding.
+</Callout>
+
+## At a glance
+
+| | OrbitDocs | Scalar |
+| --- | --- | --- |
+| License | MIT, everything | MIT for the API reference and API client; the platform is a hosted, paid service |
+| Self-hosting | Everything, including the platform | The open-source reference and client only |
+| Hosted service | None | Yes |
+| Price | Free | Free open-source pieces; paid hosted plans |
+
+## Feature by feature
+
+| Feature | OrbitDocs | Scalar |
+| --- | --- | --- |
+| API reference from OpenAPI | Yes. One scrolling page plus a URL per operation | Yes (open source) |
+| API client | Yes. Environments, collections, scripts, runner, history | Yes (open source) |
+| MDX guides next to the reference | Yes, in your repository, deployed anywhere | Scalar Docs, hosted only |
+| Static export | Yes (`output.mode: 'static'`) | No for Scalar Docs |
+| Serve the docs from your NestJS app | Yes, guides and reference (`mountOrbitDocs`) | The API reference |
+| Spec from NestJS without running the app | Yes. Preview-mode extraction, no database needed | No. Uses the spec your app produces |
+| Private docs with SSO | Yes. Six OIDC presets and four app-session adapters, on your server | Hosted plans |
+| Ask AI over your docs | Yes, with your own LLM key | Hosted only |
+| MCP servers (docs and API) | Yes, self-hosted | Hosted only |
+| `llms.txt` and Markdown per page | Yes | Check Scalar's docs |
+| SDK generation | Yes. CLI, six languages, runs locally or in your CI | Hosted only |
+| Mock server | Yes (`orbitdocs mock`, built on Scalar's open-source mock server) | Yes (open source) |
+| Spec linting | Yes. Spectral, custom rulesets | Check Scalar's docs |
+| Spec registry | Yes, self-hosted | Hosted only |
+| Git sync with GitHub | Yes | Yes |
+| Git sync with GitLab (including self-managed) | Yes | No |
+| Preview site per pull or merge request | Yes | Check Scalar's docs |
+| Custom domains with automatic HTTPS | Yes (Caddy) | Hosted |
+| Roles per project | Owner, admin, editor, viewer | Hosted plans |
+| SCIM provisioning | Yes | No |
+| Audit log | Yes | No |
+| Analytics | Built-in (no cookies), Plausible, Umami or PostHog | Check Scalar's docs |
+
+## Where Scalar is the better choice
+
+- **You don't want to run servers.** Scalar's platform is managed. OrbitDocs' platform is yours to install, back up and upgrade.
+- **You use many frameworks.** Scalar ships integrations for many languages and frameworks. OrbitDocs is NestJS-first; other APIs use a spec file or URL.
+- **You need features OrbitDocs leaves out.** OrbitDocs has no translated guides, social preview images or RSS feed yet, no SAML, and no automated breaking-change detection or changelog.
+- **You want a larger community.** Scalar has a bigger user base and ecosystem.
+
+## Where OrbitDocs fits better
+
+- **Everything must stay on your infrastructure**, for compliance or air-gapped networks.
+- **You use GitLab**, hosted or self-managed.
+- **You need SCIM and an audit log** for the docs platform.
+- **Your API is NestJS**, and you want the reference generated from code with no running database.
+- **You want static files** you can host anywhere, or docs served by the API itself.
+
+## Moving from Scalar
+
+The API reference and client read standard OpenAPI, so your spec works as is:
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme API' },
+  apis: [{ id: 'acme', source: { file: './openapi.yaml' } }],
+});
+```
+
+Move Markdown guides into `content/` as `.mdx` files with `title` and `description` frontmatter. Then follow the [Quickstart](/get-started/quickstart).

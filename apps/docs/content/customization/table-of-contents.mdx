@@ -1,0 +1,101 @@
+---
+title: Table of contents
+description: Pick one of the three table of contents styles, highlight one heading at a time, or turn the TOC off.
+---
+
+The table of contents ("On this page") lists the headings of the current guide. On wide screens it sits in a column on the right. On narrow screens it becomes a popover at the top of the page. One `layout.toc` setting controls both.
+
+## Choose a style
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme' },
+  layout: {
+    toc: { style: 'clerk' },
+  },
+});
+```
+
+| `toc.style` | What it looks like |
+| --- | --- |
+| `clerk` (default) | A thin line runs down the side of the list and steps in and out with the heading depth, like Clerk's docs. A highlight follows the headings you're reading. |
+| `normal` | A plain list of headings. A bar on the left marks the headings in view. |
+| `block` | Numbered items. The headings in view are highlighted as one block. |
+
+You get the stepped, Clerk-style line by default. To get it back after changing it, set `toc.style: 'clerk'`.
+
+## Highlight one heading at a time
+
+By default every heading whose section is on screen is highlighted. `single: true` highlights only one:
+
+```ts title="orbitdocs.config.ts"
+layout: {
+  toc: { style: 'clerk', single: true },
+},
+```
+
+## Turn the table of contents off
+
+```ts title="orbitdocs.config.ts"
+layout: {
+  toc: { enabled: false },
+},
+```
+
+This removes the column and the mobile popover on every guide. To give one page the full width instead, set `full: true` in its frontmatter (see [Layouts](/customization/layouts#page-width)).
+
+## Which headings appear
+
+- Every heading in the page body is listed, indented by level. The page title comes from frontmatter and is not listed.
+- Each heading gets an anchor id from its text. Set your own with `[#id]` at the end of the heading: `## Rate limits [#limits]`.
+- Headings inside components such as `<Tabs>` or `<Accordion>` are listed too, because they are part of the page.
+
+## Layout support
+
+With the `glass` layout only `toc.enabled` applies: Fumadocs' glass page draws its own TOC and takes no style or `single` option, so `toc.style` and `toc.single` have no effect, and `orbitdocs check` warns when you set them. Every other layout supports all three options. The `flux` layout has no separate mobile popover.
+
+## Options
+
+<TypeTable
+  type={{
+    'toc.enabled': { type: 'boolean', description: 'Show the table of contents (column and mobile popover).', default: 'true' },
+    'toc.style': { type: "'clerk' | 'normal' | 'block'", description: 'Visual style of the list.', default: "'clerk'" },
+    'toc.single': { type: 'boolean', description: 'Highlight only one heading at a time.', default: 'false' },
+  }}
+/>
+
+## Add content above or below the list
+
+The TOC can show content before (`header`) and after (`footer`) the headings, for a feedback link or an ad for your newsletter. It takes React, so it goes in `lib/overrides.tsx` of the docs app, not the config:
+
+```tsx title="lib/overrides.tsx"
+import type { OrbitOverrides } from '@orbitdocs/next';
+
+export const overrides: OrbitOverrides = {
+  page: {
+    tableOfContent: {
+      footer: <a href="https://github.com/acme/docs/issues/new" className="text-sm">Report an issue</a>,
+    },
+    // The same on small screens, in the popover (notebook and docs layouts).
+    tableOfContentPopover: { footer: <a href="https://github.com/acme/docs/issues/new">Report an issue</a> },
+  },
+};
+```
+
+`tableOfContent.header` and `footer` work in every layout, `glass` included. `page` can also be a function of the page, to show something different per page:
+
+```tsx title="lib/overrides.tsx"
+page: (page) => ({
+  tableOfContent: { footer: <a href={`https://github.com/acme/docs/edit/main/content/${page.path}`}>Edit this page</a> },
+}),
+```
+
+## Next steps
+
+<Cards>
+  <Card title="Layouts" href="/customization/layouts" description="Breadcrumb, page footer, width and page actions." />
+  <Card title="Sidebar" href="/customization/sidebar" description="Folders, tabs and sidebar links." />
+  <Card title="All Fumadocs options" href="/customization/fumadocs-options" description="Every Fumadocs option and where to set it." />
+</Cards>

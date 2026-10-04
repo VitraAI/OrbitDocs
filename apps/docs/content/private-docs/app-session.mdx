@@ -1,0 +1,175 @@
+---
+title: Your product's session
+description: Let readers who are signed in to your product read private docs with no second sign-in, using their Supabase, Clerk, Firebase or Appwrite session.
+---
+
+If your customers already sign in to your product, the docs can trust that session. There is no second sign-in and no separate docs account. On every request, the docs server reads your product's session cookie and verifies it with your auth provider.
+
+## How it works
+
+1. A reader opens a restricted page. The server looks for your product's session cookie.
+2. If the cookie is there and valid, the reader is in. Their groups come from a claim in the session.
+3. If not, they see the sign-in page with **Continue with &lt;name&gt;**. It sends them to your `loginUrl` with `?redirect_to=<page URL>`.
+4. They sign in to your product, which sets its cookie and sends them back. The docs now see the cookie.
+5. **Sign out** in the docs goes to your `logoutUrl` (or `loginUrl` when there is none). Your product ends its own session.
+
+Verified sessions are cached in memory by a hash of the cookie. Token sessions are re-checked when they expire and at least every 5 minutes; Appwrite sessions every minute.
+
+<Callout type="warn" title="The cookie must reach the docs">
+Browsers only send your product's cookie to the docs when both are on the same site:
+
+- Serve the docs on your app's domain (`app.acme.com/docs`), or
+- Serve them on a subdomain (`docs.acme.com`) and set the session cookie on the parent domain (`Domain=.acme.com`).
+
+A docs site on a different domain (`acme-docs.com`) can't see the cookie, so readers would never appear signed in.
+</Callout>
+
+## Requirements for your sign-in page
+
+`loginUrl` must:
+
+- Read the return URL from the `redirect_to` query parameter, or the parameter you set in `returnParam`.
+- Accept the docs origin as a return target. The value is a full URL, such as `https://docs.acme.com/internal/runbook/`.
+- Send readers who are already signed in straight back to that URL. The docs don't refresh expired tokens, so readers whose token expired come through here again.
+
+## Supabase
+
+```ts title="orbitdocs.config.ts"
+access: {
+  groups: { partners: { idpGroups: ['partner'] } },
+  rules: [{ path: '/partners/*', groups: ['partners'] }],
+  appSession: {
+    type: 'supabase',
+    name: 'Acme account',
+    projectUrl: 'https://abcd1234.supabase.co',
+    loginUrl: 'https://app.acme.com/login',
+    logoutUrl: 'https://app.acme.com/logout',
+  },
+},
+```
+
+| | |
+| --- | --- |
+| Cookie read | `sb-<project ref>-auth-token`, the cookie `@supabase/ssr` sets. Large sessions split into `.0`, `.1`, … chunks, which are joined. The ref is the first part of `projectUrl`'s host. |
+| Token | The `access_token` inside the cookie (the `base64-` prefix and JSON are decoded). |
+| Verified with | The project's public keys at `<projectUrl>/auth/v1/.well-known/jwks.json`, issuer `<projectUrl>/auth/v1`, audience `authenticated`. Legacy projects that sign with a shared secret: set `jwtSecretEnv` to the variable that holds the JWT secret. |
+| Email and name | `email`; `user_metadata.full_name` or `user_metadata.name`. |
+| Groups | `app_metadata.groups` (change with `groupsClaim`). |
+
+Set groups from your backend with the service role key. `app_metadata` can't be changed by the user:
+
+```ts title="Your backend"
+await supabase.auth.admin.updateUserById(userId, {
+  app_metadata: { groups: ['partner'] },
+});
+```
+
+Your app must use `@supabase/ssr` (or set the same cookie) so the session is in a cookie, not only in local storage. Supabase access tokens last one hour by default.
+
+## Clerk
+
+```ts title="orbitdocs.config.ts"
+appSession: {
+  type: 'clerk',
+  domain: 'clerk.acme.com',
+  loginUrl: 'https://accounts.acme.com/sign-in',
+  returnParam: 'redirect_url',
+  secretKeyEnv: 'CLERK_SECRET_KEY',
+},
+```
+
+| | |
+| --- | --- |
+| Cookie read | `__session` |
+| Verified with | The instance's public keys at `https://<domain>/.well-known/jwks.json`; the issuer must be `https://<domain>`. `domain` is your Clerk Frontend API domain. |
+| Email | `email` or `primary_email` claim. Clerk's default session token has neither: add one under **Sessions → Customize session token**, for example `{ "email": "{{user.primary_email_address}}" }`. Or set `secretKeyEnv`, and the server looks the user up with Clerk's Backend API. |
+| Groups | `groups` claim (change with `groupsClaim`, dot paths work). Add it to the session token, for example `"groups": "{{user.public_metadata.groups}}"`. |
+
+`returnParam: 'redirect_url'` matches Clerk's hosted sign-in page (Account Portal).
+
+<Callout type="warn" title="Clerk session tokens are short-lived">
+Clerk session tokens expire after about a minute and are refreshed by Clerk's scripts running in your app. The docs don't run those scripts. A reader who stays on the docs longer goes back through `loginUrl`. If that is too often for your readers, use Clerk as an [SSO provider](/private-docs/sso#clerk) instead: the docs then issue their own session for `session.maxAgeHours`.
+</Callout>
+
+## Firebase
+
+```ts title="orbitdocs.config.ts"
+appSession: {
+  type: 'firebase',
+  projectId: 'acme-prod',
+  loginUrl: 'https://app.acme.com/login',
+},
+```
+
+| | |
+| --- | --- |
+| Cookie read | `__session` (the one cookie name Firebase Hosting forwards) |
+| Accepted values | Session cookies made with the Admin SDK's `createSessionCookie` (issuer `https://session.firebase.google.com/<projectId>`), and ID tokens (issuer `https://securetoken.google.com/<projectId>`). |
+| Verified with | Google's public certificates, cached for an hour. Audience `projectId`, algorithm RS256. Tokens with `email_verified: false` are rejected. |
+| Groups | `groups` custom claim (change with `groupsClaim`). |
+
+The Firebase client SDK keeps tokens in browser storage, not cookies. Your app's server must set `__session` itself. Session cookies are the better choice: they last up to two weeks, while ID tokens expire after an hour.
+
+```ts title="Your backend (Firebase Admin SDK)"
+const cookie = await getAuth().createSessionCookie(idToken, { expiresIn: 7 * 24 * 3600 * 1000 });
+res.cookie('__session', cookie, { domain: '.acme.com', httpOnly: true, secure: true, sameSite: 'lax' });
+
+// Groups for the docs:
+await getAuth().setCustomUserClaims(uid, { groups: ['partner'] });
+```
+
+## Appwrite
+
+```ts title="orbitdocs.config.ts"
+appSession: {
+  type: 'appwrite',
+  endpoint: 'https://cloud.appwrite.io/v1',
+  projectId: '65f0c0ffee',
+  loginUrl: 'https://app.acme.com/login',
+},
+```
+
+| | |
+| --- | --- |
+| Cookie read | `a_session_<projectId>` (lowercased) |
+| Verified with | A call to `GET <endpoint>/account` with the `X-Appwrite-Project` and `X-Appwrite-Session` headers. Appwrite sessions are opaque, so each one is checked with Appwrite, then cached for a minute. |
+| Groups | The user's labels. Or set `groupsClaim` to a dot path into the account, such as `prefs.groups`. |
+
+Use Appwrite's server-side rendering pattern: your app creates the session with a server SDK and sets `a_session_<projectId>` on your own domain (the parent domain, if the docs are on a subdomain).
+
+## Options
+
+Shared by every type:
+
+<TypeTable
+  type={{
+    type: { type: "'supabase' | 'clerk' | 'firebase' | 'appwrite'", description: 'Your auth provider.' },
+    loginUrl: { type: 'string (URL)', description: "Your product's sign-in page. Required." },
+    name: { type: 'string', description: 'Button label: "Continue with <name>".', default: '"<site title> account"' },
+    returnParam: { type: 'string', description: 'Query parameter your sign-in page reads to send the reader back.', default: "'redirect_to'" },
+    logoutUrl: { type: 'string (URL)', description: "Where Sign out goes. Falls back to loginUrl." },
+    cookie: { type: 'string', description: "Cookie name, when you changed your product's default." },
+    groupsClaim: { type: 'string', description: 'Dot path to the groups in the token or account.', default: 'per type (see above)' },
+  }}
+/>
+
+Per type:
+
+| Type | Required | Optional |
+| --- | --- | --- |
+| `supabase` | `projectUrl` (`https://<ref>.supabase.co` or your custom domain) | `jwtSecretEnv` |
+| `clerk` | `domain` (Frontend API domain) | `secretKeyEnv` |
+| `firebase` | `projectId` | |
+| `appwrite` | `endpoint`, `projectId` | |
+
+## Combine with SSO
+
+`appSession` and `providers` work together. The sign-in page shows your product's button first, then "or", then the SSO buttons. A reader can have both; the docs session from SSO is checked first.
+
+## Next steps
+
+<Cards>
+  <Card title="Access rules" href="/private-docs/access-rules" description="Map product groups to pages and APIs." />
+  <Card title="Company SSO" href="/private-docs/sso" description="Add SSO for your own staff." />
+  <Card title="Audit log" href="/private-docs/audit-log" description="See who signed in and who was denied." />
+</Cards>

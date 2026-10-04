@@ -1,0 +1,116 @@
+---
+title: Completeness
+description: Find operations without descriptions, examples or typed responses, and fail the build until they are fixed.
+---
+
+A reader should be able to call any operation from the docs alone. Completeness checks list what is missing for that: descriptions, examples and response schemas. They run on every extraction. You decide whether a gap is a warning or a failed build.
+
+## Turn it on
+
+`completeness` is set per API:
+
+```ts title="docs/orbitdocs.config.ts"
+apis: [
+  {
+    id: 'travel',
+    source: { nest: { module: 'dist/app.module.js', build: 'nest build' } },
+    completeness: 'error',
+  },
+],
+```
+
+| Value | Effect |
+| --- | --- |
+| `warn` (default) | Print the gaps, then continue. |
+| `error` | Print the gaps in red. `orbitdocs extract` exits with code 1, and `orbitdocs build` stops. |
+| `off` | Print nothing. |
+
+`orbitdocs dev` never stops for gaps, so you can fix them while the docs run.
+
+## What it checks
+
+For every operation:
+
+| Rule | Gap message |
+| --- | --- |
+| The operation has a description. | `POST /v1/bookings: no description` |
+| Every parameter has a description. | `GET /v1/flights: query parameter "cursor" has no description` |
+| Every path, query and cookie parameter has an example. | `GET /v1/flights/{id}: path parameter "id" has no example` |
+| Every JSON request body field has a description. | `POST /v1/bookings: body.reference has no description` |
+| Every leaf JSON request body field has an example. | `POST /v1/bookings: body.passengers[].email has no example` |
+| Every success response except 204 has a JSON schema. | `GET /v1/health: 200 response has no schema` |
+| Every field of that schema has a description, and every leaf field an example. | `GET /v1/bookings: 200.data[].createdAt has no example` |
+| Every response has a description. | `GET /v1/bookings: 200 response has no description` |
+
+Some values don't need an example:
+
+- fields with an `enum` or a `default`;
+- booleans;
+- objects and arrays of objects, whose own fields are checked instead;
+- headers.
+
+Fields are checked through `$ref`, `allOf`, `oneOf` and arrays, with paths such as `body.passengers[].name` for a field of an array item (`[]` marks the items of the array before it; a response that is an array starts with `200[]`).
+
+## Read the report
+
+```txt title="Terminal"
+› travel: extracting from dist/app.module.js (preview mode, no providers started)
+✗ travel: 3 documentation gap(s):
+    POST /v1/bookings: body.reference has no description
+    GET /v1/flights: query parameter "cursor" has no example
+    GET /v1/bookings: 200.data[].createdAt has no example
+✓ travel: 12 operations → docs/openapi/travel.json
+✗ Documentation gaps in travel (completeness: 'error'). Fix them or set completeness to 'warn'.
+```
+
+The first 50 gaps are listed, followed by a count of the rest.
+
+## Fix common gaps
+
+With the Swagger CLI plugin and `introspectComments`, a JSDoc comment fixes a field's description and example at once:
+
+```ts title="src/bookings/booking.dto.ts"
+export class CreateBookingDto {
+  /**
+   * Your own reference, echoed back in webhooks.
+   * @example "order-8812"
+   */
+  @IsOptional()
+  @IsString()
+  reference?: string;
+}
+```
+
+| Gap | Fix |
+| --- | --- |
+| Operation has no description | A JSDoc comment on the method, with a `title` in `@DocsOperation`. Or `@ApiOperation({ description })`. |
+| Parameter has no description or example | `@ApiParam({ name, description, example })`, `@ApiQuery(…)`, or JSDoc on the query DTO's properties. |
+| Field has no description or example | JSDoc with `@example`, or `@ApiProperty({ description, example })`. |
+| Response has no schema | Give the method a return type, as in `create(): BookingDto`, or add `@ApiOkResponse({ type: BookingDto })`. |
+| Error response has no description | Keep `standardErrors` on, or describe it with `@DocsErrors`. |
+
+<Callout type="info" title="Start with warn, then switch to error">
+  On an existing API, the first report can be long. Keep `warn` while you fix it, then set `error` so new gaps fail the pull request that adds them.
+</Callout>
+
+## orbitdocs check
+
+`orbitdocs check` is the other build gate. It does not look at completeness. It finds broken references:
+
+- `op:` links and `<Endpoint>` components in `content/` that point at missing operations;
+- files in `reference/` that name a missing API or operation;
+- APIs whose spec has not been extracted.
+
+```bash
+npx orbitdocs check
+```
+
+`orbitdocs build` runs extraction, with its completeness report, then the check. See [Linking operations](/writing/linking-operations#let-the-build-check-your-links).
+
+## Next steps
+
+<Cards>
+  <Card title="Decorators" href="/nestjs/decorators" description="Descriptions, errors and samples from your controllers." />
+  <Card title="Linting" href="/sdks/linting" description="Spectral rules on top of completeness." />
+  <Card title="CLI reference" href="/docs-reference/cli" description="extract, check, build and their flags." />
+</Cards>

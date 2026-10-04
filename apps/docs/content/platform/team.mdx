@@ -1,0 +1,189 @@
+---
+title: Team and access
+description: Invite people, give them a role per project, sign in with SSO, and let your identity provider manage accounts with SCIM.
+---
+
+Platform accounts are people who use the dashboard. They are separate from the readers of your docs (see [Private docs](/private-docs) for those). Each account has a role per project, and platform admins manage everything.
+
+## Roles
+
+Roles are set per project. Each role includes everything the roles below it can do.
+
+| Role | Can |
+| --- | --- |
+| **Viewer** | See the project, its deployments, builds and logs, registry, domains, analytics and members. |
+| **Editor** | Roll back production, remove previews. |
+| **Admin** | Change settings (name, lint gate, analytics), Git sync, domains and tokens. Invite and remove members, change roles (except making owners). Read the project's audit log through the API. |
+| **Owner** | Delete the project, make other owners. |
+
+- Whoever creates a project becomes its owner.
+- A project always keeps at least one owner. The last owner can't be removed or demoted.
+- **Platform admins** act as owners on every project. They also see the **Users** and **Activity** pages.
+- The dashboard asks before anything that deletes, removes, revokes or rolls back: deleting a preview or the project, Instant Rollback, removing a member, a domain or a build variable, replacing a build variable's value, revoking a token, disconnecting Git, and deactivating a user or removing an admin. A failed action shows its error in the same dialog.
+
+Publishing with a token (`orbitdocs publish` or Git sync) doesn't use roles. The token decides the project.
+
+## Delete a project
+
+**Settings → General → Delete Project** (owner role). Type the project's name to confirm. The live site, previews, custom domains, publish tokens, registry history, builds and analytics are deleted, and the deletion is written to the audit log as `project.deleted`. It can't be undone.
+
+## Invite people
+
+<Tabs items={['To a project', 'To the platform']}>
+<Tab value="To a project">
+
+**Settings → Members** (admin role): enter an email and a role, then **Invite**.
+
+- If the email already has an account, the person is added at once.
+- Otherwise you get an invitation link to send yourself. The platform sends no email.
+
+</Tab>
+<Tab value="To the platform">
+
+**Users → Invite someone** (platform admins): enter an email. You get a link that creates an account without any project. Add the person to projects from each project's **Members** page.
+
+</Tab>
+</Tabs>
+
+Invitation links are valid for 7 days and work once. Opening one asks for a name and a password of at least 10 characters. With dashboard SSO turned on, the person can instead sign in with SSO using the invited email; the invitation is accepted automatically.
+
+## Sign in
+
+The dashboard supports two ways to sign in:
+
+- **Email and password.** Always on. Passwords are hashed with scrypt.
+- **SSO.** Google, Microsoft Entra ID, Okta, Auth0, Clerk and Keycloak, the same presets as private docs.
+
+Sessions last 7 days, in an `HttpOnly` cookie. Failed sign-ins are written to the audit log.
+
+## Change your password
+
+Open the account menu (your avatar, top right) and select **Change password**. Enter your current password and the new one twice; the new password needs at least 10 characters and must differ from the current one.
+
+- You stay signed in where you changed it. Every other session of yours, in other browsers and devices, is signed out, including one that signed in a moment before the change.
+- A wrong current password is refused and written to the audit log as `auth.password_change_failed`. A change is written as `user.password_changed`.
+- Accounts that sign in with SSO only (invited and joined through SSO, or created by SCIM) have no password. The dialog explains that their identity provider manages their credentials.
+
+The API is `POST /api/auth/password` with `{ "currentPassword": "…", "newPassword": "…" }`, for the signed-in user. It answers with a new session cookie.
+
+## Turn on dashboard SSO
+
+<Steps>
+<Step>
+
+**Register an app** in your identity provider with this redirect (callback) URL:
+
+```text
+https://docs.acme.com/api/sso/_auth/callback/<id>
+```
+
+`<id>` is the preset's `id`, which defaults to its type (`okta`, `google`, …).
+
+</Step>
+<Step>
+
+**Add the preset and its secret** to `apps/platform/.env`:
+
+```bash title="apps/platform/.env"
+PLATFORM_SSO=[{"type":"okta","domain":"acme.okta.com","clientId":"0oa123","clientSecretEnv":"OKTA_CLIENT_SECRET"}]
+OKTA_CLIENT_SECRET=…
+```
+
+`PLATFORM_SSO` is a JSON array. Each entry takes the same fields as an entry of `access.providers` in a docs config. See [SSO providers](/private-docs/sso) for every preset.
+
+</Step>
+<Step>
+
+**Restart** with `docker compose up -d`. The login page shows **Continue with Okta**.
+
+</Step>
+</Steps>
+
+<Callout type="warn" title="SSO doesn't create accounts">
+  SSO only signs in people who already have an account, or a pending invitation for that email.
+  Anyone else sees `<email> has no OrbitDocs account. Ask an admin to invite you.` Use invitations or SCIM to create accounts.
+</Callout>
+
+## Provision users with SCIM
+
+SCIM 2.0 lets Okta, Entra ID and other identity providers create, update and deactivate platform accounts.
+
+<Steps>
+<Step>
+
+**Set a token** in `.env` and restart:
+
+```bash title="apps/platform/.env"
+SCIM_TOKEN=…   # openssl rand -hex 32
+```
+
+</Step>
+<Step>
+
+**Configure the provider's SCIM app:**
+
+| Setting | Value |
+| --- | --- |
+| SCIM base URL | `https://docs.acme.com/scim/v2` |
+| Authentication | Bearer token: the `SCIM_TOKEN` value |
+| User name | The user's email |
+| Supported actions | Create users, update attributes, deactivate users |
+
+</Step>
+</Steps>
+
+What the endpoint supports:
+
+| Endpoint | Behavior |
+| --- | --- |
+| `GET /scim/v2/ServiceProviderConfig` | PATCH and filtering supported. No bulk, sort, ETag or password change. |
+| `GET /scim/v2/Users` | Lists users, 100 per page by default, 200 at most. Supports `filter=userName eq "a@b.c"`, `startIndex` and `count`. |
+| `POST /scim/v2/Users` | Creates a user from `userName` (or the primary email). Returns 409 when the email exists. |
+| `GET`, `PUT`, `PATCH /scim/v2/Users/<id>` | Reads or updates `userName`, `displayName`, `name`, `externalId` and `active`. |
+| `DELETE /scim/v2/Users/<id>` | Deactivates the user. Accounts are never deleted, so the audit trail stays intact. |
+
+- Users created by SCIM show **SCIM** as their source on the **Users** page.
+- They have no password and no projects. They sign in with dashboard SSO; add them to projects from **Members**.
+- Deactivated users can't sign in, and their sessions stop working at once.
+- Groups are not supported. Roles are managed in the dashboard.
+- Without `SCIM_TOKEN`, every SCIM call returns 403 `SCIM is off: set SCIM_TOKEN`.
+
+## Manage users
+
+The **Users** page (platform admins) lists every account with its source, last sign-in and two switches:
+
+- **Admin** makes the user a platform admin.
+- **Active** turns the account on or off. A deactivated user's sessions stop working at once.
+
+Turning on either switch takes effect at once. Turning one off asks you to confirm first.
+
+You can't deactivate or demote yourself. Every change is written to the audit log.
+
+To reset someone's password, a platform admin calls `PATCH /api/admin/users/<id>` with `{ "password": "…" }` (at least 10 characters). The user is signed out everywhere, and the reset is logged as `user.updated` with `password: reset`. When admins reset their own password this way, the request's session stays signed in and gets a new session cookie, like **Change password**; their other sessions end.
+
+## Audit log
+
+The **Activity** page (platform admins) lists events newest first, 50 at a time:
+
+| Area | Events |
+| --- | --- |
+| Sign-in | `auth.login`, `auth.login_failed`, `auth.password_change_failed` |
+| Accounts | `user.invited`, `user.joined`, `user.updated`, `user.password_changed`, `user.provisioned`, `user.deactivated`, `user.deprovisioned` |
+| Projects | `project.created`, `project.updated`, `project.deleted` |
+| Members | `member.added`, `member.role_changed`, `member.removed` |
+| Tokens | `token.created`, `token.revoked` |
+| Sites | `site.published`, `preview.published`, `site.rolled_back`, `preview.removed` |
+| Domains | `domain.added`, `domain.verified`, `domain.removed` |
+| Git | `git.configured`, `git.disconnected` |
+
+Each entry has the actor (an email, `token:odp_…`, `git:github`, `git:gitlab` or `scim`), the target, the IP address and details. Project admins can read their project's entries from `GET /api/projects/<slug>/audit`.
+
+This is the platform's audit log. Sign-ins of docs readers are logged separately; see `access.audit` in [Private docs](/private-docs).
+
+## Next steps
+
+<Cards>
+  <Card title="SSO providers" href="/private-docs/sso" description="Every preset and its fields." />
+  <Card title="Operations" href="/platform/operations" description="Backups, upgrades and scaling." />
+  <Card title="Environment variables" href="/docs-reference/environment-variables" description="PLATFORM_SSO, SCIM_TOKEN and the rest." />
+</Cards>

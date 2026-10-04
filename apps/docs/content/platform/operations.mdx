@@ -1,0 +1,114 @@
+---
+title: Operations
+description: Run the platform in production. Where data lives, backups, upgrades, scaling build workers and monitoring.
+---
+
+This page is for whoever keeps the platform running. It covers where the data is, how to back it up and upgrade, and how to add capacity.
+
+## Where data lives
+
+| Data | Where | Volume |
+| --- | --- | --- |
+| Users, projects, memberships, tokens (hashed), domains, deployments metadata, builds and logs, registry specs, analytics, audit log | Postgres | `pg` |
+| Build queue (pg-boss jobs) | Postgres, schema `pgboss` | `pg` |
+| Published sites: one folder per deployment | `DATA_DIR/deployments/<id>` | `data` |
+| Git sync working copies (deleted after each build) | `DATA_DIR/builds/<id>` | `data` |
+| Uploads being unpacked (deleted after each publish) | `DATA_DIR/uploads`, `DATA_DIR/staging` | `data` |
+| HTTPS certificates and Caddy's local CA | `/data` in the Caddy container | `caddy` |
+
+`DATA_DIR` is `/data` in the image. Disk use grows with the five kept production builds per project plus every open preview.
+
+## Back up
+
+Back up the database and the `data` volume together, so deployments in the database have their files:
+
+```bash title="apps/platform"
+# Database
+docker compose exec -T postgres pg_dump -U orbitdocs -Fc orbitdocs > orbitdocs-$(date +%F).dump
+
+# Published sites
+docker run --rm -v platform_data:/data -v "$PWD":/backup alpine \
+  tar czf /backup/orbitdocs-data-$(date +%F).tgz -C /data deployments
+```
+
+Compose prefixes volume names with the project name, which is the folder name (`platform`) by default. Check with `docker volume ls`.
+
+The `caddy` volume is optional: certificates are issued again if it is lost. Keep it if readers trust Caddy's local CA.
+
+Also keep `PLATFORM_SECRET` safe. Without the same secret, stored Git tokens can't be decrypted after a restore.
+
+### Restore
+
+```bash title="apps/platform"
+docker compose up -d postgres
+docker compose exec -T postgres pg_restore -U orbitdocs -d orbitdocs --clean < orbitdocs-2026-10-01.dump
+docker run --rm -v platform_data:/data -v "$PWD":/backup alpine \
+  tar xzf /backup/orbitdocs-data-2026-10-01.tgz -C /data
+docker compose up -d
+```
+
+## Upgrade
+
+```bash
+cd OrbitDocs
+git pull
+cd apps/platform
+docker compose up -d --build
+```
+
+Database migrations run automatically every time the platform starts, before it accepts requests. Back up first.
+
+Running builds survive a restart: their jobs miss heartbeats and run again on the new instance (see [Git sync](/platform/git-sync)).
+
+## Scale
+
+The platform is one Node process that serves the dashboard, hosts sites and runs builds. To add capacity:
+
+- **More builds at once on one instance:** raise `BUILD_CONCURRENCY` (default `1`). Each build runs your install command and `next build` inside the platform container, so give the container CPU and memory to match.
+- **More instances:** run several platform containers against the **same Postgres** and the **same `DATA_DIR`** (a shared volume such as NFS or EFS), behind Caddy or another load balancer.
+
+How several instances cooperate:
+
+| Concern | Behavior |
+| --- | --- |
+| Build queue | Shared through Postgres. Each job runs on one instance; one build per target runs at a time across all instances. |
+| Crash during a build | Another instance picks the job up after missed heartbeats (60 seconds), up to 2 retries. |
+| Site files | Read from `DATA_DIR` on every request, so every instance must see the same files. |
+| Sessions | Signed with `PLATFORM_SECRET`; every instance must have the same value. |
+
+<Callout type="warn" title="Shared DATA_DIR is required">
+  An instance only serves the deployments it can see on disk. With separate volumes, a site published through one instance returns 404 on the others.
+</Callout>
+
+### Build timeouts
+
+`BUILD_TIMEOUT_MS` (default 15 minutes) limits each build step: the clone, the install command and the build command. A job is given up as expired after that time plus 5 minutes.
+
+## Monitor
+
+- **Logs:** `docker compose logs -f platform`. Each publish logs a line such as `payments: production → https://payments.docs.acme.com/`. Build output lives in each build's log in the dashboard.
+- **Health:** `GET /api/auth/me` on the platform domain returns 200 without signing in.
+- **Failed builds:** the **Builds** tab per project, and failed commit statuses in GitHub or GitLab.
+- **Audit:** the **Activity** page lists sign-ins, failed sign-ins, publishes and permission changes.
+
+## Rotate secrets
+
+| Secret | How to rotate | Effect |
+| --- | --- | --- |
+| `PLATFORM_SECRET` | Change it in `.env` and restart. | Everyone is signed out. Saved Git tokens can no longer be decrypted: enter each project's token again in **Settings → Git**. Built-in analytics start new visitor hashes. |
+| `SCIM_TOKEN` | Change it in `.env`, restart, update the identity provider. | SCIM calls with the old token fail. |
+| Publish tokens | Create a new token, update CI, revoke the old one. | None if done in that order. |
+| Webhook secret | Disconnect and reconnect Git sync, then update the webhook. | A new secret is generated on reconnect. |
+| `POSTGRES_PASSWORD` | Change the password in Postgres (`ALTER USER`), then in `.env`, then restart. | Changing only `.env` locks the platform out of the existing database. |
+
+## Environment variables
+
+Every variable the platform reads is listed on [Environment variables](/docs-reference/environment-variables#platform).
+
+## Next steps
+
+<Cards>
+  <Card title="Install" href="/platform/install" description="Compose, .env and HTTPS." />
+  <Card title="Git sync" href="/platform/git-sync" description="The build queue in detail." />
+  <Card title="Troubleshooting" href="/help/troubleshooting" description="Certificates, ports and failed builds." />
+</Cards>

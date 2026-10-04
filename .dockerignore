@@ -1,0 +1,12 @@
+**/node_modules
+**/.next
+**/.turbo
+**/out
+**/dist
+**/.orbitdocs
+apps/platform/data
+examples/universe-server
+examples/universe-server-*
+examples/nest-sample/docs/sdks
+.git
+*.log

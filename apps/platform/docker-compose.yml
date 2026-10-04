@@ -1,0 +1,62 @@
+# OrbitDocs platform: `cp .env.example .env`, fill it in, `docker compose up -d`
+# → dashboard at https://$PLATFORM_DOMAIN, sites at https://<project>.$PLATFORM_DOMAIN
+# and on their custom domains.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: orbitdocs
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orbitdocs}
+      POSTGRES_DB: orbitdocs
+    volumes:
+      - pg:/var/lib/postgresql/data
+    ports:
+      - '5433:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U orbitdocs']
+      interval: 2s
+      retries: 30
+
+  platform:
+    build:
+      context: ../..
+      dockerfile: apps/platform/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Every variable in .env reaches the platform (SSO client secrets, build limits, …).
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Your own Postgres: set DATABASE_URL in .env (and remove the postgres service).
+      DATABASE_URL: ${DATABASE_URL:-postgres://orbitdocs:${POSTGRES_PASSWORD:-orbitdocs}@postgres:5432/orbitdocs}
+      PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:-localhost}
+      # Caddy serves everything over HTTPS, localhost included.
+      PLATFORM_URL: ${PLATFORM_URL:-https://${PLATFORM_DOMAIN:-localhost}}
+      PLATFORM_SECRET: ${PLATFORM_SECRET:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      PLATFORM_SSO: ${PLATFORM_SSO:-}
+      SCIM_TOKEN: ${SCIM_TOKEN:-}
+      DATA_DIR: /data
+    volumes:
+      - data:/data
+
+  # Automatic HTTPS for the platform, every project subdomain and every custom domain.
+  caddy:
+    image: caddy:2-alpine
+    depends_on: [platform]
+    environment:
+      PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:-localhost}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+
+volumes:
+  pg:
+  data:
+  caddy:

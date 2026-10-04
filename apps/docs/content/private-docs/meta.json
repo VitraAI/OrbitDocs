@@ -1,0 +1,4 @@
+{
+  "title": "Private docs",
+  "pages": ["index", "sso", "app-session", "access-rules", "audit-log"]
+}

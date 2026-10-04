@@ -1,0 +1,266 @@
+---
+title: Access rules
+description: Define access groups, restrict pages, folders and APIs to them, and personalize the docs for each signed-in reader.
+---
+
+Access is decided by groups. A group lists who belongs to it. Rules, page frontmatter and API settings say which groups can read what. This page covers all three, then personalization.
+
+## Define groups
+
+```ts title="orbitdocs.config.ts"
+access: {
+  groups: {
+    staff: { domains: ['acme.com'] },
+    partners: { emails: ['pat@partner.io', 'sam@partner.io'], idpGroups: ['partner-devs'] },
+    beta: { idpGroups: ['beta-testers'] },
+  },
+  // …providers or appSession
+},
+```
+
+A reader belongs to a group when any of these match:
+
+| Field | Matches | Example |
+| --- | --- | --- |
+| `emails` | The reader's exact email (case-insensitive) | `pat@partner.io` |
+| `domains` | Everything after the `@` (a leading `@` is ignored) | `acme.com` matches `ada@acme.com`, not `ada@eu.acme.com` |
+| `idpGroups` | A group from the sign-in: the SSO provider's groups claim or your product session's groups | `partner-devs` |
+
+A reader can be in several groups. `*` is a built-in group meaning "any signed-in reader".
+
+Group names used in rules, frontmatter or `apis[].access` must be defined in `groups` (or be `*`). The config, `orbitdocs extract` and `orbitdocs build` fail on an unknown group.
+
+## Restrict a page
+
+Add `access` to the page's frontmatter:
+
+```mdx title="content/internal/runbook.mdx"
+---
+title: Incident runbook
+access: [staff]
+---
+```
+
+A restricted page, whether frontmatter or a [rule](#restrict-a-folder-or-path) restricts it, is protected everywhere its content goes:
+
+- the page itself, and the data files a static build writes next to it (`index.txt`, `__next.*.txt`),
+- its Markdown copy at `/md/<slug>/content.md` (used by **Copy page**), which gets the same groups as the page,
+- the sidebar, the breadcrumb and the previous/next links, which list it only for readers who can open it (see [What each reader sees](#what-each-reader-sees)),
+- the search index, `llms.txt` and `llms-full.txt`, which leave it out,
+- Ask AI, which only uses it for readers who can open it, and the docs MCP, which never does.
+
+The search index, `llms.txt` and `llms-full.txt` are one file for every reader, so they hold only what everyone who can open them may read. In `public` mode, that is pages no rule or frontmatter restricts. In `private` mode those files need sign-in themselves, so pages open to any signed-in reader (`*`) stay in, and pages limited to some groups stay out.
+
+## Restrict a folder or path
+
+`rules` gate a URL path and, with `/*`, everything under it:
+
+```ts title="orbitdocs.config.ts"
+access: {
+  rules: [
+    { path: '/internal/*', groups: ['staff'] },
+    { path: '/beta/*', groups: ['beta', 'staff'] },
+    { path: '/changelog', groups: ['*'] },
+  ],
+},
+```
+
+| Pattern | Matches |
+| --- | --- |
+| `/internal/*` | `/internal` and everything under it |
+| `/internal*` | Any path starting with `/internal`, including `/internal-tools` |
+| `/changelog` | Exactly `/changelog` (trailing slash ignored) |
+
+Paths are relative to the base path: write `/internal/*`, not `/docs/internal/*`. Among rules, the first match wins, so put narrow rules before broad ones.
+
+A rule protects the pages it matches the same way frontmatter does: their Markdown copies get the same groups (`/internal/*` also covers `/md/internal/*`), and the search index, `llms.txt` and `llms-full.txt` leave them out. You don't need to repeat the groups in each page's frontmatter.
+
+### When a rule and frontmatter both apply
+
+The stricter wins: a reader needs both the first matching rule and the page's frontmatter `access`. A rule never loosens a page, and frontmatter never loosens a rule:
+
+| Rule | Frontmatter | Who can read the page |
+| --- | --- | --- |
+| `/guides/*` → `['*']` | `access: [staff]` | staff only |
+| `/internal/*` → `['staff']` | `access: ['*']` | staff only |
+| `/internal/*` → `['staff']` | none | staff only |
+| none | `access: [staff, partners]` | staff or partners |
+| `/beta/*` → `['staff', 'partners']` | `access: [staff, beta]` | staff, or readers in both partners and beta |
+
+The same goes for `apis[].access`: a rule such as `/reference/*` → `['*']` doesn't open an API restricted to `['staff']`. The Markdown copy, the search index, `llms.txt`, Ask AI and the sidebar follow the same answer as the page.
+
+`access` on a folder's `index.mdx` restricts that index page (and its Markdown copy) only, not the pages in the folder. To restrict a whole folder, use a rule such as `/internal/*`.
+
+## Restrict an API
+
+```ts title="orbitdocs.config.ts"
+apis: [
+  { id: 'public', source: { nest: { module: 'dist/app.module.js' } } },
+  { id: 'admin', source: { file: 'specs/admin.json' }, access: ['staff'] },
+],
+```
+
+An API with `access` gates:
+
+- its reference pages (`/reference/<id>/*`),
+- its spec download (`/openapi/<id>.json`) and its code samples file,
+- its collection in the API client (`/client`), which each reader gets with only the APIs and operations they may open.
+
+It is also left out of search, `llms.txt` and `llms-full.txt`, and gets no API MCP server. The "API Reference" link in the top bar still lists it.
+
+A rule over an API's reference, such as `{ path: '/reference/admin/*', groups: ['staff'] }`, works like `access` on the API: the spec download, the code samples file, search, `llms.txt`, `llms-full.txt` and the client page are gated the same way.
+
+A rule over a single operation, such as `{ path: '/reference/public/delete-user', groups: ['staff'] }`, gates that page and leaves the operation out of everything readers outside the group get:
+
+- the reference's sidebar, its other pages and the sections they load,
+- the spec download (`/openapi/public.json`): the operation, and the schemas, parameters and tags only it uses, are removed,
+- the code samples file and the API client,
+- search, `llms.txt`, `llms-full.txt` and the API MCP server.
+
+Readers in the group get all of it, the operation included, from the same URLs. See [What each reader sees](#what-each-reader-sees).
+
+## Restrict everything
+
+```ts title="orbitdocs.config.ts"
+access: {
+  mode: 'private',
+  groups: { staff: { domains: ['acme.com'] }, partners: { emails: ['pat@partner.io'] } },
+  rules: [{ path: '/internal/*', groups: ['staff'] }],
+  providers: [/* … */],
+},
+```
+
+In `private` mode every page needs sign-in, and readers outside every group can't sign in at all. Rules still narrow paths to groups: here partners can read everything except `/internal`.
+
+In `private` mode the docs MCP and the API MCP servers have nothing public to serve. See [MCP servers](/ai/mcp).
+
+## How a request is decided
+
+1. `/_auth/*`, `/_next/*`, `/favicon.ico`, `/icon.svg`, `/robots.txt`, and the logo and icons the sign-in page shows are always public.
+2. The first of your `rules` whose path matches (each rule also covers its pages' Markdown copies, `/md/…/content.md`).
+3. Plus every group list that also applies: the page's frontmatter `access` (and its Markdown copy), and `apis[].access` for the API's reference, spec download and code samples. A config rule over an API's reference (`/reference/admin/*`) applies to its spec download and code samples too.
+4. The reader needs one group from each list that applies (`*` = signed in). Nothing applies: public in `public` mode, sign-in in `private` mode.
+5. For files whose content depends on the reader (below), the server then serves the variant the reader may open.
+
+## What each reader sees
+
+Some files list many pages or operations: the guides sidebar (with the breadcrumb and previous/next links), and for an API with some operations restricted, its reference pages, spec download, code samples file and the API client. A reader never gets titles, URLs or details of items they can't open.
+
+- The files at the usual URLs hold only what every reader of that URL may see. In `public` mode, the sidebar there has no restricted page.
+- `orbitdocs build` also builds a copy for each combination of groups that can see more: the guides under `/~/<variant>/`, an API's reference under `/reference/<api>~<variant>/` with `/openapi/<api>~<variant>.json` and `/reference-samples/<api>~<variant>.json`, and the client under `/client/<variant>/`. The plan is in `.orbitdocs/access.json` (`variants`). A site without restricted pages or operations gets no copies.
+- The server serves each reader the most complete copy they may open, from the same URL: a staff member opening `/quickstart` sees the restricted pages in the sidebar, and the URL stays `/quickstart`. Opening a copy's own URL needs the same groups as the copy.
+- Responses that depend on the reader are sent with `Cache-Control: private, no-cache`, so a CDN or proxy never hands one reader's copy to another.
+
+| Served by | Restricted titles hidden from readers who can't open them | Readers who can open them see them |
+| --- | --- | --- |
+| `mountOrbitDocs` (Nest) | Yes | Yes |
+| Next server mode (`proxy.ts`) | Yes | Yes |
+| The self-hosted platform | Yes | Not yet: everyone gets the copy at the usual URL |
+| A plain static host | Pages are not protected at all (see [Private docs need a server](/private-docs#private-docs-need-a-server)) | |
+
+The copies are built for at most 16 combinations of groups per sidebar, API or client. A site with more fails to build with a message that says which; restrict whole folders, or move operations into a separate API with `apis[].access`, instead of many single pages or operations with different groups.
+
+Two routes in the docs app render the copies. `orbitdocs init` creates them; an app made before this needs them added (the build prints a warning and shows only what every reader may see until then):
+
+```tsx title="app/~/[variant]/layout.tsx"
+import { GuidesLayout } from '@orbitdocs/next';
+import { guidesTree } from '@orbitdocs/next/server';
+import type { ReactNode } from 'react';
+
+import { orbit } from '@/lib/orbit';
+import { source } from '@/lib/source';
+
+export default async function Layout({ children, params }: { children: ReactNode; params: Promise<{ variant: string }> }) {
+  const { variant } = await params;
+  return (
+    <GuidesLayout config={orbit} tree={guidesTree(source.getPageTree(), variant)}>
+      {children}
+    </GuidesLayout>
+  );
+}
+```
+
+`app/~/[variant]/[[...slug]]/page.tsx` renders `GuidePage` like `app/(guides)/[...slug]/page.tsx`, with `generateStaticParams` returning `guideVariantParams(source)` and a `notFound()` unless `isGuideVariantPage(variant, page)`. The client page moves to `app/client/[[...variant]]/page.tsx` and passes `variant?.[0]` to `ClientPage`, with `clientStaticParams()`. `app/(guides)/layout.tsx` and `app/(home)/page.tsx` pass `guidesTree(source.getPageTree())` as the tree. Copy all of them from a new `orbitdocs init` app.
+
+<Callout type="info" title="Links you write">
+A public guide that links to a restricted page or operation still shows the link text you wrote. The link leads to the sign-in page or "no access" for readers outside its groups.
+</Callout>
+
+## Personalization
+
+After sign-in, the docs can ask your backend about the reader. Your backend can add groups and give the reader their own credentials. Those credentials are pre-filled in the API reference's auth and in every code sample, so readers can copy a working request.
+
+```ts title="orbitdocs.config.ts"
+access: {
+  // …
+  personalization: {
+    url: 'https://api.acme.com/internal/docs-user',
+    secretEnv: 'DOCS_HOOK_SECRET',
+  },
+},
+```
+
+The docs `POST` the reader to `url`:
+
+```json title="Request body"
+{ "email": "ada@acme.com", "name": "Ada Lovelace", "groups": ["staff"], "provider": "okta" }
+```
+
+The body is signed with HMAC-SHA256 using the secret, in the header `x-orbitdocs-signature: sha256=<hex>`. Reply with any of:
+
+```json title="Response body"
+{
+  "groups": ["beta"],
+  "credentials": { "apiKey": "otk_test_4f9a2c1b8e7d6a5f" },
+  "variables": { "accountId": "acc_123" }
+}
+```
+
+| Field | Effect |
+| --- | --- |
+| `groups` | Added to the reader's groups. Only groups defined in `access.groups` are kept. |
+| `credentials` | Values by security scheme name (the keys of the spec's `securitySchemes`). They pre-fill auth in the API reference and its code samples, unless the reader typed their own. |
+| `variables` | Stored with the session and returned by `/_auth/me`, for your own components. The built-in UI doesn't use them yet. |
+
+A NestJS hook that verifies the signature, from the sample app:
+
+```ts title="src/docs-hook/docs-hook.controller.ts"
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
+import { Controller, Headers, HttpCode, Post, type RawBodyRequest, Req, UnauthorizedException } from '@nestjs/common';
+import type { Request } from 'express';
+
+@Controller('internal/docs-user')
+export class DocsHookController {
+  @Post()
+  @HttpCode(200)
+  identify(@Req() req: RawBodyRequest<Request>, @Headers('x-orbitdocs-signature') signature?: string) {
+    const secret = process.env.DOCS_HOOK_SECRET ?? '';
+    const expected = `sha256=${createHmac('sha256', secret).update(req.rawBody ?? '').digest('hex')}`;
+    if (!secret || !signature || signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+      throw new UnauthorizedException('Bad signature');
+    }
+    const { email } = JSON.parse(String(req.rawBody)) as { email: string };
+    // Look up the reader's own test key here.
+    return email.endsWith('@acme.com') ? { credentials: { apiKey: 'otk_test_4f9a2c1b8e7d6a5f' } } : {};
+  }
+}
+```
+
+Verify the signature over the raw body: create the Nest app with `rawBody: true`.
+
+- The call times out after 5 seconds. A failure, a timeout or a non-2xx reply never blocks sign-in; the reader just gets no extras.
+- Without the `secretEnv` variable set, the hook is skipped.
+- SSO readers are personalized once per sign-in. Product-session readers are personalized each time their session is re-verified (at most every 5 minutes).
+
+<Callout type="warn">
+Credentials from the hook are stored in the reader's session cookie (signed, not encrypted) and sent to their browser. Return test or sandbox keys, not production secrets.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Audit log" href="/private-docs/audit-log" description="Record sign-ins and denied requests." />
+  <Card title="Company SSO" href="/private-docs/sso" description="Groups claims per identity provider." />
+  <Card title="Authentication in the reference" href="/api-reference/authentication" description="Security schemes and try-it credentials." />
+</Cards>

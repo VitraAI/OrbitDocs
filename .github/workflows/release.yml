@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+
+permissions:
+  contents: write # version commits and GitHub releases
+  pull-requests: write # the "Version Packages" pull request
+  id-token: write # npm provenance
+
+jobs:
+  release:
+    name: Version or publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      # With pending changesets: opens or updates the "Version Packages" pull request.
+      # When that pull request is merged: publishes to npm, but only once publishing is
+      # switched on (repository variable NPM_PUBLISH_ENABLED=true and the NPM_TOKEN secret).
+      - uses: changesets/action@v1
+        with:
+          version: pnpm version-packages
+          publish: ${{ vars.NPM_PUBLISH_ENABLED == 'true' && 'pnpm release' || '' }}
+          commit: 'chore: version packages'
+          title: 'chore: version packages'
+          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'

@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791053400584,
+      "tag": "0000_bent_annihilus",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791082022278,
+      "tag": "0001_build_env_lint_password",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791089171537,
+      "tag": "0002_site_env",
+      "breakpoints": true
+    }
+  ]
+}

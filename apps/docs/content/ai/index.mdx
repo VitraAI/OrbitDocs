@@ -1,0 +1,154 @@
+---
+title: Ask AI
+description: Add an AI assistant that answers questions from your docs with citations, using your own LLM key, plus MCP servers for coding agents.
+---
+
+Add an `ai` section to your config and readers get **Ask AI**: a chat drawer that answers questions from your guides and API reference, citing the pages it used. The same setup serves an MCP server for your docs and one for each API, so coding agents can search your docs and call your API.
+
+<Cards>
+  <Card title="Providers and keys" href="/ai/providers" description="OpenAI, Anthropic, Google or any OpenAI-compatible model; rate limits." />
+  <Card title="MCP servers" href="/ai/mcp" description="Connect Claude, Cursor or VS Code to your docs and your API." />
+  <Card title="llms.txt and page actions" href="/ai/llms-txt" description="Markdown versions of your docs for any AI tool." />
+</Cards>
+
+## Ask AI needs a server
+
+Ask AI, the docs MCP and the API MCP run on the server that serves your docs. That's where your LLM key lives; it never reaches the browser or the build output.
+
+| Served by | Ask AI and MCP |
+| --- | --- |
+| Your Nest app with `mountOrbitDocs` | Yes |
+| Next server mode (`output.mode: 'server'`, with `proxy.ts`) | Yes |
+| The self-hosted platform | Yes |
+| A plain static host | No. The Ask AI button hides itself. |
+
+`llms.txt`, `llms-full.txt` and the page actions are static files and buttons. They work everywhere. See [llms.txt and page actions](/ai/llms-txt).
+
+## Add Ask AI
+
+<Steps>
+<Step>
+
+### Add the ai section
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme', url: 'https://docs.acme.com' },
+  ai: {
+    provider: 'anthropic',
+    model: 'claude-sonnet-5-5',
+    apiKeyEnv: 'ANTHROPIC_API_KEY',
+    askAi: {
+      greeting: 'Ask anything about the Acme API.',
+      suggestions: ['How do I authenticate?', 'How do I paginate results?'],
+      instructions: 'Answer in the voice of the Acme developer team. Prefer TypeScript in examples.',
+    },
+  },
+});
+```
+
+</Step>
+<Step>
+
+### Set the key on the server
+
+```bash title=".env"
+ANTHROPIC_API_KEY=sk-ant-…
+```
+
+Set it where the docs are served: your Nest app's environment, your Vercel project, your container.
+
+</Step>
+<Step>
+
+### Build
+
+```bash
+npx orbitdocs build
+```
+
+`orbitdocs extract` and `build` write the AI index to `.orbitdocs/ai.json`: every guide and every API operation as Markdown, and the MCP tool definitions. It holds no secrets. The build copies it to `orbitdocs-ai.json`, which the server reads and never serves.
+
+</Step>
+</Steps>
+
+Readers now see **Ask AI** in the top bar.
+
+## What readers get
+
+- **Ask AI** in the top bar, or <kbd>⌘ I</kbd> / <kbd>Ctrl I</kbd> anywhere, opens a drawer on the right.
+- Before the first question, the drawer shows your `greeting` and `suggestions` as buttons.
+- Answers stream in as Markdown with code blocks. Citations like **1** link to the page section they come from, and the cited pages are listed under the answer.
+- Each answer has a copy button. **Stop** cancels an answer; **New chat** clears the conversation.
+- The conversation survives page navigation within the browser tab (session storage).
+
+## How answers are grounded
+
+Ask AI is retrieval-augmented: the model only sees passages from your docs.
+
+1. At build time, guides and operations are split into passages at `##` and `###` headings, then into chunks of about 1,500 characters.
+2. For each question, a keyword search (BM25, with a light stemmer and extra weight on titles and headings) picks the best passages. At most two come from one page, and at most `maxSources` in total.
+3. If a follow-up finds fewer than two passages ("and in Python?"), the search runs again with the previous question added.
+4. The passages go to the model, numbered, with instructions to answer only from them, cite them as `[1]`, `[2]`, never invent endpoints or fields, and say so when the docs don't cover the question. Your `instructions` are added at the end.
+5. Up to 7 earlier messages are sent as history, each cut to 4,000 characters. The question is cut to 2,000.
+
+There is no vector database and no embeddings call: search runs in memory on the docs server.
+
+<Callout type="info" title="Private docs stay private">
+Passages come only from pages the reader may open, using the same rules as the docs server. A partner never gets an answer built from a staff-only page.
+</Callout>
+
+## Options
+
+<TypeTable
+  type={{
+    provider: { type: "'openai' | 'anthropic' | 'google' | 'openai-compatible'", description: 'LLM provider. See Providers.' },
+    model: { type: 'string', description: 'Model id, e.g. gpt-5-mini, claude-sonnet-5-5, gemini-3-flash.' },
+    apiKeyEnv: { type: 'string', description: 'Environment variable that holds the API key.' },
+    baseUrl: { type: 'string (URL)', description: 'Required for openai-compatible; a proxy URL for the others.' },
+    'askAi.enabled': { type: 'boolean', description: 'Show the Ask AI button and serve /_ai/chat. MCP is separate.', default: 'true' },
+    'askAi.greeting': { type: 'string', description: 'Text shown before the first question.' },
+    'askAi.suggestions': { type: 'string[]', description: 'Starter questions shown as buttons.', default: '[]' },
+    'askAi.instructions': { type: 'string', description: 'Extra rules for the assistant: tone, product names, what not to answer.' },
+    'askAi.maxSources': { type: 'number (1–20)', description: 'Most passages sent with each question.', default: '6' },
+    'mcp.docs': { type: 'boolean', description: 'Serve the docs MCP at /mcp. See MCP servers.', default: 'true' },
+    'mcp.apis': { type: 'boolean | string[]', description: 'Serve an API MCP for every API, none, or the listed API ids.', default: 'true' },
+    'mcp.tools': { type: "'per-operation' | 'search-execute'", description: 'One tool per operation, or two tools for large APIs.', default: "'per-operation'" },
+  }}
+/>
+
+To keep the MCP servers but hide the chat, set `askAi.enabled: false`.
+
+## HTTP endpoints
+
+Build your own chat UI on the same endpoints. Paths are under the base path.
+
+| Endpoint | What it does |
+| --- | --- |
+| `GET /_ai/config` | `{ enabled, greeting, suggestions }`. The Ask AI button calls it to decide whether to show itself. |
+| `POST /_ai/chat` | Body `{ "messages": [{ "role": "user", "content": "How do I paginate?" }] }`. The last message must be from the user; the last 12 are used. |
+
+`/_ai/chat` streams newline-delimited JSON (`application/x-ndjson`):
+
+```txt
+{"type":"sources","sources":[{"n":1,"title":"Pagination","url":"/guides/pagination/","heading":"Cursors"}]}
+{"type":"text","delta":"Pass the `cursor` from the previous page"}
+{"type":"text","delta":" as a query parameter [1]."}
+{"type":"done"}
+```
+
+An error during the answer arrives as `{"type":"error","message":"…"}`. Errors before streaming return JSON with a status: `400` (bad messages), `404` (Ask AI off), `405` (not POST), `429` (rate limit).
+
+<Callout type="warn" title="Behind a reverse proxy">
+Answers stream word by word. The server sends `X-Accel-Buffering: no` so nginx doesn't buffer them. If your proxy buffers responses another way, turn buffering off for `/_ai/chat`.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Providers and keys" href="/ai/providers" description="Pick a model, set keys and rate limits." />
+  <Card title="MCP servers" href="/ai/mcp" description="Let coding agents read your docs and call your API." />
+  <Card title="Private docs" href="/private-docs" description="Restrict what Ask AI can draw on." />
+</Cards>

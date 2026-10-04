@@ -1,0 +1,199 @@
+---
+title: Themes and colors
+description: Pick a color preset, set your accent color, control light and dark mode, and override any color with CSS.
+---
+
+OrbitDocs styles three things with one palette: your guides (Fumadocs), the API reference and the API client (HeroUI). You pick the palette in `orbitdocs.config.ts`. You fine-tune it with CSS variables in `app/global.css`.
+
+This section covers every visual option:
+
+<Cards>
+  <Card title="Themes and colors" href="/customization" description="Presets, accent color, light and dark mode, widths, CSS variables." />
+  <Card title="Layouts" href="/customization/layouts" description="Notebook, docs, flux, glass and home layouts, sidebar, TOC, page actions." />
+  <Card title="Navigation bar" href="/customization/navigation-bar" description="Header links, buttons, menus, sidebar links and the announcement banner." />
+  <Card title="Search" href="/customization/search" description="The search dialog, its hotkey, suggested links and what it indexes." />
+  <Card title="Branding" href="/customization/branding" description="Site title, logos for light and dark mode, favicon, fonts and metadata." />
+  <Card title="Sidebar" href="/customization/sidebar" description="Folder depth, root-folder tabs, sidebar banner and links." />
+  <Card title="Table of contents" href="/customization/table-of-contents" description="The clerk, normal and block TOC styles." />
+  <Card title="Code blocks" href="/customization/code-blocks" description="Titles, tabs, line numbers, highlights and syntax themes." />
+  <Card title="MDX components" href="/customization/mdx-components" description="Register file trees, image zoom and your own components." />
+  <Card title="All Fumadocs options" href="/customization/fumadocs-options" description="Every Fumadocs option and where to set it in OrbitDocs." />
+</Cards>
+
+## How theming works
+
+When Next loads `next.config.ts`, `withOrbitDocs` reads the `theme` and `layout` sections of your config. It writes `.orbitdocs/theme.css` with:
+
+- the Fumadocs color preset you chose,
+- the CSS of the layout (the glass layout needs its own file),
+- a palette file that ties HeroUI and Fumadocs colors together,
+- your accent color and layout widths.
+
+`app/global.css` imports that file, then the OrbitDocs styles, then your own rules. You never edit `.orbitdocs/theme.css`: it is regenerated from the config, and `orbitdocs init` adds `.orbitdocs/` to `.gitignore`.
+
+```css title="app/global.css"
+@import 'tailwindcss';
+@import '@heroui/styles';
+/* Preset, layout CSS and palette, generated from `theme` and `layout` in orbitdocs.config.ts. */
+@import '../.orbitdocs/theme.css';
+@import '@orbitdocs/ui/styles.css';
+
+/* Your styles: override any HeroUI/OrbitDocs variable here, e.g. --accent. */
+```
+
+## Pick a preset
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme' },
+  theme: {
+    preset: 'ocean',
+    accent: '#0ea5e9',
+    defaultMode: 'system',
+  },
+});
+```
+
+There are 13 presets:
+
+| Preset | What you get |
+| --- | --- |
+| `orbit` (default) | Neutral greys like Scalar's default theme, with your accent as the only color. HeroUI variables are the source of every color. |
+| `neutral`, `black`, `vitepress`, `dusk`, `catppuccin`, `ocean`, `purple`, `solar`, `emerald`, `ruby`, `aspen`, `shadcn` | The Fumadocs preset of the same name. HeroUI adopts its colors, so the API reference and the API client match the guides. |
+
+The two families work in opposite directions. With `orbit`, HeroUI variables drive Fumadocs' `--color-fd-*` tokens. With any other preset, the Fumadocs tokens drive HeroUI. Keep that in mind when you override colors with CSS (see below).
+
+## Set the accent color
+
+`theme.accent` takes any CSS color: hex, `rgb()`, `oklch()` or a named color. It colors links, active items, buttons and focus rings everywhere.
+
+```ts title="orbitdocs.config.ts"
+theme: { accent: 'oklch(62% 0.2 290)' },
+```
+
+- With `orbit`, the accent is written to `--od-accent` and used in light and dark mode. Without it, `orbit` uses a blue: `oklch(55% 0.19 255)` in light mode and `oklch(70% 0.15 255)` in dark mode.
+- With any other preset, the accent overrides the preset's `--color-fd-primary`.
+
+The sign-in page of [private docs](/private-docs) uses the same accent. It falls back to `#3b6fe0`.
+
+<Callout type="info" title="A different accent in dark mode">
+With the `orbit` preset, set `--od-accent-dark` in `app/global.css`. Dark mode uses it instead of `--od-accent`.
+
+```css title="app/global.css"
+:root {
+  --od-accent-dark: oklch(78% 0.14 290);
+}
+```
+</Callout>
+
+The API client can have its own accent: see [Customize the API client](/api-client/customizing).
+
+## Light and dark mode
+
+```ts title="orbitdocs.config.ts"
+theme: {
+  defaultMode: 'dark',
+  switch: { enabled: true, mode: 'light-dark-system' },
+},
+```
+
+- `defaultMode` is the scheme a first-time reader sees. `system` follows their operating system.
+- `switch.enabled: false` removes the switch from the header. Readers then always see `defaultMode`.
+- `switch.mode: 'light-dark-system'` adds a third "System" choice to the switch.
+- Readers can also press <kbd>D</kbd> to toggle light and dark mode (Fumadocs' theme hotkey). It is ignored while they type in a field or a dialog is open. `hotKey` picks another key; `hotKey: false` turns it off.
+
+## Change layout widths
+
+`theme.widths` takes any CSS length. Each value sets a Fumadocs layout variable; leave one out to keep the Fumadocs default.
+
+```ts title="orbitdocs.config.ts"
+theme: {
+  widths: { layout: '100rem', sidebar: '300px', toc: '260px' },
+},
+```
+
+| Key | CSS variable |
+| --- | --- |
+| `layout` | `--fd-layout-width` (the whole page) |
+| `sidebar` | `--fd-sidebar-width` |
+| `toc` | `--fd-toc-width` (the "On this page" column) |
+
+## Theme options
+
+<TypeTable
+  type={{
+    preset: {
+      type: "'orbit' | 'neutral' | 'black' | 'vitepress' | 'dusk' | 'catppuccin' | 'ocean' | 'purple' | 'solar' | 'emerald' | 'ruby' | 'aspen' | 'shadcn'",
+      description: 'Color preset for the guides, the API reference and the API client.',
+      default: "'orbit'",
+    },
+    accent: { type: 'string', description: "Accent color (any CSS color). Overrides the preset's primary color." },
+    defaultMode: { type: "'light' | 'dark' | 'system'", description: 'Color scheme for first-time readers.', default: "'system'" },
+    'switch.enabled': { type: 'boolean', description: 'Show the theme switch in the header.', default: 'true' },
+    'switch.mode': { type: "'light-dark' | 'light-dark-system'", description: 'Two-way or three-way switch.', default: "'light-dark'" },
+    'widths.layout': { type: 'string', description: 'Page width (any CSS length).' },
+    'widths.sidebar': { type: 'string', description: 'Sidebar width.' },
+    'widths.toc': { type: 'string', description: 'Table of contents width.' },
+  }}
+/>
+
+## Override colors with CSS
+
+Anything the config doesn't cover, you set in `app/global.css`, after the imports. Your rules load last, so they win.
+
+```css title="app/global.css"
+/* orbit preset: HeroUI variables are the source of every color. */
+:root {
+  --radius: 0.5rem;
+  --background: oklch(99% 0.005 250);
+  --border: oklch(88% 0.01 250);
+}
+
+.dark {
+  --background: oklch(15% 0.01 250);
+}
+
+/* HTTP method colors in the reference, the same for every preset. */
+:root {
+  --od-get: oklch(52% 0.15 200);
+}
+```
+
+Useful variables:
+
+| Variables | What they color |
+| --- | --- |
+| `--accent`, `--background`, `--foreground`, `--surface`, `--muted`, `--border`, `--radius` | HeroUI tokens. With `orbit`, Fumadocs follows them. |
+| `--color-fd-primary`, `--color-fd-background`, `--color-fd-border`, … | Fumadocs tokens. With any other preset, HeroUI follows them. |
+| `--od-get`, `--od-post`, `--od-put`, `--od-patch`, `--od-delete`, `--od-other` | Method badges in the reference and the client. |
+| `--od-required` | The "required" marker on parameters. |
+| `--od-code-bg`, `--od-request-bg`, `--od-request-fg`, `--od-request-border` | Code blocks and the request card. |
+
+<Callout type="warn">
+With a Fumadocs preset, set `--color-fd-*` tokens, not HeroUI ones. HeroUI variables are mapped from the Fumadocs tokens, so a HeroUI override only changes the reference and the client, not the guides.
+</Callout>
+
+## Go beyond the config
+
+The docs app is a normal Next.js + Fumadocs app. You can change any file `orbitdocs init` created:
+
+| What | Where |
+| --- | --- |
+| Colors, fonts, spacing | `app/global.css` |
+| Your own MDX components | `components` in `app/(guides)/[...slug]/page.tsx` |
+| Layout slots and sidebar components | `app/(guides)/layout.tsx` (use the Fumadocs layout directly) |
+| Fonts | `app/layout.tsx` (see [Branding](/customization/branding)) |
+| Syntax themes and MDX plugins | `mdxOptions` in `lib/source.ts` (see [Code blocks](/customization/code-blocks)) |
+| Pages of your own | Any route under `app/` |
+
+[All Fumadocs options](/customization/fumadocs-options) lists every Fumadocs option and where to set it.
+
+## Next steps
+
+<Cards>
+  <Card title="Layouts" href="/customization/layouts" description="Choose a page layout and set up the sidebar and TOC." />
+  <Card title="Branding" href="/customization/branding" description="Add your logo, favicon and fonts." />
+  <Card title="Configuration reference" href="/docs-reference/configuration" description="Every key of orbitdocs.config.ts." />
+</Cards>

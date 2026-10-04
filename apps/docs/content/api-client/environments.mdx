@@ -1,0 +1,135 @@
+---
+title: Environments
+description: Variables per environment, secret values, production checks, and the environments generated from your servers and mock.
+---
+
+An environment is a named set of variables, such as `baseUrl` and `apiKey`. Switch environment in the top bar and every request goes to another server with other credentials. The client creates one environment per server in your spec, so readers rarely start from scratch.
+
+## Pick an environment
+
+The menu in the top bar lists **No environment** and the environments of the current collection. The active one shows its color dot. A production environment also shows a red **prod** chip.
+
+You can also switch with the command palette (⌘ K, then "Use environment: …").
+
+## Generated environments
+
+For each server in the API's `servers`, the client creates an environment:
+
+| Field | Value |
+| --- | --- |
+| Name | The server's `description`, or its URL |
+| `baseUrl` | The server's URL |
+| Credential variables | One per credential of the API's security scheme, empty and secret |
+| Production | On when the URL or description contains `prod` or `live` |
+| Color | Red for production, otherwise green, blue, amber or violet in turn |
+
+The credential variables depend on the scheme: `apiKey`; `token`; `username` and `password`; or `clientId` and `clientSecret` for OAuth 2.0 client credentials.
+
+Without any server, there is one environment named **Same origin**, with an empty `baseUrl`.
+
+When the spec changes, generated environments keep the reader's values and gain any new variables.
+
+```ts title="docs/orbitdocs.config.ts"
+servers: [
+  { url: 'http://localhost:3010', description: 'Local' },
+  { url: 'https://api.orbit-travel.example', description: 'Production' },
+],
+```
+
+This config gives two environments: **Local** and **Production**, the second one marked production.
+
+## Edit environments
+
+Open **Environments** from the rail, or press ⌘ E.
+
+<Steps>
+<Step>
+
+Pick **Globals** or an environment in the list. **New environment** adds one with an empty `baseUrl`.
+
+</Step>
+<Step>
+
+Edit the variables. Each row has an on/off checkbox, a name, a value, a **Secret** switch and a delete button. Type in the empty last row to add a variable.
+
+</Step>
+<Step>
+
+Rename the environment in its title field, pick a color, and turn **Production — ask before sending** on or off.
+
+</Step>
+<Step>
+
+Press **Use this environment** to make it active, or **Delete** to remove it.
+
+</Step>
+</Steps>
+
+## How variables resolve
+
+When the client meets `{{name}}`, it looks in this order and uses the first value it finds:
+
+1. Request variables set by a script with `pm.variables.set` (in the runner, they carry to the next request).
+2. The active environment.
+3. Globals.
+
+Variables that are switched off are skipped. A name found nowhere stays as `{{name}}` in the request, and its chip turns red.
+
+**Globals** are available with any environment, in every collection. Use them for values that don't change per server, such as a user id you test with.
+
+## Secret variables
+
+Turn on **Secret** for keys, tokens and passwords:
+
+- The value is masked. The eye button in the header shows all values.
+- The value is stored apart from the rest of the workspace, in this browser only.
+- **Export workspace** writes secret variables with an empty value.
+- Code snippets and **Copy as cURL** show `{{name}}` instead of the value, unless you ask for real values. See [Copy the request as code](/api-client/requests#copy-the-request-as-code).
+
+Credential variables of generated environments are secret from the start.
+
+### Keys from the reference
+
+When a reader enters a key in the reference's **Authentication** card and presses **Test Request**, the key fills the matching variable: `apiKey`, `token`, or `username` and `password`. It only fills variables that are still empty; a value the reader set in the client wins.
+
+## Production environments
+
+An environment marked **Production** asks before each send: "Send to Production? This environment is marked as production. The request will run against real data."
+
+The check is on by default. Readers can turn it off with **Confirm before sending to production** in [settings](/api-client/customizing).
+
+## The mock server environment
+
+With `mock` in the config, the reference and the client get a **Mock server** environment:
+
+```ts title="docs/orbitdocs.config.ts"
+mock: {
+  port: 4010,
+  url: 'https://mock.orbit-travel.example', // optional: a hosted mock
+},
+```
+
+| Situation | Mock server environment |
+| --- | --- |
+| `orbitdocs dev` with `mock` set | Added, with `baseUrl` `http://localhost:<port>` (port `4010` by default) |
+| A build with `mock.url` set | Added, with `baseUrl` set to `mock.url` |
+| A build without `mock.url` | Not added: a production site never points at localhost |
+| `mock.client: false` | Never added |
+
+Its credential variables are pre-filled with `mock-credentials`, because the mock accepts any key. Start the mock with `orbitdocs mock`. See [Mock server](/sdks/mock-server).
+
+## Variables written by scripts
+
+Scripts can set and unset variables with `pm.environment.set(…)` and `pm.globals.set(…)`. After the request, the client saves them to the active environment or globals and shows a notice such as "Saved `{{id}}` to Local". With **No environment** active, environment writes are not saved. See [Scripts and tests](/api-client/scripts).
+
+## Turn environments off
+
+Set `client.features.environments: false` to hide the **Environments** view, its shortcut and its palette entry. The environment menu in the top bar stays, so readers can still switch between generated environments. See [Customizing](/api-client/customizing).
+
+## Next steps
+
+<Cards>
+  <Card title="Scripts and tests" href="/api-client/scripts" description="Set variables from responses." />
+  <Card title="Authentication" href="/api-reference/authentication" description="Security schemes that create credential variables." />
+  <Card title="Mock server" href="/sdks/mock-server" description="Run a mock of your API." />
+</Cards>

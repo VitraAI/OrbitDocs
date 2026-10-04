@@ -1,0 +1,186 @@
+---
+title: OrbitDocs
+description: Open-source API docs for NestJS. A Scalar-style reference from your controllers, guides in MDX, a built-in API client, private docs, Ask AI and SDKs. Self-hosted, free, MIT.
+layout: landing
+---
+
+<Hero
+  logo={<AnimatedLogo size={64} loop title="OrbitDocs" />}
+  badge="Open source · MIT · every feature free"
+  badgeHref="https://github.com/VitraAI/OrbitDocs"
+  title="API docs that live in your NestJS repo"
+  highlight="your NestJS repo"
+  description="Keep the @nestjs/swagger decorators you already have. OrbitDocs turns them into a Scalar-style reference, adds MDX guides, a built-in API client, private docs, Ask AI and SDKs, and ships one site you host anywhere."
+  backdrop="glow-grid"
+  align="center"
+  actions={[
+    { text: 'Get started', href: '/get-started/quickstart', icon: 'rocket' },
+    { text: 'Live demo', href: '/reference/demo', icon: 'play' },
+  ]}
+  footnote={<VitraCredit />}
+>
+  <ExtractDemo />
+</Hero>
+
+<Logos title="Works with the stack you already run" marquee>
+  <Logo name="NestJS" icon="SiNestjs" />
+  <Logo name="Next.js" icon="SiNextdotjs" />
+  <Logo name="OpenAPI" icon="SiOpenapiinitiative" />
+  <Logo name="Vercel" icon="SiVercel" />
+  <Logo name="Docker" icon="SiDocker" />
+  <Logo name="GitHub" icon="SiGithub" />
+  <Logo name="GitLab" icon="SiGitlab" />
+  <Logo name="PostgreSQL" icon="SiPostgresql" />
+  <Logo name="Okta" icon="SiOkta" />
+  <Logo name="Auth0" icon="SiAuth0" />
+  <Logo name="Keycloak" icon="SiKeycloak" />
+  <Logo name="Supabase" icon="SiSupabase" />
+  <Logo name="Firebase" icon="SiFirebase" />
+  <Logo name="Clerk" icon="SiClerk" />
+  <Logo name="Anthropic" icon="SiAnthropic" />
+</Logos>
+
+<Flow
+  eyebrow="How it works"
+  title="From controller to docs site in three steps"
+  description="No second source of truth. The docs read your Nest app the way Swagger does, then build a site you own."
+  align="center"
+>
+  <FlowStep icon="code" title="Describe your API">
+    Use the `@nestjs/swagger` decorators you already have, or add OrbitDocs extras for samples, errors and notes.
+  </FlowStep>
+  <FlowStep icon="scan-search" title="Extract the spec">
+    `orbitdocs extract` boots your module in Nest's preview mode. No provider starts, so no database or queue is touched.
+  </FlowStep>
+  <FlowStep icon="rocket" title="Ship the site">
+    `orbitdocs build` writes a static site for any host, or serve it from your own Nest app with private docs and Ask AI.
+  </FlowStep>
+</Flow>
+
+<Showcase
+  eyebrow="The product"
+  title="One site for everything your developers need"
+  description="Reference, client, guides, AI and access control share one navigation, one search and one theme."
+>
+  <ShowcaseItem title="API reference" icon="book-open" description="One scrolling page like Scalar, plus a pre-rendered URL per operation. Samples in 10 languages and your generated SDKs.">
+    <BrowserFrame url="docs.orbit-travel.dev/reference" src="/screens/reference-light.webp" srcDark="/screens/reference-dark.webp" alt="The Orbit Travel API reference" tilt={false} />
+  </ShowcaseItem>
+  <ShowcaseItem title="API client" icon="send" description="Send real requests from the docs: environments, variables, collections, scripts and history. Run `orbitdocs mock` and a mock server environment appears.">
+    <BrowserFrame url="docs.orbit-travel.dev/client" src="/screens/client-light.webp" srcDark="/screens/client-dark.webp" alt="The built-in API client" tilt={false} />
+  </ShowcaseItem>
+  <ShowcaseItem title="Ask AI and MCP" icon="sparkles" description="Answers grounded in your guides and spec, with citations. The same content as an MCP server for Claude, Cursor and other agents.">
+    <BrowserFrame url="docs.orbit-travel.dev/docs" src="/screens/ask-ai-light.webp" srcDark="/screens/ask-ai-dark.webp" alt="Ask AI answering a question with citations" tilt={false} />
+  </ShowcaseItem>
+  <ShowcaseItem title="Private docs" icon="lock-keyhole" description="Sign in with Google, Microsoft, Okta, Auth0, Clerk or Keycloak, or reuse the login your product already has.">
+    <BrowserFrame url="docs.orbit-travel.dev/login" src="/screens/login-light.webp" srcDark="/screens/login-dark.webp" alt="The private docs sign-in page" tilt={false} />
+  </ShowcaseItem>
+  <ShowcaseItem title="Self-hosted platform" icon="server" description="Projects, previews per pull request, custom domains, a spec registry, analytics, SSO and SCIM in one Docker Compose file.">
+    <BrowserFrame url="docs.example.com" src="/screens/platform-light.webp" srcDark="/screens/platform-dark.webp" alt="The OrbitDocs platform dashboard" tilt={false} />
+  </ShowcaseItem>
+</Showcase>
+
+<Bento
+  eyebrow="Everything in the box"
+  title="Every feature, free, on your own servers"
+  description="No account, no pricing tier, nothing behind a paywall. Turn on what you need in one config file."
+>
+  <BentoItem size="lg" icon="book-open" title="A reference developers enjoy" description="Grouped operations, schemas you can expand, request and response examples, and try-it on every endpoint." href="/api-reference">
+
+```ts title="orbitdocs.config.ts"
+export default defineConfig({
+  site: { title: 'Orbit Travel' },
+  apis: [{
+    id: 'travel',
+    source: { nest: { module: 'dist/app.module.js', routes: 'all' } },
+  }],
+});
+```
+
+  </BentoItem>
+  <BentoItem size="sm" icon="pen-line" title="Guides in MDX" description="Callouts, steps, tabs and links to operations that never break." href="/writing" />
+  <BentoItem size="md" icon="package" title="SDKs in six languages" description="TypeScript, Python, Go, Java, C# and PHP, regenerated by CI when the spec changes." href="/sdks">
+    <Terminal title="sdk" lines={['$ npx orbitdocs sdk', '✓ typescript  sdks/travel/typescript', '✓ python      sdks/travel/python', '✓ go          sdks/travel/go', '✓ 36 samples added to the reference']} />
+  </BentoItem>
+  <BentoItem size="md" icon="flask-conical" title="Mock server" description="Realistic responses from your spec, request validation and custom handlers." href="/sdks/mock-server">
+    <Terminal title="mock" lines={['$ npx orbitdocs mock', '✓ Mock server on http://localhost:4010', '→ POST /v1/bookings  201 Created', '→ POST /v1/bookings  422 seats must be an array']} />
+  </BentoItem>
+  <BentoItem size="sm" icon="send" title="API client" description="Environments, collections and history, built into the docs." href="/api-client" />
+  <BentoItem size="sm" icon="lock-keyhole" title="Private docs" description="Six SSO providers or your product's own login." href="/private-docs" />
+  <BentoItem size="sm" icon="sparkles" title="Ask AI and MCP" description="OpenAI, Anthropic, Google or any compatible model." href="/ai" />
+</Bento>
+
+<CodeShowcase
+  eyebrow="Quickstart"
+  title="An existing Nest app to a docs site in one command"
+  description="orbitdocs init adds a docs app next to your API and asks which routes to show: only the ones you mark, or everything @nestjs/swagger already documents."
+  actions={[
+    { text: 'Read the quickstart', href: '/get-started/quickstart' },
+    { text: 'CLI reference', href: '/docs-reference/cli', variant: 'secondary' },
+  ]}
+>
+  <Terminal
+    title="my-nest-api"
+    lines={[
+      '$ npx orbitdocs init',
+      '? Which routes should the docs show?',
+      '  2) Every route @nestjs/swagger documents',
+      '✓ Created docs/',
+      '$ cd docs && npm install',
+      '$ npx orbitdocs dev',
+      '✓ travel: 12 operations',
+      '▲ Ready on http://localhost:3000',
+    ]}
+  />
+</CodeShowcase>
+
+<Stats>
+  <Stat value="10" label="code sample languages" />
+  <Stat value="6" label="SDK languages" />
+  <Stat value="10" label="ways to sign in readers" />
+  <Stat value="0" label="features behind a paywall" />
+</Stats>
+
+<Comparison
+  eyebrow="Compared"
+  title="Everything Scalar sells, on your own servers"
+  description="Scalar's reference and client are open source; its docs, registry, SDK and MCP products are hosted only. OrbitDocs gives you all of them to run yourself."
+  columns={['OrbitDocs', 'Scalar']}
+  rows={[
+    { feature: 'API reference and API client', values: [true, true] },
+    { feature: 'Guides in MDX', values: [true, true] },
+    { feature: 'Self-hosted docs site', note: 'static export, your own server or Docker', values: [true, false] },
+    { feature: 'Served from your NestJS app', values: [true, false] },
+    { feature: 'Private docs with SSO', values: [true, 'Paid plan'] },
+    { feature: 'Reuse your product login', note: 'Supabase, Clerk, Firebase, Appwrite', values: [true, false] },
+    { feature: 'Ask AI and MCP server', values: [true, 'Paid plan'] },
+    { feature: 'SDK generation', values: [true, 'Paid plan'] },
+    { feature: 'GitLab sync and previews', values: [true, false] },
+    { feature: 'SCIM and audit log', values: [true, false] },
+    { feature: 'Price', values: ['Free, MIT', 'Per seat'] },
+  ]}
+/>
+
+<Features
+  eyebrow="Live demo"
+  title="Try it on a real API"
+  description="Orbit Travel is a sample NestJS API documented with OrbitDocs: bookings, payments, seats, loyalty and webhooks."
+>
+  <Feature icon="book-open" title="Read the reference" href="/reference/demo">
+    Every endpoint with schemas, examples and samples in 10 languages and the generated SDKs.
+  </Feature>
+  <Feature icon="send" title="Send a request" href="/client">
+    Open the API client with the Orbit Travel collection ready to run against the mock server.
+  </Feature>
+  <Feature icon="SiGithub" title="Read the source" href="https://github.com/VitraAI/OrbitDocs/tree/main/examples/nest-sample">
+    The Nest app, its decorators and the docs app that builds this demo.
+  </Feature>
+</Features>
+
+<CallToAction
+  title="Ship docs your developers want to read"
+  description="Five minutes from an existing NestJS app to a searchable, deployable docs site."
+  actions={[
+    { text: 'Get started', href: '/get-started/quickstart', icon: 'rocket' },
+    { text: 'Star on GitHub', href: 'https://github.com/VitraAI/OrbitDocs', icon: 'SiGithub', variant: 'secondary' },
+  ]}
+/>

@@ -1,0 +1,193 @@
+---
+title: Static hosts
+description: Upload the out/ folder to Netlify, GitHub Pages, Cloudflare Pages, S3 + CloudFront or nginx.
+---
+
+A static build is a folder of plain files. Any host that serves files works. This page lists the settings each common host needs.
+
+## Build the site
+
+```bash
+cd docs
+npx orbitdocs build
+```
+
+The site is in `out/`. Every page is a folder with an `index.html` (`/quickstart/` is `out/quickstart/index.html`), and `out/404.html` is the not-found page.
+
+`orbitdocs deploy --target static` runs the same build and prints where to upload. It does not upload anything.
+
+<Callout type="warn" title="Set basePath before you build">
+  If the host serves the site under a path, such as `https://acme.github.io/payments/`, set `output.basePath: '/payments'` and build again.
+  Links and assets point at the wrong place otherwise.
+</Callout>
+
+## What every host needs
+
+| Need | Why |
+| --- | --- |
+| Serve `out/` as the site root (or at `basePath`) | All files are relative to it. |
+| Resolve `/page/` to `/page/index.html` | Pages are folders. Most hosts do this by default. |
+| Serve `404.html` for missing paths | The site ships its own not-found page. |
+| No build step on the host, or one that runs `orbitdocs build` | Extraction compiles your Nest app, so the host needs it too. Building locally or in CI is simpler. |
+
+Redirects from the `redirects` config are written two ways:
+
+- A small HTML page per redirect without a `*`. It forwards the reader on any host.
+- An `out/_redirects` file with every rule, wildcards included. Netlify and Cloudflare Pages read it. Other hosts ignore it.
+
+## Netlify
+
+<Tabs items={['Drag and drop', 'CLI', 'Git build']}>
+<Tab value="Drag and drop">
+
+Build locally, then drop the `out` folder onto **Sites → Add new site → Deploy manually** in the Netlify app.
+
+</Tab>
+<Tab value="CLI">
+
+```bash
+npx orbitdocs build
+npx netlify-cli deploy --dir out --prod
+```
+
+</Tab>
+<Tab value="Git build">
+
+Set the base directory to the docs app and run the Nest install first, because extraction compiles the API:
+
+```toml title="docs/netlify.toml"
+[build]
+  command = "npm ci --prefix .. && npx orbitdocs build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "22"
+```
+
+</Tab>
+</Tabs>
+
+Netlify reads `out/_redirects`, so wildcard redirects work.
+
+## Cloudflare Pages
+
+Build locally and upload with Wrangler:
+
+```bash
+npx orbitdocs build
+npx wrangler pages deploy out --project-name acme-docs
+```
+
+To build on Cloudflare instead, set the root directory to `docs`, the build command to `npm ci --prefix .. && npx orbitdocs build`, the output directory to `out`, and `NODE_VERSION` to `22`. Cloudflare Pages reads `out/_redirects`.
+
+## GitHub Pages
+
+A project site lives under the repository name, for example `https://acme.github.io/payments/`. Set the base path to match:
+
+```ts title="docs/orbitdocs.config.ts"
+output: { mode: 'static', basePath: '/payments' },
+```
+
+Deploy with GitHub Actions. This workflow builds the Nest app and the docs, then publishes `docs/out`:
+
+```yaml title=".github/workflows/pages.yml"
+name: Docs
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm ci
+        working-directory: docs
+      - run: npx orbitdocs build
+        working-directory: docs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/out
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+```
+
+In the repository settings, set **Pages → Source** to **GitHub Actions**.
+
+<Callout type="warn" title="Jekyll hides the _next folder">
+  The site's scripts live in `out/_next/`. The old "Deploy from a branch" mode runs Jekyll, which drops folders that start with `_`.
+  Use the Actions workflow above, or add an empty `out/.nojekyll` file before you push the folder.
+</Callout>
+
+GitHub Pages ignores `_redirects`. Only redirects without `*` work there.
+
+## S3 + CloudFront
+
+```bash
+npx orbitdocs build
+aws s3 sync out/ s3://acme-docs --delete
+aws cloudfront create-invalidation --distribution-id E123EXAMPLE --paths "/*"
+```
+
+CloudFront only maps `/` to `index.html` on its own. For `/quickstart/` to load `quickstart/index.html`, do one of these:
+
+- Use the bucket's **static website endpoint** as the CloudFront origin. It resolves folder index files.
+- Keep the REST endpoint and add a CloudFront Function on viewer requests that appends `index.html` to paths ending in `/`.
+
+Set the distribution's custom error response for 404 to `/404.html`.
+
+## nginx
+
+Copy `out/` to the server and point a `location` at it:
+
+```nginx title="/etc/nginx/conf.d/docs.conf"
+server {
+  listen 80;
+  server_name docs.acme.com;
+  root /var/www/docs;
+
+  location / {
+    try_files $uri $uri/ $uri.html =404;
+  }
+
+  error_page 404 /404.html;
+}
+```
+
+With `basePath: '/docs'`, serve the folder under that path:
+
+```nginx title="/etc/nginx/conf.d/docs.conf"
+location /docs {
+  alias /var/www/docs/;
+  try_files $uri $uri/ $uri.html =404;
+}
+error_page 404 /docs/404.html;
+```
+
+This is the same config `orbitdocs deploy --target docker` writes. See [Docker](/deploy/docker) for a ready image.
+
+## Private docs and Ask AI
+
+A static host cannot check who is reading or call an LLM. Gated pages are served to everyone, and the Ask AI button stays hidden. When you need either feature, deploy with [server mode](/deploy/server-mode), [inside your Nest app](/deploy/nest) or on the [platform](/platform).
+
+## Next steps
+
+<Cards>
+  <Card title="Docker" href="/deploy/docker" description="An nginx image of the static build, generated for you." />
+  <Card title="Server mode" href="/deploy/server-mode" description="Run the docs as a Next server for private docs and Ask AI." />
+  <Card title="Troubleshooting" href="/help/troubleshooting" description="Broken links after deploy, missing assets and other fixes." />
+</Cards>

@@ -1,0 +1,113 @@
+---
+title: Code samples
+description: The code samples on every operation, the 10 generated languages, your own samples and SDK samples.
+---
+
+Every operation shows a request sample in the right column. OrbitDocs generates it in 10 languages from the spec. You can add your own samples, and `orbitdocs sdk` can add a sample for each SDK it builds.
+
+## Generated samples
+
+| Language | Tab label | Library used |
+| --- | --- | --- |
+| Shell | Shell | curl |
+| Node.js | Node.js | fetch |
+| Python | Python | requests |
+| Go | Go | net/http |
+| Java | Java | OkHttp |
+| PHP | PHP | Guzzle |
+| Ruby | Ruby | net/http |
+| C# | C# | HttpClient |
+| Rust | Rust | reqwest |
+| Swift | Swift | URLSession |
+
+The first five appear as tabs in the **Client Libraries** card; the rest are under **More**. Each operation's sample card has a language menu with all of them.
+
+### What a sample contains
+
+Samples are built from the operation's examples, so they run as shown:
+
+- **URL.** The first server in `servers`, plus the path. Path parameters use their example, default or first enum value.
+- **Query and headers.** Required ones always, optional ones only when they have an example. This keeps samples short.
+- **Body.** The request body's example. Without one, an example is generated from the schema. Multipart bodies list each field; file fields become a file upload.
+- **Auth.** A placeholder for the operation's security scheme: `YOUR_API_KEY`, `Bearer YOUR_TOKEN` or a Basic header. When a reader enters a credential, it replaces the placeholder. See [Authentication](/api-reference/authentication).
+
+<Callout type="info" title="Better examples, better samples">
+  A sample shows `"string"` wherever the spec has no example. Add `@example` in JSDoc or `example` in `@ApiProperty`. [Completeness](/api-reference/completeness) lists every field still missing one.
+</Callout>
+
+### The reader's language
+
+The language a reader picks applies to every operation and is remembered in their browser. To keep pages small, each page carries one sample per operation. When a reader picks another language, the samples for every operation load once from `/reference-samples/<api id>.json`.
+
+## Add your own samples
+
+Hand-written samples come first, before the generated ones. In a Nest app, use `@DocsSamples`:
+
+```ts title="src/bookings/bookings.controller.ts"
+@Post()
+@DocsOperation({ group: 'Bookings', title: 'Create a booking', order: 1 })
+@DocsSamples([
+  {
+    lang: 'typescript',
+    label: 'TypeScript SDK',
+    source: [
+      'const booking = await orbit.bookings.create({',
+      "  flightId: 'flt_2031_proxima',",
+      "  cabin: 'economy',",
+      "  passengers: [{ name: 'Ada Lovelace', email: 'ada@example.com' }],",
+      '});',
+    ].join('\n'),
+  },
+])
+create(@Body() dto: CreateBookingDto) {}
+```
+
+In a spec file, use the `x-codeSamples` extension on the operation. `x-code-samples` also works:
+
+```yaml title="specs/billing.yaml"
+paths:
+  /invoices:
+    post:
+      operationId: createInvoice
+      x-codeSamples:
+        - lang: typescript
+          label: TypeScript SDK
+          source: |
+            const invoice = await billing.invoices.create({ customerId: 'cus_42' });
+```
+
+| Field | Required | What it is |
+| --- | --- | --- |
+| `lang` | Yes | Highlighting language, such as `typescript`, `python`, `go`, `shell`, `java`, `kotlin`, `php`, `ruby`, `csharp`, `rust`, `swift`, `json` or `http`. Others show as plain text. |
+| `label` | No | The name in the language menu. Defaults to `lang`. |
+| `source` | Yes | The code. |
+
+<Callout type="info" title="Use the same label everywhere">
+  The reader's choice is stored by label. A reader who picks "TypeScript SDK" on one operation sees it on every operation that has one. Elsewhere they see the first generated language.
+</Callout>
+
+## SDK samples
+
+When you generate SDKs with `orbitdocs sdk`, it also writes a sample per operation for each SDK to `.orbitdocs/sdk-samples.json`. The reference adds them as samples labeled `TypeScript SDK`, `Python SDK`, `Go SDK`, `Java SDK`, `C# SDK` and `PHP SDK`.
+
+```ts title="docs/orbitdocs.config.ts"
+sdks: {
+  typescript: { package: '@orbit-travel/sdk' },
+  python: { package: 'orbit_travel' },
+  samples: true, // the default; false keeps SDK samples out of the reference
+},
+```
+
+A hand-written sample with the same label wins over the generated SDK sample. See [SDK samples](/sdks/samples).
+
+## Samples in the API client
+
+The API client's **Code** tab generates a snippet for the request as you edited it, with your variables resolved. It offers cURL, JavaScript, Node.js, Python, Go, PHP, Ruby and C#. See [Requests](/api-client/requests#copy-the-request-as-code).
+
+## Next steps
+
+<Cards>
+  <Card title="Authentication" href="/api-reference/authentication" description="How a reader's key fills every sample." />
+  <Card title="Generate SDKs" href="/sdks" description="orbitdocs sdk and its languages." />
+  <Card title="Decorators" href="/nestjs/decorators#docssamples" description="@DocsSamples in detail." />
+</Cards>

@@ -1,0 +1,77 @@
+---
+title: Spec registry
+description: Every published version of every API spec, numbered, linted with Spectral and downloadable, with an optional gate on lint errors.
+---
+
+The registry keeps a history of your API specs. Each production publish stores the spec of every API it carries, when it changed. You can see what was live when, read its lint report and download the exact JSON.
+
+## How versions are stored
+
+On every **production** publish, for each `openapi/<id>.json` in the upload:
+
+1. The spec is normalized (keys sorted) and hashed.
+2. If the hash equals the latest stored revision of that API, nothing is stored. The publish output says `unchanged (revision 4)`.
+3. Otherwise a new revision is stored: `revision` goes up by one per API, starting at 1.
+
+| Field | Source |
+| --- | --- |
+| API id | The spec file name, which is the `id` in `apis` |
+| Revision | `r1`, `r2`, … per API |
+| Version | The spec's `info.version` (`0.0.0` when missing) |
+| Title | The spec's `info.title` |
+| Operations | Count of operations in `paths` |
+| Lint | Spectral errors and warnings, plus up to 200 problems |
+| Published by | The signed-in user, when there was one |
+
+Previews never add registry versions. Rolling back changes the live site, not the registry.
+
+## Browse the registry
+
+Open the project's **Registry** tab. Each API lists its revisions newest first, with the version, operation count, lint result and age. The newest has a **Latest** badge.
+
+**View** opens a revision with its lint problems and the full spec. **Download** saves it as `<api>-r<revision>-v<version>.json`.
+
+The same data is available to viewers through the API:
+
+```bash
+# Every revision of every API
+curl -b od_platform=… https://docs.acme.com/api/projects/payments/registry
+
+# One revision, as a file
+curl -b od_platform=… "https://docs.acme.com/api/projects/payments/registry/payments/4?download" -o payments-r4.json
+```
+
+These endpoints use the dashboard session cookie (`od_platform`), not a publish token.
+
+## Lint rules
+
+Every spec is linted with Spectral's recommended OpenAPI rules (`spectral:oas`). Errors and warnings are counted per revision.
+
+<Callout type="info" title="Your own ruleset runs in the CLI">
+  The registry always uses the recommended rules. A custom `lint.ruleset` from `orbitdocs.config.ts` applies to `orbitdocs lint`, not to the registry.
+  Run `orbitdocs lint` in CI before publishing to enforce your own rules. See [Linting](/sdks/linting).
+</Callout>
+
+## Block publishes on lint errors
+
+An admin can turn on **Settings → General → Lint Gate**: "Block production publishes with lint errors".
+
+With it on, a production publish whose specs have any Spectral **error** is refused before anything is stored:
+
+```text
+✗ Publish failed (400): Lint errors block this publish: payments (2). <path>: <message>; <path>: <message>
+```
+
+The message names each failing API with its error count, then up to three of the errors.
+
+- Warnings never block.
+- Previews always publish, gate or not. Their lint counts show on the deployment, the build and the Git sync pull or merge request comment, so reviewers see the errors before merging.
+- Git sync builds fail the same way and set a failed commit status.
+
+## Next steps
+
+<Cards>
+  <Card title="Publishing" href="/platform/publishing" description="Production publishes and previews." />
+  <Card title="Linting" href="/sdks/linting" description="Run Spectral locally with your own ruleset." />
+  <Card title="Completeness checks" href="/api-reference/completeness" description="Fail the build when operations lack descriptions or examples." />
+</Cards>

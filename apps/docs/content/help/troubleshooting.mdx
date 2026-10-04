@@ -1,0 +1,219 @@
+---
+title: Troubleshooting
+description: Fixes for the problems people actually hit, from installing and extracting to deploying and running the platform.
+---
+
+Find the message or symptom you see, then apply the fix. Each entry says why it happens, so you can spot related problems.
+
+## Install and setup
+
+### pnpm or the CLI fails on Node 20
+
+**Symptom:** installs fail, or `pnpm` errors before doing anything.
+
+OrbitDocs needs **Node 22.12 or later**. The repository pins pnpm 11, which doesn't run on Node 20.
+
+```bash
+node -v            # must print v22.12 or later
+nvm install 22 && nvm use 22
+```
+
+### "No orbitdocs config in …"
+
+```text
+No orbitdocs config in /app. Expected one of: orbitdocs.config.ts, orbitdocs.config.mts, orbitdocs.config.js, orbitdocs.config.mjs. Run `orbitdocs init` to create one.
+```
+
+Every command except `init` reads the config from the **current folder**. Run it in the docs app folder (`cd docs`), not in the Nest project root.
+
+### "… is not empty (use --force to write into it)."
+
+`orbitdocs init` won't overwrite an existing folder. Pick another with `--dir`, or pass `--force` to write into it.
+
+### Port 3000 is already in use
+
+`orbitdocs dev` starts Next on port 3000, which is also Nest's default. Pick another port:
+
+```bash
+npx orbitdocs dev -p 3001
+```
+
+Other default ports: the mock server uses `4010`, the platform `8080`, its Postgres `5433` on the host, and Caddy `80` and `443`. Change the mock with `-p` or `mock.port`. For the platform, edit the `ports` in `docker-compose.yml` or stop whatever holds the port.
+
+## Extraction
+
+### "Compiled module not found"
+
+```text
+Compiled module not found: /app/dist/app.module.js. Build the app first (e.g. `nest build`), or set `build` in the config.
+```
+
+Extraction loads your **compiled** Nest module, not the TypeScript sources. Either build the app before extracting, or let OrbitDocs do it:
+
+```ts title="orbitdocs.config.ts"
+source: { nest: { module: 'dist/app.module.js', build: 'nest build' } },
+```
+
+Also check `module` and `root`: the path is relative to `root`, which defaults to `..` (the folder above the docs app).
+
+### "@orbitdocs/nestjs is not installed in …"
+
+The extractor runs inside your Nest project so both share one copy of Nest. Install the package in the Nest app (not only in the docs app):
+
+```bash
+npm install @orbitdocs/nestjs
+```
+
+### "… has no export named "AppModule""
+
+Your root module has another name. Set it:
+
+```ts title="orbitdocs.config.ts"
+source: { nest: { module: 'dist/main.module.js', export: 'MainModule' } },
+```
+
+### Extraction fails on a missing environment variable
+
+Preview mode starts no providers, so nothing connects to a database. Code that runs on import still runs, such as `ConfigModule` validation or a module-level `process.env.X!`. Give it placeholders:
+
+```ts title="orbitdocs.config.ts"
+source: { nest: { module: 'dist/app.module.js', env: { DATABASE_URL: 'postgres://placeholder' } } },
+```
+
+### The reference is empty, or routes are missing
+
+With `routes: 'opt-in'` (the default) only routes marked with `@DocsOperation()` appear. Either mark them, or show everything `@nestjs/swagger` documents:
+
+```ts title="orbitdocs.config.ts"
+source: { nest: { module: 'dist/app.module.js', routes: 'all' } },
+```
+
+With `routes: 'all'`, hide internal routes with `@ApiExcludeEndpoint()` or `@DocsHidden()`.
+
+### Routes appear without their global prefix or version
+
+Extraction doesn't run `main.ts`, so mirror what it does: `globalPrefix` for `app.setGlobalPrefix()`, `versioning` for URI versioning, and `configure` for anything else. See [Extraction](/nestjs/extraction).
+
+### "Schemas are referenced but not defined: …"
+
+A DTO is referenced by name but never registered with Swagger. Register it with `@ApiExtraModels(MyDto)` or give the property an explicit type.
+
+### "Documentation gaps (completeness: error)."
+
+With `completeness: 'error'`, operations without descriptions, examples or typed success responses fail the build. The CLI lists each gap. Fix them, or set `completeness: 'warn'` while you work. See [Completeness](/api-reference/completeness).
+
+## Building
+
+### "useOverlayTrigger is not a function" during next build
+
+Next.js 16.3's production builds with Turbopack scope hoisting bind a react-aria module's exports to the wrong module. HeroUI modals and drawers (used on `/client`) then fail to prerender.
+
+`withOrbitDocs` turns scope hoisting off for you (`experimental.turbopackScopeHoisting: false`). You only see this error if your `next.config.ts` turns it back on through its own `experimental` settings. Remove that line.
+
+### "N broken reference(s)."
+
+`orbitdocs build` runs `orbitdocs check` first. An `op:` link, an `<Endpoint>` or a `reference/<api>/<operation>.mdx` file points at an operation that no longer exists, often after a route was renamed. Run `npx orbitdocs check` to list them, then fix the slugs.
+
+### Invalid config
+
+```text
+Invalid orbitdocs config:
+  - output.basePath: empty or /segment[/segment]
+```
+
+Every problem is listed with its path. Common ones: a trailing slash in `basePath` (`/docs/` must be `/docs`), uppercase in an API `id`, and an access group used in `rules` but missing from `groups`.
+
+## Deploying
+
+### Pages load without styles, or links 404 after deploy
+
+The site was built for one path and served at another. `output.basePath` is baked into every link at build time. Set it to the exact path the host serves the site on (for GitHub project pages, `/<repository>`), then build again. With Nest, `mountOrbitDocs`'s `path` must equal `basePath`.
+
+### GitHub Pages serves the HTML but no scripts
+
+The "Deploy from a branch" mode runs Jekyll, which drops the `_next/` folder. Deploy with the GitHub Actions workflow on [Static hosts](/deploy/static-hosts), or add an empty `.nojekyll` file to `out/`.
+
+### Private pages are readable by everyone
+
+A static host serves every file; it can't check who is reading. The build warns:
+
+```text
+! Private docs are enforced by the server that serves them: mountOrbitDocs (Nest) or output.mode "server". Plain static hosts serve every file.
+```
+
+Serve the docs from your [Nest app](/deploy/nest), switch to [server mode](/deploy/server-mode), or host them on the [platform](/platform).
+
+### "Target "…" needs output.mode 'static'."
+
+Only `--target vercel` deploys server mode. For the other targets, set `output.mode: 'static'`.
+
+### "mountOrbitDocs supports the Express adapter in this version."
+
+`mountOrbitDocs` doesn't work with `@nestjs/platform-fastify`. Use a static host or server mode for the docs.
+
+### "OrbitDocs build not found at …"
+
+`mountOrbitDocs` couldn't find the build folder. Run `orbitdocs build`, and check that `root` resolves from the compiled `main.js`: `join(__dirname, '../docs/out')` from `dist/main.js`.
+
+## Private docs and Ask AI
+
+### "ORBITDOCS_AUTH_SECRET must be set to a random string of at least 32 characters"
+
+The serving process has no session secret, or a short one. Set it where the docs are served (the Nest app, the Next server or the platform), not where they are built:
+
+```bash
+export ORBITDOCS_AUTH_SECRET=$(openssl rand -hex 32)
+```
+
+### "… is not set (client secret for …)" or "… is not set (API key for Ask AI)"
+
+The variable named by `clientSecretEnv` or `ai.apiKeyEnv` is missing on the serving process. See [Environment variables](/docs-reference/environment-variables).
+
+### The SSO callback fails behind a proxy
+
+Callback URLs are built from the request's origin. When a proxy rewrites the `Host` header, pass the public origin: `mountOrbitDocs(app, { …, auth: { publicUrl: 'https://docs.acme.com' } })` or `orbitProxy({ publicUrl: 'https://docs.acme.com' })`.
+
+## Platform
+
+### The browser warns about the certificate on localhost
+
+Public certificate authorities don't issue for `localhost`, so Caddy signs those certificates with its own authority. Trust its root once:
+
+```bash title="apps/platform"
+docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain caddy-root.crt   # macOS
+```
+
+Linux and Windows commands are on [Install](/platform/install). Restart the browser afterwards.
+
+### The platform won't start: "PLATFORM_SECRET must be a random string of at least 32 characters"
+
+Set `PLATFORM_SECRET` in `apps/platform/.env` (`openssl rand -hex 32`) and run `docker compose up -d` again.
+
+### A custom domain has no certificate
+
+Caddy only requests certificates for verified domains. Select **Refresh** in **Settings → Domains** until it shows **Valid Configuration**. With TXT verification, also point an `A`/`AAAA` record at the server. Ports `80` and `443` must reach Caddy.
+
+### "No site is published at …"
+
+The host resolves to the platform but no live deployment matches it: the project has never been published, the slug is misspelled, the preview was removed, or the custom domain isn't verified yet.
+
+### Git sync builds fail at extraction
+
+Extraction compiles your Nest app, so its dependencies must be installed too. Leave **Install Command** empty in **Settings → Git**: automatic install runs the right package manager in every folder with a lockfile, from the repository root down to the docs folder. If you set your own command, make it install the Nest app as well. The build log shows what ran. See [Git sync](/platform/git-sync).
+
+### "has no OrbitDocs account. Ask an admin to invite you."
+
+Dashboard SSO signs in existing accounts only. Invite the person, or provision them with SCIM. See [Team and access](/platform/team).
+
+### Builds queue but never start
+
+Each instance runs `BUILD_CONCURRENCY` builds at once (default 1), and one build per target at a time. Check the **Builds** tab for a long-running build, and the platform logs (`docker compose logs -f platform`) for queue errors.
+
+### Docker fills the disk
+
+The platform image is about 830 MB, and each image build needs more while it runs. Remove old images and test stacks you created (`docker image prune`, `docker compose down` in old copies). Don't prune a shared build cache you don't own.
+
+## Still stuck?
+
+Search the [FAQ](/help/faq), or open an issue on GitHub with the full command output and your `orbitdocs.config.ts` (remove secrets first).

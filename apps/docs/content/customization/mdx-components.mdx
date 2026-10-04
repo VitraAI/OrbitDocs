@@ -1,0 +1,113 @@
+---
+title: MDX components
+description: See which components every guide can use, add more Fumadocs components such as a file tree or image zoom, and register your own.
+---
+
+Guides can use a set of components with no import. This page shows what's registered, how to add the Fumadocs components that aren't, and how to add your own. For how to write with each component, see [Components](/writing/components).
+
+## What every guide can use
+
+| Component | From | Notes |
+| --- | --- | --- |
+| `Callout` | Fumadocs | `type`: `info` (default), `warn`, `warning`, `error`, `success`, `idea`. Optional `title` and `icon`. |
+| `Card`, `Cards` | Fumadocs | `title`, `description`, `href`, `icon`, `external`. |
+| `Steps`, `Step` | Fumadocs | Numbered steps. |
+| `Tabs`, `Tab` | Fumadocs | `items`, `defaultIndex`, `label`, and `groupId`, `persist`, `updateAnchor` (see below). |
+| `Accordions`, `Accordion` | Fumadocs | `Accordion` takes a `title`. |
+| `TypeTable` | Fumadocs | A props or options table. |
+| Headings, links, images, tables, code blocks | Fumadocs | Headings get anchor links; `op:` links resolve to operations. |
+| `Endpoint` | OrbitDocs | Method badge and path linking to an operation. |
+| Landing components (`Hero`, `Features`, …) | OrbitDocs | See [Landing pages](/writing/landing-pages). |
+
+They are registered by `orbitMdxComponents(orbit, …)` in `app/(guides)/[...slug]/page.tsx`.
+
+### Keep tabs in sync
+
+`Tabs` with the same `groupId` switch together across the page. `persist` remembers the choice across visits; `updateAnchor` writes the tab to the URL hash.
+
+```mdx
+<Tabs groupId="language" persist items={['TypeScript', 'Python']}>
+  <Tab value="TypeScript">…</Tab>
+  <Tab value="Python">…</Tab>
+</Tabs>
+```
+
+## Register more components
+
+Pass extra components as the second argument of `orbitMdxComponents`. They are merged over the defaults, so you can also replace a default (such as `img`).
+
+```tsx title="app/(guides)/[...slug]/page.tsx"
+import { GuidePage } from '@orbitdocs/next';
+import { orbitMdxComponents } from '@orbitdocs/next/mdx';
+import { File, Files, Folder } from 'fumadocs-ui/components/files';
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
+import { InlineTOC } from 'fumadocs-ui/components/inline-toc';
+import { createRelativeLink } from 'fumadocs-ui/mdx';
+
+import { PricingTable } from '@/components/pricing-table';
+
+// …
+<GuidePage
+  config={orbit}
+  page={page}
+  components={
+    orbitMdxComponents(orbit, {
+      a: createRelativeLink(source, page),
+      // Fumadocs extras
+      File,
+      Files,
+      Folder,
+      InlineTOC,
+      // Click any image to zoom
+      img: (props) => <ImageZoom {...(props as any)} />,
+      // Your own component
+      PricingTable,
+    }) as Record<string, unknown>
+  }
+/>
+```
+
+`op:` links keep working when you replace `a`: OrbitDocs wraps whatever link component you pass.
+
+### File tree
+
+```mdx
+<Files>
+  <Folder name="src" defaultOpen>
+    <File name="main.ts" />
+    <File name="app.module.ts" />
+  </Folder>
+  <File name="package.json" />
+</Files>
+```
+
+### Inline table of contents
+
+`toc` is available in every MDX file:
+
+```mdx
+<InlineTOC items={toc} />
+```
+
+### Image zoom
+
+With `img` replaced as above, every Markdown image (`![Alt](/screenshot.png)`) opens full size on click. `ImageZoom` loads its own CSS.
+
+## Fumadocs components not registered by default
+
+| Component | Import from | Use it for |
+| --- | --- | --- |
+| `Files`, `Folder`, `File` | `fumadocs-ui/components/files` | File and folder trees. |
+| `ImageZoom` | `fumadocs-ui/components/image-zoom` | Zoomable images. |
+| `InlineTOC` | `fumadocs-ui/components/inline-toc` | A collapsible table of contents inside the page. |
+| `Banner` | `fumadocs-ui/components/banner` | A banner inside a page (the site banner is set with `banner` in the config). |
+| `GithubInfo` | `fumadocs-ui/components/github-info` | Stars and forks of a repository. |
+| `DynamicCodeBlock` | `fumadocs-ui/components/dynamic-codeblock` | Highlighting code that is only known at runtime. |
+
+## Next steps
+
+<Cards>
+  <Card title="Components" href="/writing/components" description="How to write with callouts, steps, tabs and more." />
+  <Card title="Code blocks" href="/customization/code-blocks" description="Titles, tabs, highlights and syntax themes." />
+  <Card title="Components reference" href="/docs-reference/components" description="Every MDX component and its props." />
+</Cards>

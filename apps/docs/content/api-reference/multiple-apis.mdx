@@ -1,0 +1,140 @@
+---
+title: Multiple APIs
+description: Document several APIs in one site, from Nest apps, spec files or URLs, and link to them with API cards.
+---
+
+`apis` in `orbitdocs.config.ts` is a list. Each entry gets its own reference, spec file, collection in the API client and search results. Sources can be Nest apps, OpenAPI files or URLs, mixed freely.
+
+## Add more APIs
+
+```ts title="docs/orbitdocs.config.ts"
+apis: [
+  {
+    id: 'travel',
+    title: 'Orbit Travel API',
+    description: 'Search flights and book seats.',
+    source: { nest: { module: 'dist/app.module.js', build: 'nest build' } },
+  },
+  {
+    id: 'billing',
+    title: 'Billing API',
+    source: { file: './specs/billing.yaml' },
+  },
+  {
+    id: 'partner',
+    title: 'Partner API',
+    source: { url: 'https://partner.example.com/openapi.json' },
+  },
+],
+```
+
+| Source | Read | When |
+| --- | --- | --- |
+| `{ nest: { … } }` | Your compiled Nest module, booted in preview mode | On every extract |
+| `{ file: './specs/billing.yaml' }` | A JSON or YAML file, relative to the docs app | On every extract |
+| `{ url: 'https://…' }` | Fetched with a GET request | On every extract, so on every build |
+
+File and URL sources accept OpenAPI 3.0, 3.1 and Swagger 2.0. They are upgraded to OpenAPI 3.1 and validated. Validation problems are printed as warnings (the first 20); the spec is still used.
+
+<Callout type="warn" title="URL sources are fetched at build time">
+  The build fails if the URL doesn't answer with 2xx: `partner: GET https://… → 503`. To build offline, download the spec and use `source.file` instead.
+</Callout>
+
+## API ids
+
+Each `id` is used in:
+
+- the reference URL: `/reference/billing`;
+- `op:` links: `[Create an invoice](op:billing/create-an-invoice)`;
+- the spec files: `openapi/billing.json` and `/openapi/billing.json`;
+- the `reference/billing/` content folder;
+- the MCP server URL, when `ai` is set.
+
+Ids use lowercase letters, digits and dashes, and start with a letter or digit. They must be unique. Changing an id changes all of the above, so pick one you can keep.
+
+## API options
+
+<TypeTable
+  type={{
+    id: { type: 'string', required: true, description: 'Stable id: `[a-z0-9][a-z0-9-]*`.' },
+    title: { type: 'string', description: 'Title in the reference, the top bar menu and API cards. Defaults to the spec\'s `info.title`.' },
+    description: { type: 'string', description: 'Markdown at the top of the reference. Its first line is used in the top bar menu and API cards. Defaults to the spec\'s.' },
+    version: { type: 'string', description: 'Version badge. Defaults to the spec\'s `info.version`.' },
+    source: { type: '{ nest } | { file } | { url }', required: true, description: 'Where the spec comes from.' },
+    servers: { type: '{ url: string; description?: string }[]', description: 'Replaces the spec\'s servers.' },
+    securitySchemes: { type: 'Record<string, object>', description: 'Added to the spec\'s security schemes.' },
+    security: { type: 'string[]', description: 'Nest sources only: scheme names required by every operation.' },
+    completeness: { type: "'error' | 'warn' | 'off'", default: '"warn"', description: 'How documentation gaps are reported.' },
+    standardErrors: { type: 'boolean', default: 'true', description: 'Nest sources only: add generic 400, 401, 403, 404 and 500 responses.' },
+    access: { type: 'string[]', description: 'Access groups that can read this API\'s reference. See [Access rules](/private-docs/access-rules).' },
+  }}
+/>
+
+## Nest apps versus spec files
+
+Some features need the Nest extraction step. For a file or URL source, OrbitDocs uses the spec as written:
+
+| Feature | Nest source | File or URL source |
+| --- | --- | --- |
+| Readable operation ids from titles | Yes | From the spec's `operationId`, lowercased: `getPetById` becomes `getpetbyid` |
+| `@Docs*` decorators: groups, order, stability | Yes | Not applied |
+| Standard errors (`standardErrors`) | Yes | Not applied |
+| `security` applied to every operation | Yes | Not applied: declare `security` in the spec |
+| `servers` and `securitySchemes` from the config | Yes | Yes |
+| `title`, `description`, `version` from the config | Yes | Yes |
+| Completeness report | Yes | Yes |
+
+## Two Nest apps
+
+Each Nest source has its own `root` and `module`, so one docs app can document several Nest apps, for example in a monorepo:
+
+```ts title="docs/orbitdocs.config.ts"
+apis: [
+  {
+    id: 'public',
+    title: 'Public API',
+    source: { nest: { root: '../apps/public-api', module: 'dist/app.module.js', build: 'nest build' } },
+  },
+  {
+    id: 'admin',
+    title: 'Admin API',
+    source: { nest: { root: '../apps/admin-api', module: 'dist/app.module.js', build: 'nest build' } },
+    access: ['staff'],
+  },
+],
+```
+
+Each `root` needs `@orbitdocs/nestjs` installed. Extract one at a time with `orbitdocs extract --api admin`.
+
+## What changes with several APIs
+
+- **Top bar.** **API Reference** becomes a menu. Each item shows the API's title and the first line of its description.
+- **API client.** `/client` has one collection per API, with its own environments.
+- **Search.** Results show the API's title and group as a breadcrumb.
+- **llms.txt.** Each API gets its own section.
+
+## Show your APIs as cards
+
+`<ApiCards />` shows a card per API: title, version, first line of the description, number of endpoints and the first four groups. Each card links to its reference.
+
+```mdx title="docs/content/index.mdx"
+<ApiCards title="APIs" description="Everything you can build with." />
+```
+
+<ApiCards />
+
+| Prop | Default | What it does |
+| --- | --- | --- |
+| `ids` | Every API | Show only these APIs, as in `ids={['travel', 'billing']}`. |
+| `title` | None | Heading above the cards. |
+| `description` | None | Text under the heading. |
+
+`ApiCards` works on landing pages and on any guide. See [Landing pages](/writing/landing-pages).
+
+## Next steps
+
+<Cards>
+  <Card title="Authentication" href="/api-reference/authentication" description="Security schemes and servers for each API." />
+  <Card title="Private docs" href="/private-docs" description="Limit an API's reference to some readers." />
+  <Card title="Configuration" href="/docs-reference/configuration" description="Every API option." />
+</Cards>

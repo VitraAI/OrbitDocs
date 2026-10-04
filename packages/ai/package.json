@@ -1,0 +1,55 @@
+{
+  "name": "@orbitdocs/ai",
+  "version": "0.1.0",
+  "description": "AI for OrbitDocs: Ask-AI over your docs with your own LLM key, a docs MCP server and an MCP server generated from your OpenAPI spec.",
+  "license": "MIT",
+  "author": "Vitra.ai (https://vitra.ai)",
+  "homepage": "https://github.com/VitraAI/OrbitDocs/tree/main/packages/ai#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VitraAI/OrbitDocs.git",
+    "directory": "packages/ai"
+  },
+  "bugs": {
+    "url": "https://github.com/VitraAI/OrbitDocs/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.71",
+    "@ai-sdk/google": "^4.0.87",
+    "@ai-sdk/openai": "^4.0.83",
+    "@ai-sdk/openai-compatible": "^3.0.62",
+    "@modelcontextprotocol/sdk": "^1.32.0",
+    "@orbitdocs/auth": "workspace:*",
+    "ai": "^7.0.127",
+    "zod": "^4.6.5",
+    "@orbitdocs/openapi": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "vitest": "^4.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

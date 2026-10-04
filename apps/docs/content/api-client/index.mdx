@@ -1,0 +1,101 @@
+---
+title: API client
+description: A Postman-style API client inside your docs, built from your spec, that runs entirely in the reader's browser.
+---
+
+Every OrbitDocs site includes an API client. Readers send real requests to your API without installing anything. Their collections come from your spec, and their environments, secrets and history stay in their own browser.
+
+## Open the client
+
+There are two ways in, and both share the same workspace:
+
+- **Test Request.** Every operation in the reference has a **Test Request** button. It opens the client in a full-screen dialog, on that operation. The server and the credentials chosen on the page carry over.
+- **The client page.** [/client](/client) is a page of its own, linked as **API Client** in the top bar. It has one collection per API.
+
+<Cards>
+  <Card title="Open the demo client" href="/client" description="The client for the sample Orbit Travel API." />
+  <Card title="Try it from the reference" href="/reference/demo" description="Pick an operation and press Test Request." />
+</Cards>
+
+## What's in this section
+
+<Cards>
+  <Card title="Requests" href="/api-client/requests" description="URL, params, headers, body types, auth and code snippets." />
+  <Card title="Environments" href="/api-client/environments" description="Variables, secrets, production environments and the mock server." />
+  <Card title="Collections" href="/api-client/collections" description="Generated collections, your own requests, cURL import and export." />
+  <Card title="Scripts and tests" href="/api-client/scripts" description="Postman-compatible pre-request and post-response scripts." />
+  <Card title="Runner and history" href="/api-client/runner-and-history" description="Run a collection with iterations, and reopen past requests." />
+  <Card title="Customizing" href="/api-client/customizing" description="Site defaults in the config and reader settings." />
+</Cards>
+
+## Layout
+
+```txt
+┌────┬───────────────┬──────────────────────────────────────────────────────┐
+│rail│ collections   │ tabs …                      [Environment ▾] ⌘K  ⤓   │
+│    │ ┌───────────┐ │ Request name                                         │
+│ ▤  │ │ search    │ │ [POST ▾] {{baseUrl}}/v1/bookings      {}  [Send ⌘↵] │
+│ ⚙  │ └───────────┘ │ {{baseUrl}} {{apiKey}}           ← variable chips    │
+│ ▶  │ Bookings      │ ┌─────────────────────────┬────────────────────────┐ │
+│ ⟲  │  POST Create… │ │ Params Headers Body     │ 201 Created  84 ms 1KB │ │
+│ ⇩  │  GET  List…   │ │ Auth Scripts Code       │ Pretty Raw Headers …   │ │
+│    │ Flights       │ │                         │                        │ │
+│ ⚙  │  GET  Search… │ │       request           │       response         │ │
+└────┴───────────────┴─┴─────────────────────────┴────────────────────────┴─┘
+```
+
+| Area | What it holds |
+| --- | --- |
+| **Rail** | Collections, Environments, Collection runner, History, Import, and Settings at the bottom |
+| **Collections panel** | Every API's requests, grouped in folders, with a search box |
+| **Top bar** | Open requests as tabs, the active environment, the command palette and **Export workspace** |
+| **URL bar** | Method, URL, a variable picker, **Send**, and a menu with **Copy as cURL**, **Copy as cURL with secret values** and **Duplicate request** |
+| **Variable chips** | Each `{{variable}}` the request uses, green when set, red when missing |
+| **Request and response** | Side by side or stacked. Drag the divider to resize. |
+
+## Keyboard shortcuts
+
+Use ⌘ on macOS and Ctrl elsewhere.
+
+| Keys | Action |
+| --- | --- |
+| ⌘ Enter | Send the request |
+| ⌘ K | Open the command palette |
+| ⌘ B | Show or hide the collections panel |
+| ⌘ J | Switch between side-by-side and stacked layout |
+| ⌘ E | Open environments |
+| ⌘ / | Search requests |
+
+While the client is on screen, it owns these keys. ⌘K opens the client's palette instead of the site search.
+
+The command palette finds any request by method, name, URL or folder. It also runs actions: send, new request, duplicate, copy as cURL (with or without secret values), open environments, runner, history or settings, switch layout, and switch environment.
+
+## Right-click menus
+
+Right-click (or press the context-menu key, or Shift+F10) on most things in the client for the actions that apply to them:
+
+| Where | Actions |
+| --- | --- |
+| A request in the sidebar | Open in a tab, Send, Rename, Duplicate, Copy as cURL, Copy URL, then **Reset to spec** for requests from your API (enabled once you've edited one) or **Delete** for requests you created |
+| A tab | The same request actions, plus Close tab, Close other tabs, Close tabs to the right, Close all tabs |
+| A collection's name | New request, Run collection |
+| A history entry | Open with this response, Copy URL, Remove from history, Clear history |
+| An environment | Use this environment, Duplicate, Delete |
+
+Requests from your API come back with every page load, so they can't be deleted; **Reset to spec** throws away your edits instead. Copy as cURL uses placeholders for secrets, as in [Requests](/api-client/requests).
+
+## Everything stays in the browser
+
+The client has no backend. Requests go straight from the reader's browser to your API. Collections, environments and history are saved in `localStorage` under `orbitdocs:client`. Secret variables are stored separately and never exported.
+
+<Callout type="warn" title="Your API must allow the docs origin">
+  Because requests come from the browser, a cross-origin API must allow the docs origin in CORS. Otherwise the response shows `Network error` with a hint. See [Authentication](/api-reference/authentication#allow-the-docs-origin-in-cors). Docs served [from Nest](/nestjs/serve-from-nest) are same-origin and need no CORS.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Requests" href="/api-client/requests" description="Build and send a request." />
+  <Card title="Environments" href="/api-client/environments" description="Set base URLs and keys once." />
+  <Card title="Customizing" href="/api-client/customizing" description="Turn features on or off for your site." />
+</Cards>

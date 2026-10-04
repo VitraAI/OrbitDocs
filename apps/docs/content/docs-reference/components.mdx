@@ -1,0 +1,226 @@
+---
+title: MDX components
+description: Every component you can use in guide pages without an import, with its props.
+---
+
+Guide pages (`content/**/*.mdx`) get these components without an import. They come from Fumadocs and from `@orbitdocs/next/mdx` (`orbitMdxComponents`). For how to use them in writing, see [Components](/writing/components).
+
+| Component | From | Use it for |
+| --- | --- | --- |
+| [`Callout`](#callout) | Fumadocs | Notes, warnings and errors. |
+| [`Cards`, `Card`](#cards-and-card) | Fumadocs | Linked cards in a grid. |
+| [`Steps`, `Step`](#steps-and-step) | Fumadocs | Numbered procedures. |
+| [`Tabs`, `Tab`](#tabs-and-tab) | Fumadocs | Alternatives, such as npm and pnpm. |
+| [`Accordions`, `Accordion`](#accordions-and-accordion) | Fumadocs | Collapsible sections. |
+| [`TypeTable`](#typetable) | Fumadocs | Options and props tables. |
+| [`Endpoint`](#endpoint) | OrbitDocs | An inline link to an API operation. |
+| [Code blocks](#code-blocks) | Fumadocs | Highlighted code with titles, tabs and line marks. |
+| [`op:` links](#op-links) | OrbitDocs | Markdown links to API operations. |
+
+## Callout
+
+```mdx
+<Callout type="warn" title="Set basePath first">
+  Links break when the base path doesn't match.
+</Callout>
+```
+
+| Prop | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `type` | `'info' \| 'warn' \| 'warning' \| 'error' \| 'success' \| 'idea'` | `'info'` | Color and icon. |
+| `title` | `ReactNode` | none | Bold first line. |
+| `icon` | `ReactNode` | the type's icon | Replaces the icon. |
+
+## Cards and Card
+
+```mdx
+<Cards>
+  <Card title="Quickstart" href="/get-started/quickstart" description="Docs running in 5 minutes." />
+  <Card title="GitHub" href="https://github.com/VitraAI/OrbitDocs" external />
+</Cards>
+```
+
+`Cards` lays out its children in a grid. `Card` props:
+
+| Prop | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `title` | `ReactNode` | required | Card title. |
+| `description` | `ReactNode` | none | Text under the title. |
+| `href` | `string` | none | Makes the card a link. |
+| `external` | `boolean` | `false` | Opens the link in a new tab. |
+| `icon` | `ReactNode` | none | Icon before the title. |
+
+A card can also take children as its body.
+
+## Steps and Step
+
+```mdx
+<Steps>
+<Step>
+**Install the package.**
+</Step>
+<Step>
+**Add the module.**
+</Step>
+</Steps>
+```
+
+No props. Each `Step` gets the next number. Leave a blank line inside a `Step` when it holds Markdown blocks such as code fences.
+
+## Tabs and Tab
+
+```mdx
+<Tabs items={['npm', 'pnpm']}>
+  <Tab value="npm">`npm install @orbitdocs/nestjs`</Tab>
+  <Tab value="pnpm">`pnpm add @orbitdocs/nestjs`</Tab>
+</Tabs>
+```
+
+| Component | Prop | Type | Default | What it does |
+| --- | --- | --- | --- | --- |
+| `Tabs` | `items` | `string[]` | none | Tab labels, in order. |
+| `Tabs` | `defaultIndex` | `number` | `0` | Tab selected first. |
+| `Tabs` | `label` | `ReactNode` | none | Extra label in the tab list. |
+| `Tab` | `value` | `string` | from its position | Must match an entry of `items`. |
+
+## Accordions and Accordion
+
+```mdx
+<Accordions>
+  <Accordion title="Does extraction start my database?" id="extraction-db">
+    No. Nest preview mode instantiates no providers.
+  </Accordion>
+</Accordions>
+```
+
+| Prop | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `title` | `ReactNode` | required | The always-visible header. |
+| `id` | `string` | none | Adds an anchor and a copy-link button. Opening the page with `#id` expands it. |
+| `value` | `string` | the title | Identity of the item inside `Accordions`. |
+
+Content is hidden until opened, but browser find-in-page still finds it.
+
+## TypeTable
+
+```mdx
+<TypeTable
+  type={{
+    path: { type: 'string', default: "'/docs'", description: 'URL path to serve under.' },
+    root: { type: 'string', required: true, description: 'Folder with the build.' },
+  }}
+/>
+```
+
+`type` is an object of fields. Each field takes:
+
+| Key | Type | What it does |
+| --- | --- | --- |
+| `type` | `ReactNode` | Short type signature. Required. |
+| `description` | `ReactNode` | What the field does. |
+| `default` | `ReactNode` | Default value. |
+| `required` | `boolean` | Marks the field required. |
+| `deprecated` | `boolean` | Marks the field deprecated. |
+| `typeDescription` | `ReactNode` | Full type signature, shown on expand. |
+| `typeDescriptionLink` | `string` | Link for the type. |
+| `parameters` | `{ name: string; description: ReactNode }[]` | Parameters, for function types. |
+| `returns` | `ReactNode` | Return value, for function types. |
+
+## Endpoint
+
+An inline link to one operation: a method badge and the path. It links to the operation in the reference.
+
+```mdx
+Create one with <Endpoint api="demo" op="create-a-booking" />.
+```
+
+Create one with <Endpoint api="demo" op="create-a-booking" />.
+
+| Prop | Type | What it is |
+| --- | --- | --- |
+| `api` | `string` | The API `id` from `orbitdocs.config.ts`. |
+| `op` | `string` | The operation slug, as in the operation's URL (`/reference/<api>/<op>/`). |
+
+An unknown API or operation fails the build. `orbitdocs check` finds them first.
+
+## op: links
+
+Any Markdown link whose target starts with `op:` points at an operation:
+
+```mdx
+[Create a booking](op:demo/create-a-booking)
+[The demo API](op:demo)
+```
+
+`op:<api>/<operation>` becomes `/reference/<api>/<operation>/`; `op:<api>` becomes `/reference/<api>/`. Broken targets are reported by `orbitdocs check` and fail `orbitdocs build`. See [Linking operations](/writing/linking-operations).
+
+## Code blocks
+
+Fenced code is highlighted with Shiki and gets a copy button. Options go after the language:
+
+````mdx
+```ts title="src/main.ts" lineNumbers
+mountOrbitDocs(app, { root: docs, path: '/docs' }); // [!code highlight]
+```
+````
+
+| Option | Example | What it does |
+| --- | --- | --- |
+| `title="…"` | `title="src/main.ts"` | File name above the code. |
+| `lineNumbers` | `lineNumbers` | Show line numbers. |
+| `tab="…"` | `tab="npm"` | Consecutive blocks with `tab` become one tabbed block. |
+| `// [!code highlight]` | at the end of a line | Highlight that line. |
+| `// [!code ++]`, `// [!code --]` | at the end of a line | Mark a line as added or removed. |
+| `// [!code focus]` | at the end of a line | Dim every other line. |
+| `// [!code word:basePath]` | on its own line | Highlight a word in the next line. |
+
+Use the comment style of the language (`#` in shell and YAML).
+
+## Markdown
+
+GitHub-flavored Markdown works: tables, task lists, strikethrough and autolinks. Headings get anchors and appear in the table of contents.
+
+GitHub alerts (`> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]`) render as callouts everywhere: guide pages, operation content (`reference/<api>/*.mdx`, `@DocsContent`) and descriptions from the spec. In MDX they become a Fumadocs `Callout` (`info`, `success`, `idea`, `warning`, `error`) through `orbitMdxOptions()` in `lib/source.ts`. See [GitHub alerts](/writing/components#github-alerts).
+
+## Add your own components
+
+The guides route passes its components to the page. Add yours next to the OrbitDocs ones:
+
+```tsx title="app/(guides)/[...slug]/page.tsx"
+import { orbitMdxComponents } from '@orbitdocs/next/mdx';
+import { createRelativeLink } from 'fumadocs-ui/mdx';
+
+import { Diagram } from '@/components/diagram';
+
+// …
+components={orbitMdxComponents(orbit, { a: createRelativeLink(source, page), Diagram }) as Record<string, unknown>}
+```
+
+`orbitMdxComponents(config, extra)` merges `extra` over the defaults and keeps `op:` links working with whatever `a` you pass.
+
+## Landing sections
+
+Section components for landing pages; they also work on any guide page. Each animates in on scroll and respects "reduce motion". [Landing pages](/writing/landing-pages) has an example of every one.
+
+`LandingAction` is `{ text: string; href: string; icon?: string; variant?: 'primary' | 'secondary' | 'ghost' }`. Icons are Lucide names (`rocket`) or Simple Icons brands (`SiGithub`). Heading props shared by `Section`, `Features`, `Bento`, `Flow`, `Showcase`, `Comparison` and `ApiCards`: `eyebrow`, `title`, `description`, `align` (`'left' | 'center'`).
+
+| Component | Props | What it renders |
+| --- | --- | --- |
+| `Hero` | `title`, `highlight?`, `description?`, `logo?: ReactNode`, `footnote?: ReactNode`, `badge?`, `badgeHref?`, `actions?: LandingAction[]`, `align?: 'left' \| 'center'` (default `left`), `backdrop?: 'glow' \| 'grid' \| 'glow-grid' \| 'none'` (default `glow`), children = visual | Page header; text and buttons animate in on load. |
+| `Highlight` | children | Words in the brand gradient. |
+| `Section` | heading props, children | A titled band for any content. |
+| `Features` / `Feature` | `columns?: 2 \| 3 \| 4` (default 3) · `icon?`, `title`, `href?`, children | Card grid with a pointer-following glow. |
+| `Bento` / `BentoItem` | heading props · `size?: 'sm' \| 'md' \| 'lg' \| 'full'` (default `md`), `tall?`, `icon?`, `title`, `description?`, `href?`, children = visual | Six-column asymmetric grid. |
+| `Terminal` | `lines: string[]`, `title?` (default `Terminal`), `speed?` (default 32 ms), `loop?` | Typing terminal; `$ ` lines are commands, `# ` comments. |
+| `CodeShowcase` | `title`, `description?`, `eyebrow?`, `actions?`, `reverse?`, children = code | Text beside code. |
+| `Flow` / `FlowStep` | heading props · `icon?`, `title`, children | Numbered steps on a line that draws itself. |
+| `Showcase` / `ShowcaseItem` | heading props, `interval?` (default 6000 ms) · `title`, `description?`, `icon?`, children = visual | Auto-playing tabbed product tour. |
+| `BrowserFrame` | `src?`, `srcDark?`, `url?`, `alt?`, `tilt?` (default `true`), children | Browser window around a screenshot. |
+| `Stats` / `Stat` | `value`, `label` | Big numbers that count up. |
+| `Comparison` | heading props, `columns: string[]`, `rows: { feature, values: (boolean \| string)[], note? }[]`, `highlight?` (default 0) | Feature table with ✓ and –. |
+| `ApiCards` | heading props, `ids?: string[]` | One card per configured API. |
+| `Logos` / `Logo` | `title?`, `marquee?` · `name`, `src?`, `icon?`, `href?` | Logo row or endless marquee. |
+| `CallToAction` | `title`, `description?`, `actions?` | Closing banner with a turning gradient border. |
+| `LinkButton` | `href`, `variant?`, `icon?`, children | A single button. |
+
+For your own animated components, `@orbitdocs/next` also exports `Reveal`, `RevealGroup` and `RevealItem` (scroll-in animations) and `CountUp`.

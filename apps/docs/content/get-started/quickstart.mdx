@@ -1,0 +1,226 @@
+---
+title: Quickstart
+description: Add a docs site to an existing NestJS app in about five minutes.
+---
+
+This page takes an existing Nest app to a running docs site with an API reference, an API client and a first guide. You run every command from your Nest project.
+
+## Before you start
+
+You need:
+
+- A NestJS app (Nest 10 or later) that builds with `nest build`.
+- Node.js 20.9 or later. The docs app is a Next.js 16 app.
+- `@nestjs/swagger` 7 or later. Step 1 installs it if you don't have it.
+
+<Steps>
+<Step>
+
+### Install the Nest integration
+
+In your Nest project:
+
+```npm
+npm install @orbitdocs/nestjs @nestjs/swagger
+```
+
+Turn on the `@nestjs/swagger` CLI plugin in `nest-cli.json`. It turns DTO types into schemas and your JSDoc comments into descriptions and examples:
+
+```json title="nest-cli.json"
+{
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "@nestjs/swagger",
+        "options": { "introspectComments": true, "classValidatorShim": true }
+      }
+    ]
+  }
+}
+```
+
+The plugin is optional, but without it you must describe every property with `@ApiProperty`.
+
+</Step>
+<Step>
+
+### Create the docs app
+
+```npm
+npx orbitdocs init
+```
+
+`init` reads your project and writes a Next.js app in `docs/`. It takes the global prefix and URI versioning from `main.ts`, so the paths in the reference match your real routes.
+
+In a terminal, `init` asks which routes the docs should show:
+
+```txt
+Which routes should the docs show?
+  1) Only routes marked with @DocsOperation (internal routes can't leak)
+  2) Every route @nestjs/swagger documents (hide one with @ApiExcludeEndpoint)
+     Found 14 @ApiOperation decorators in this project.
+Choose 1 or 2 [2]:
+```
+
+It suggests option 2 when it finds `@ApiOperation` decorators. You can skip the question with `--routes all` or `--routes opt-in`. Without a terminal (in CI), the default is `opt-in`.
+
+</Step>
+<Step>
+
+### Choose which routes appear
+
+Pick the path that matches the answer you gave. You can switch later by changing one line in `docs/orbitdocs.config.ts`.
+
+<Tabs items={['Every Swagger route (all)', 'Marked routes only (opt-in)']}>
+<Tab value="Every Swagger route (all)">
+
+Every route that `@nestjs/swagger` documents appears. Your existing decorators give the title and the group:
+
+```ts title="src/bookings/bookings.controller.ts"
+import { Body, Controller, Get, Post } from '@nestjs/common';
+import { ApiExcludeEndpoint, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Bookings') // the sidebar group
+@Controller('bookings')
+export class BookingsController {
+  @Post()
+  @ApiOperation({ summary: 'Create a booking', description: 'Books seats on a flight.' })
+  create(@Body() dto: CreateBookingDto): BookingDto {
+    // ...
+  }
+
+  @Get('internal/stats')
+  @ApiExcludeEndpoint() // stays out of the docs
+  stats() {
+    // ...
+  }
+}
+```
+
+The generated config already contains `routes: 'all'`:
+
+```ts title="docs/orbitdocs.config.ts"
+source: {
+  nest: {
+    module: 'dist/app.module.js',
+    build: 'nest build',
+    routes: 'all',
+  },
+},
+```
+
+<Callout type="warn" title="Check for routes you don't want public">
+  Admin, health and internal routes appear too unless you hide them. Use `@ApiExcludeEndpoint()` from `@nestjs/swagger` or `@DocsHidden()` from `@orbitdocs/nestjs`.
+</Callout>
+
+</Tab>
+<Tab value="Marked routes only (opt-in)">
+
+Only routes marked with `@DocsOperation` appear. Anything you don't mark, such as health checks or admin routes, can never leak:
+
+```ts title="src/bookings/bookings.controller.ts"
+import { Body, Controller, Post } from '@nestjs/common';
+import { DocsErrors, DocsOperation } from '@orbitdocs/nestjs';
+
+@Controller({ path: 'bookings', version: '1' })
+export class BookingsController {
+  /**
+   * Books seats on a flight for one or more passengers.
+   */
+  @Post()
+  @DocsOperation({ group: 'Bookings', title: 'Create a booking', order: 1 })
+  @DocsErrors({ 409: 'Not enough seats left in this cabin.' })
+  create(@Body() dto: CreateBookingDto): BookingDto {
+    // ...
+  }
+}
+```
+
+The JSDoc comment above the method becomes the description. `group` is the sidebar section and `title` is the operation's name. See [Decorators](/nestjs/decorators) for every option.
+
+</Tab>
+</Tabs>
+
+</Step>
+<Step>
+
+### Describe authentication and servers
+
+Extraction builds its own OpenAPI document. It does not run the `DocumentBuilder` code in your `main.ts`. If your API needs a key or a token, declare the scheme in the docs config:
+
+```ts title="docs/orbitdocs.config.ts"
+apis: [
+  {
+    id: 'travel',
+    title: 'Orbit Travel API',
+    source: { nest: { module: 'dist/app.module.js', build: 'nest build' } },
+    servers: [
+      { url: 'http://localhost:3000', description: 'Local' },
+      { url: 'https://api.orbit-travel.example', description: 'Production' },
+    ],
+    securitySchemes: {
+      apiKey: { type: 'apiKey', in: 'header', name: 'x-api-key' },
+    },
+    security: ['apiKey'],
+  },
+],
+```
+
+`security` applies the scheme to every documented operation. Readers can then enter a key once; it fills every code sample and test request. See [Authentication](/api-reference/authentication).
+
+</Step>
+<Step>
+
+### Run the docs
+
+```bash
+cd docs
+npm install
+npm run dev
+```
+
+`npm run dev` runs `orbitdocs dev`. It builds your Nest app, extracts the spec, then starts Next.js. Open `http://localhost:3000`:
+
+- `/` is the home page, from `content/index.mdx`.
+- `/reference/<api id>` is the API reference.
+- `/client` is the API client.
+
+<Callout title="Port 3000 already taken by your API?">
+  Pass a port to Next.js: `npm run dev -- --port 3001`.
+</Callout>
+
+Leave it running. When you save a controller or a DTO, `orbitdocs dev` rebuilds the app and re-extracts the spec. The terminal prints `reference updated — reload the page`.
+
+</Step>
+<Step>
+
+### Build the site
+
+```bash
+npm run build
+```
+
+`npm run build` runs `orbitdocs build`. It extracts the spec, checks every link to an operation, then runs `next build`. The static site lands in `docs/out/`, ready for any host.
+
+</Step>
+</Steps>
+
+## If something goes wrong
+
+| Message | Fix |
+| --- | --- |
+| `Compiled module not found: …/dist/app.module.js` | Your build writes the module somewhere else, such as `dist/src/app.module.js`. Set `module` to the real path. |
+| `@orbitdocs/nestjs is not installed in …` | Run `npm install @orbitdocs/nestjs` in the Nest project, not in `docs/`. |
+| The reference is empty | You chose `opt-in` and marked no route. Add `@DocsOperation()` or switch to `routes: 'all'`. |
+| `Schemas are referenced but not defined: …` | A property's type isn't visible to Swagger. Register it with `@ApiExtraModels()` or type the property. |
+| Your app throws on startup during extraction | Module-level code reads config that isn't set. Give placeholder values with `env` in the config. |
+
+[Extraction](/nestjs/extraction#troubleshooting) has the full list.
+
+## Next steps
+
+<Cards>
+  <Card title="Write your first guide" href="/writing" description="Add pages to content/ and link them to operations." />
+  <Card title="Decorators" href="/nestjs/decorators" description="Groups, titles, order, errors, samples and extra content." />
+  <Card title="Deploy" href="/deploy" description="Vercel, a static host, Docker or your Nest app." />
+</Cards>

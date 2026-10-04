@@ -1,0 +1,225 @@
+---
+title: Publishing
+description: Create a project and a token, publish with orbitdocs publish from any CI, and roll back in one click.
+---
+
+Every docs site on the platform is a project. You publish to it with `orbitdocs publish`, which builds the site and uploads it with its specs. Production publishes go live at once and add registry versions. Previews get their own URL.
+
+Prefer pushing to Git and letting the platform build? See [Git sync](/platform/git-sync). Both paths produce the same deployments.
+
+## Create a project
+
+In the dashboard, select **Add New…** and fill in:
+
+| Field | Rules |
+| --- | --- |
+| **Project Name** | Shown in the dashboard. |
+| **Domain** | The slug and subdomain: `payments` serves at `payments.<platform domain>`. 1 to 40 lowercase letters, digits and dashes; starts and ends with a letter or digit; no `--`. |
+| **Description** | Optional. |
+
+Any signed-in user can create a project and becomes its owner.
+
+## Create a publish token
+
+Open the project, then **Settings → Tokens**. Name the token (default `CI`) and select **Create**. The token starts with `odp_` and is shown **once**. Store it as a CI secret.
+
+- A token publishes to its own project only.
+- Only its hash is stored. The list shows the first 10 characters, when it was created and when it was last used.
+- Revoke a token from the same page, after a confirmation. It stops working at once and can't be restored.
+- Creating and revoking tokens needs the admin role.
+
+## Publish
+
+Run in the docs app folder:
+
+```bash
+ORBITDOCS_TOKEN=odp_… npx orbitdocs publish --platform https://docs.acme.com
+```
+
+The command:
+
+1. Runs `orbitdocs build` (skip with `--skip-build`).
+2. Packs `out/`, every `openapi/*.json` and a `publish.json` (base path, kind, label, branch, commit, message) into a `.tar.gz`.
+3. Uploads it to `POST <platform>/api/publish` with the token as a bearer token.
+4. Prints the registry result per API (production), each spec's Spectral errors and warnings (production and previews, from the response's `lint`), and the site URL.
+
+```text title="Output"
+✓ payments: registry revision 4 · v2.3.0
+✓ payments: 0 lint errors, 3 warnings
+✓ Published: https://payments.docs.acme.com/
+```
+
+### Options
+
+| Flag | Environment variable | Default | What it does |
+| --- | --- | --- | --- |
+| `--platform <url>` | `ORBITDOCS_PLATFORM_URL` | none (required) | The platform's URL. |
+| `--token <token>` | `ORBITDOCS_TOKEN` | none (required) | The project token. |
+| `--preview <label>` | | none | Publish a preview with this label instead of production. |
+| `--skip-build` | | off | Upload the existing `out/` without building. |
+| `-m, --message <text>` | | last commit subject | Describes this publish in the dashboard. |
+
+Branch and commit are read from Git when the docs app is in a repository.
+
+<Callout type="warn" title="Static builds only">
+  The platform hosts static builds. With `output.mode: 'server'` the command stops with `The platform hosts static builds: set output.mode to "static".`
+  Private docs and Ask AI still work: the platform runs them for the site.
+</Callout>
+
+## Publish a preview
+
+```bash
+npx orbitdocs publish --platform https://docs.acme.com --preview mr-42
+```
+
+- The preview is served at `https://<project>--<label>.<platform domain>`, for example `https://payments--mr-42.docs.acme.com`.
+- The label is lowercased, other characters become `-`, and it is cut to 40 characters.
+- Publishing the same label again replaces the old preview.
+- Previews never change the live site or the registry, and the lint gate never blocks them. Their specs are still linted: `orbitdocs publish` prints the counts (`✓ payments: 0 lint errors, 3 warnings`), they are on the deployment in **Deployments**, and Git sync puts them in the pull or merge request comment.
+- Previews send `X-Robots-Tag: noindex`, so search engines skip them.
+
+Remove a preview with **Delete Preview** in its row's menu in **Deployments** (editor role), after a confirmation. Its files are deleted and its URL stops working. Git sync removes its own previews when the pull or merge request closes.
+
+## Publish from CI
+
+<Tabs items={['GitHub Actions', 'GitLab CI']}>
+<Tab value="GitHub Actions">
+
+```yaml title=".github/workflows/docs.yml"
+name: Docs
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      ORBITDOCS_PLATFORM_URL: https://docs.acme.com
+      ORBITDOCS_TOKEN: ${{ secrets.ORBITDOCS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm ci
+        working-directory: docs
+      - name: Publish
+        working-directory: docs
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx orbitdocs publish --preview pr-${{ github.event.number }}
+          else
+            npx orbitdocs publish
+          fi
+```
+
+</Tab>
+<Tab value="GitLab CI">
+
+```yaml title=".gitlab-ci.yml"
+docs:
+  image: node:22
+  variables:
+    ORBITDOCS_PLATFORM_URL: https://docs.acme.com
+  script:
+    - npm ci
+    - cd docs && npm ci
+    - |
+      if [ -n "$CI_MERGE_REQUEST_IID" ]; then
+        npx orbitdocs publish --preview mr-$CI_MERGE_REQUEST_IID
+      else
+        npx orbitdocs publish
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+```
+
+Store `ORBITDOCS_TOKEN` as a masked CI/CD variable.
+
+</Tab>
+</Tabs>
+
+## Site environment variables
+
+Private docs and Ask AI run on the platform for hosted sites, and they need secrets: each SSO provider's `clientSecretEnv`, an app session's `jwtSecretEnv` or `secretKeyEnv`, the personalization hook's `secretEnv`, and Ask AI's `apiKeyEnv`. Your `orbitdocs.config.ts` names the variables. Each project sets their values under **Settings → Environment**.
+
+- **A site sees only its own variables.** Hosted sites never read the platform's environment, so a site can't name `PLATFORM_SECRET` or `DATABASE_URL` and have it sent to its AI `baseUrl` or SSO issuer. Two projects can use the same name with different values.
+- **No session secret to set.** The platform derives each project's `access.session.secretEnv` value from `PLATFORM_SECRET`, and it takes precedence over a site variable with the same name.
+- **Encrypted, write-only.** Values are encrypted with `PLATFORM_SECRET` (AES-256-GCM) and never shown again. Adding an existing name replaces its value after a confirmation; removing one asks first.
+- **Applied at once.** The live site and its previews use a change from their next request; nothing is rebuilt.
+- **Missing names are flagged.** **Used by the Live Site** lists every variable the production deployment reads, what reads it and whether it is set. **Set** fills in the name for you. `orbitdocs publish` and Git sync builds print a warning for each missing one:
+
+```txt
+! OKTA_CLIENT_SECRET is not set (Okta sign-in (client secret)): add it in the dashboard under Settings → Environment
+```
+
+Names use letters, digits and `_`, and don't start with a digit; up to 50 variables of 16 KB each. Only project admins and owners see or change them. Changes are written to the audit log as `site_env.changed`, with the names added (`+NAME`) or removed (`-NAME`), never the values.
+
+Through the API (an admin's dashboard session):
+
+```json title="PATCH /api/projects/payments/site-env"
+{ "env": { "OKTA_CLIENT_SECRET": "…", "OLD_KEY": null } }
+```
+
+`GET /api/projects/<slug>/site-env` returns `{ keys, used }`: the names that are set, and each name the live site reads with `usedBy` and `set`.
+
+<Callout type="info" title="Audit trail of a hosted site">
+  `access.audit.webhookUrl` works as usual. `access.audit.file` is ignored on the platform, because a hosted site can't write files on the platform host.
+</Callout>
+
+## Outbound requests
+
+A hosted site's config decides where the platform sends some requests: the SSO issuer (discovery, token and userinfo), app-session key lookups, the personalization hook, the audit webhook, Ask AI's provider (`ai.baseUrl`) and the API MCP's calls to your API. The platform makes those requests from inside your network, so it refuses any that would reach:
+
+- loopback and `localhost` (`127.0.0.0/8`, `::1`);
+- private networks (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, `fc00::/7`);
+- link-local addresses, which include the cloud metadata endpoint `169.254.169.254`;
+- other reserved ranges, multicast, and the platform's own domain and its sites;
+- anything that isn't `http` or `https`.
+
+The check runs on the address each connection actually uses, so a public name that resolves to a private address is refused too, and every redirect is checked again. Credentials are dropped when a redirect leaves the origin.
+
+A refused request fails like an unreachable server: sign-in shows `Sign-in failed: Blocked a hosted site's request to …`, Ask AI answers with an error, and the platform log names the host. If a site needs an internal service, such as a Keycloak on your network, the operator allows it in the platform's `.env`:
+
+```bash title="apps/platform/.env"
+SITE_OUTBOUND_ALLOW=keycloak.internal,*.corp.acme.com,10.0.0.20,10.1.0.0/16
+```
+
+Entries are hostnames, `*.suffix` wildcards, IPs and CIDR ranges. For local testing with services on your machine, allow `localhost,127.0.0.1,::1`.
+
+Sites your own Nest or Next app serves aren't affected: they run your code, under your config.
+
+## Deployments and rollback
+
+The **Deployments** tab lists the 100 newest uploads, production and previews, with branch, commit, message and lint result (errors, warnings or **Lint clean**; hover for each spec).
+
+- The platform keeps the **five newest production builds**. Older ones are deleted from disk.
+- **Instant Rollback** on a kept production build makes it live again, after a confirmation. Nothing is rebuilt, so it takes effect at once. It needs the editor role and is written to the audit log.
+- Rolling back does not change the registry. The next production publish becomes live as usual.
+
+<Callout type="info" title="Lint gate">
+  An admin can turn on **Settings → General → Lint Gate**. A production publish is then refused while any spec has Spectral errors, and nothing is stored.
+  Previews are never blocked; their lint counts show on the deployment and in the Git sync comment. See [Registry](/platform/registry).
+</Callout>
+
+## Common errors
+
+| Message | Fix |
+| --- | --- |
+| `Set --platform or ORBITDOCS_PLATFORM_URL` | Pass the platform URL. |
+| `Send a project token: Authorization: Bearer odp_…` (401) | The token is wrong or revoked. Create a new one. |
+| `The site folder has no index.html: is it a static build (output.mode: static)?` | Build in static mode, or remove `--skip-build`. |
+| `A preview needs a label (e.g. mr-42)` | The label was empty after cleaning. Use letters and digits. |
+| `Lint errors block this publish: …` | Fix the listed spec errors, or turn off the lint gate. |
+| `OKTA_CLIENT_SECRET is not set (…)` on the site | Add it under **Settings → Environment**. See [Site environment variables](#site-environment-variables). |
+
+## Next steps
+
+<Cards>
+  <Card title="Git sync" href="/platform/git-sync" description="Let the platform build on every push and pull request." />
+  <Card title="Registry" href="/platform/registry" description="Every spec version a production publish stores." />
+  <Card title="Domains" href="/platform/domains" description="Serve the project on your own domain." />
+</Cards>

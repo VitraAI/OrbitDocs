@@ -1,0 +1,58 @@
+---
+title: Webhooks
+description: Get a POST when a booking or payment changes.
+---
+
+Register an HTTPS endpoint with [Create a webhook endpoint](op:travel/create-a-webhook-endpoint)
+and choose the events you want.
+
+| Event               | Sent when                                               |
+| ------------------- | ------------------------------------------------------- |
+| `booking.confirmed` | Seats are reserved for a booking.                       |
+| `booking.changed`   | Passengers, seats or your reference change.             |
+| `booking.cancelled` | A booking is cancelled.                                 |
+| `payment.succeeded` | A card or wallet payment is charged.                    |
+| `payment.failed`    | A payment is declined; the booking is still unpaid.     |
+
+Every delivery is an [event](op:travel/get-an-event): the object it is about
+(a booking or a payment) in `data.object`, and for `booking.changed` the old
+values in `data.previousAttributes`.
+
+```json title="booking.changed"
+{
+  "id": "evt_N3wB9k",
+  "type": "booking.changed",
+  "apiVersion": "2031-01-01",
+  "data": {
+    "object": { "id": "bk_7Hq2xP", "status": "confirmed", "seats": ["24A"] },
+    "previousAttributes": { "seats": ["22A"] }
+  },
+  "createdAt": "2026-10-03T12:00:01Z"
+}
+```
+
+## Verify the signature
+
+Each delivery is signed with your endpoint's `secret`: the `Orbit-Signature`
+header holds an HMAC-SHA256 of the raw body, in hex. Verify it before trusting the event.
+
+```ts title="verify.ts"
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
+export function verify(rawBody: string, signature: string, secret: string) {
+  const expected = createHmac('sha256', secret).update(rawBody).digest('hex');
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+}
+```
+
+## Test your endpoint
+
+[Send a test event](op:travel/send-a-test-event) delivers a signed sample of any
+event type right away and tells you how your server answered, so you can check
+verification before real traffic arrives.
+
+## Missed deliveries
+
+Deliveries can arrive twice or out of order: skip event `id`s you have already
+handled. If your endpoint was down, catch up with [List events](op:travel/list-events),
+filtered by `type` and `created[gte]`. It returns the same payloads.

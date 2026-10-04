@@ -1,0 +1,110 @@
+---
+title: Lint your spec
+description: Run Spectral's OpenAPI rules or your own ruleset on every extracted spec, and choose which severity fails the command.
+---
+
+`orbitdocs lint` runs [Spectral](https://stoplight.io/open-source/spectral) on the specs OrbitDocs extracted. It finds problems that make docs, SDKs and the mock worse: missing operation ids, undefined tags, invalid examples, broken references. Without a ruleset of your own, it uses Spectral's recommended OpenAPI rules.
+
+## Run it
+
+```bash
+npx orbitdocs extract
+npx orbitdocs lint
+npx orbitdocs lint --api travel
+```
+
+```txt
+  warn  travel paths./v1/flights.get  Operation must have non-empty "tags" array. operation-tags
+  warn  travel info  Info object must have "contact" object. info-contact
+✓ Lint: 0 error, 2 warn, 0 info, 0 hint
+```
+
+Each line shows the severity, the API, the path in the spec, the message and the rule. The command exits with code 1 when a problem at or above `failOn` is found.
+
+| Flag | Default | |
+| --- | --- | --- |
+| `--api <id>` | every API | Lint one API. |
+
+`orbitdocs lint` reads `openapi/<api>.json` and doesn't extract. An API without a spec is skipped with a warning.
+
+## Choose what fails
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme' },
+  lint: { failOn: 'warn' },
+});
+```
+
+| `failOn` | Fails on |
+| --- | --- |
+| `error` (default) | errors |
+| `warn` | errors and warnings |
+| `info` | errors, warnings and info |
+| `hint` | any problem |
+
+## Use your own ruleset
+
+Point `lint.ruleset` at a Spectral ruleset file, relative to the docs app. It replaces the built-in rules, so extend Spectral's OpenAPI rules to keep them:
+
+```yaml title=".spectral.yaml"
+extends: [[spectral:oas, recommended]]
+
+rules:
+  # Nest apps often skip these:
+  info-contact: off
+  operation-tags: warn
+
+  # Every operation needs a description.
+  operation-description: error
+
+  # Paths use kebab-case.
+  paths-kebab-case:
+    description: Path segments are kebab-case.
+    severity: warn
+    given: $.paths[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: "^(/([a-z0-9-]+|\\{[a-zA-Z0-9]+\\}))+$"
+```
+
+```ts title="orbitdocs.config.ts"
+lint: { ruleset: '.spectral.yaml', failOn: 'warn' },
+```
+
+Rulesets can extend other files and URLs, like any Spectral ruleset. If the file doesn't exist, the command fails with `lint.ruleset: <path> not found`.
+
+## Lint in CI
+
+```yaml title=".github/workflows/docs.yml"
+      - run: npx orbitdocs extract
+        working-directory: docs
+      - run: npx orbitdocs lint
+        working-directory: docs
+```
+
+The self-hosted platform can lint every spec revision too. See [Spec registry](/platform/registry).
+
+## Options
+
+<TypeTable
+  type={{
+    'lint.ruleset': { type: 'string', description: 'A Spectral ruleset file, relative to the docs app. Replaces the built-in rules.' },
+    'lint.failOn': { type: "'error' | 'warn' | 'info' | 'hint'", description: 'Lowest severity that fails the command.', default: "'error'" },
+  }}
+/>
+
+<Callout type="info" title="Lint and completeness are different checks">
+Lint checks the spec against OpenAPI style rules. [Completeness](/api-reference/completeness) checks that each operation has the descriptions, examples and typed responses good docs need, and runs during `orbitdocs extract` and `build`.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Completeness checks" href="/api-reference/completeness" description="Fail the build on undocumented operations." />
+  <Card title="Spec registry" href="/platform/registry" description="Revisions and lint results on the platform." />
+  <Card title="CLI reference" href="/docs-reference/cli" description="Every command and flag." />
+</Cards>

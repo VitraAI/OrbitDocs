@@ -1,0 +1,95 @@
+---
+title: Collections
+description: How collections are generated from your spec and kept in sync, how readers add their own requests, and how import and export work.
+---
+
+A collection is the set of requests for one API. The client generates one per API from your spec, grouped in folders by tag. Readers can edit those requests, add their own, and import cURL commands. Everything is saved in their browser as they type.
+
+## Generated collections
+
+Each API in `orbitdocs.config.ts` becomes a collection named after the API's title:
+
+| Collection part | Comes from |
+| --- | --- |
+| Folders | The reference's groups (tags), in the same order. Operations without a group go under **Requests**. |
+| One request per operation | Named after the operation's title |
+| URL | `{{baseUrl}}` plus the path, with example values for path parameters |
+| Params and headers | Every query parameter and header from the spec. Required ones and ones with an example start switched on. |
+| Body | The example body, as JSON, Raw, Form or Multipart |
+| Auth | **Inherit from collection** for secured operations, **No auth** for the rest |
+| Collection auth | The API's security scheme, using `{{apiKey}}`, `{{token}}` or similar variables |
+| Environments | One per server. See [Environments](/api-client/environments). |
+
+On `/client`, every API's collection is listed. In the **Test Request** dialog, the collection of that API is loaded.
+
+## Staying in sync with the spec
+
+Each time the client loads, it merges the latest spec into the saved workspace:
+
+- New operations are added.
+- Operations removed from the spec are removed, with their requests.
+- A generated request the reader never edited is replaced by the new version.
+- A generated request the reader edited is kept exactly as they left it.
+- Requests the reader created are always kept.
+
+<Callout type="info" title="Edited requests stop following the spec">
+  Once a reader changes a generated request, later spec changes don't reach it. There is no reset button; clearing the site's data in the browser resets the whole workspace.
+</Callout>
+
+## Find a request
+
+The search box at the top of the collections panel filters by name, method or URL. Press ⌘ / to jump to it. The command palette (⌘ K) also searches every request, including folder names.
+
+Opened requests appear as tabs in the top bar. Close a tab with its **×** or a middle click. A dot on a tab means the request was sent in this session.
+
+## Add your own requests
+
+| Action | How | Result |
+| --- | --- | --- |
+| New request | **+** next to the collection name, **+** in the tab bar, or the command palette | `Untitled request`, `GET {{baseUrl}}/`, in that collection |
+| Duplicate | **Duplicate request** in the **Send** menu, or the command palette | A copy named `<name> (copy)` |
+| Rename | Type in the name field above the URL bar | |
+
+Requests you create or duplicate are your own. They never change when the spec changes. New requests are listed under **Requests**; a duplicate stays in the folder of the original.
+
+## Saving
+
+There is no save button. Every change is saved to the browser's `localStorage` as you make it, under `orbitdocs:client:workspace`. Secret values are saved under `orbitdocs:client:secrets`.
+
+The workspace belongs to the browser and to the site's origin. It is not shared between browsers or readers, and nothing is sent to a server.
+
+## Import a cURL command
+
+Open **Import** from the rail, paste a cURL command and press **Import**. It becomes a new request in the current collection, and opens.
+
+```bash
+curl -X POST 'https://api.orbit-travel.example/v1/bookings?notify=true' \
+  -H 'x-api-key: otk_test_4f9a2c1b8e7d6a5f' \
+  -H 'Content-Type: application/json' \
+  --data '{"flightId":"flt_2031_proxima","cabin":"economy"}'
+```
+
+| cURL option | Becomes |
+| --- | --- |
+| `-X`, `--request` | The method. Without it: `POST` when there is a body, otherwise `GET`. |
+| The URL, or `--url` | The URL. Its query string becomes **Params**. |
+| `-H`, `--header` | **Headers** |
+| `-d`, `--data`, `--data-raw`, `--data-binary`, `--data-ascii` | The body. JSON is detected and formatted. |
+| `-F`, `--form` | A **Multipart** body. `field=@file` rows become File rows; pick the file again. |
+| `-u`, `--user` | **Basic auth** |
+
+The request is named after its method and path, such as `POST /v1/bookings`. Other cURL options are ignored.
+
+## Export the workspace
+
+**Export workspace** (the download button in the top bar) saves `orbitdocs-workspace.json`. It contains every collection, request, environment, global and the history. Secret variables are exported with empty values.
+
+The client can't import this file back yet. Use it as a backup or to share request setups as reference.
+
+## Next steps
+
+<Cards>
+  <Card title="Requests" href="/api-client/requests" description="Everything inside a request." />
+  <Card title="Runner and history" href="/api-client/runner-and-history" description="Run a collection top to bottom." />
+  <Card title="Customizing" href="/api-client/customizing" description="Hide Import or other features on your site." />
+</Cards>

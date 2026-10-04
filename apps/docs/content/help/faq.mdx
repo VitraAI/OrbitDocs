@@ -1,0 +1,132 @@
+---
+title: FAQ
+description: Short answers to the questions people ask before and after adopting OrbitDocs.
+---
+
+Short answers, each with a link to the full page.
+
+## Getting started
+
+<Accordions>
+<Accordion title="Is OrbitDocs free?" id="free">
+
+Yes. Everything is MIT-licensed: the CLI, the docs site, the API client, private docs, Ask AI, SDK generation and the self-hosted platform. There is no paid tier and no hosted service.
+
+</Accordion>
+<Accordion title="Do I need NestJS?" id="nestjs-required">
+
+No. NestJS gets automatic extraction, decorators and `mountOrbitDocs`. Any other API works with a spec file or URL:
+
+```ts title="orbitdocs.config.ts"
+apis: [{ id: 'payments', source: { file: './openapi.yaml' } }],
+```
+
+See [Multiple APIs](/api-reference/multiple-apis).
+
+</Accordion>
+<Accordion title="I already use @nestjs/swagger. Do I have to add OrbitDocs decorators?" id="swagger">
+
+No. Set `routes: 'all'` and every route Swagger documents appears, titled by `@ApiOperation` and grouped by `@ApiTags`. The `@Docs*` decorators are optional extras. See [Decorators](/nestjs/decorators).
+
+</Accordion>
+<Accordion title="Why are my routes missing from the reference?" id="missing-routes">
+
+The default is `routes: 'opt-in'`: only routes marked with `@DocsOperation()` appear, so internal and admin routes can't leak by accident. Mark the routes, or switch to `routes: 'all'`.
+
+</Accordion>
+<Accordion title="Does extraction connect to my database?" id="extraction-db">
+
+No. The module is loaded in Nest preview mode, which instantiates no providers. Code that runs on import still runs, so you may need placeholder variables in `source.nest.env`. See [Extraction](/nestjs/extraction).
+
+</Accordion>
+<Accordion title="Which Node version do I need?" id="node">
+
+Node 22.12 or later.
+
+</Accordion>
+</Accordions>
+
+## Hosting
+
+<Accordions>
+<Accordion title="Where can I host the docs?" id="hosting">
+
+Anywhere that serves files: Vercel, Netlify, Cloudflare Pages, GitHub Pages, S3 + CloudFront, nginx, a Docker image, inside your Nest app, or on the self-hosted platform. See [Deploy](/deploy).
+
+</Accordion>
+<Accordion title="Do private docs work on a static host?" id="private-static">
+
+No. A static host serves every file to everyone. Serve the docs from your Nest app, run them in server mode (Vercel, containers), or host them on the platform.
+
+</Accordion>
+<Accordion title="Does mountOrbitDocs work with Fastify?" id="fastify">
+
+Not in this version. It supports the Express adapter. Deploy the docs to a static host or in server mode instead.
+
+</Accordion>
+<Accordion title="Do I need the self-hosted platform?" id="platform-needed">
+
+No. One team publishing one site needs only the CLI. The platform helps when many teams publish many sites and you want previews, a registry, roles and an audit log in one place. See [Self-hosted platform](/platform).
+
+</Accordion>
+<Accordion title="Can the platform host server-mode builds?" id="platform-server">
+
+No, it hosts static builds. It adds private docs, Ask AI, MCP and analytics itself, so you don't lose those features.
+
+</Accordion>
+</Accordions>
+
+## Features
+
+<Accordions>
+<Accordion title="Which LLMs does Ask AI support?" id="llms">
+
+OpenAI, Anthropic, Google, and any OpenAI-compatible endpoint (Ollama, vLLM, OpenRouter, Azure OpenAI). You bring the key; it stays in an environment variable on your server. See [AI providers](/ai/providers).
+
+</Accordion>
+<Accordion title="Which SDK languages can I generate?" id="sdk-languages">
+
+TypeScript, Python, Go, Java, C# and PHP. Languages other than TypeScript need Java 11 or later on the machine that runs `orbitdocs sdk`. See [SDKs](/sdks).
+
+</Accordion>
+<Accordion title="Which sign-in options do private docs support?" id="sign-in">
+
+SSO presets for Google, Microsoft Entra ID, Okta, Auth0, Clerk and Keycloak. Or reuse your product's own session from Supabase, Clerk, Firebase or Appwrite. See [SSO](/private-docs/sso) and [App session](/private-docs/app-session).
+
+</Accordion>
+<Accordion title="Is there SAML, a generic OIDC provider or email magic links?" id="saml">
+
+No. These are out of scope. The six presets above are OpenID Connect underneath, which covers most company identity providers.
+
+</Accordion>
+<Accordion title="Does OrbitDocs detect breaking changes or write a changelog?" id="breaking-changes">
+
+No. Breaking-change detection and changelogs are left to you. Write changelog pages as MDX guides. The platform registry keeps every spec revision, so you can download two revisions and compare them with the tool you prefer.
+
+</Accordion>
+<Accordion title="Are translated docs, OG images or an RSS feed supported?" id="i18n">
+
+Not yet. They are planned but not built.
+
+</Accordion>
+<Accordion title="Can I add my own React components to guides?" id="custom-components">
+
+Yes. Pass them to `orbitMdxComponents` in the guides route. See [MDX components](/docs-reference/components).
+
+</Accordion>
+</Accordions>
+
+## Coming from Scalar
+
+<Accordions>
+<Accordion title="How does OrbitDocs compare with Scalar?" id="scalar">
+
+Both have a modern API reference and API client. OrbitDocs also runs the parts Scalar only offers hosted (guides, registry, SDKs, MCP) on your own infrastructure, and adds GitLab sync, SCIM and an audit log. See the [full comparison](/help/scalar-comparison).
+
+</Accordion>
+<Accordion title="Can I keep my existing OpenAPI file?" id="existing-spec">
+
+Yes. Point `source.file` or `source.url` at it. Extraction from NestJS is optional.
+
+</Accordion>
+</Accordions>

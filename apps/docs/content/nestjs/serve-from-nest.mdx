@@ -1,0 +1,172 @@
+---
+title: Serve from Nest
+description: Serve the built docs from your Nest app at /docs with mountOrbitDocs, including private docs and Ask AI.
+---
+
+`mountOrbitDocs` serves the static docs build from your own Nest server. Your API and its docs then share one origin and one deployment. It also enforces [private docs](/private-docs) and runs [Ask AI and the MCP servers](/ai) when the build has them.
+
+## Set it up
+
+<Steps>
+<Step>
+
+### Set the base path
+
+The site's links must include the path Nest serves it under. Set `output.basePath` in the docs config:
+
+```ts title="docs/orbitdocs.config.ts"
+export default defineConfig({
+  // ...
+  output: { mode: 'static', basePath: '/docs' },
+});
+```
+
+</Step>
+<Step>
+
+### Build the docs
+
+```bash
+cd docs
+npm run build
+```
+
+The site is written to `docs/out/`.
+
+</Step>
+<Step>
+
+### Mount it in main.ts
+
+Call `mountOrbitDocs` before `app.listen()`:
+
+```ts title="src/main.ts"
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { NestFactory } from '@nestjs/core';
+import { mountOrbitDocs } from '@orbitdocs/nestjs';
+
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // Serve the docs at /docs once `orbitdocs build` has run.
+  const docs = join(__dirname, '../docs/out');
+  if (existsSync(docs)) mountOrbitDocs(app, { root: docs, path: '/docs' });
+
+  await app.listen(3000);
+}
+
+void bootstrap();
+```
+
+Open `http://localhost:3000/docs`. The `existsSync` check keeps the API starting when the docs haven't been built yet. Without it, `mountOrbitDocs` throws `OrbitDocs build not found at …`.
+
+</Step>
+</Steps>
+
+`npx orbitdocs deploy --target nest` builds the site and prints this snippet with your paths filled in.
+
+## Options
+
+```ts
+mountOrbitDocs(app: INestApplication, options: MountOrbitDocsOptions): void
+```
+
+<TypeTable
+  type={{
+    root: { type: 'string', required: true, description: 'Folder with the built site, the `out/` folder of `orbitdocs build`.' },
+    path: { type: 'string', default: '"/docs"', description: 'URL path to serve it under. Must equal `output.basePath`.' },
+    spec: { type: '{ file: string; path: string }', description: 'Also serve a spec file at exactly `path`, e.g. `/openapi.json`.' },
+    auth: { type: 'false | { publicUrl?: string; env?: Record<string, string | undefined> }', description: 'Private docs. On automatically when the build has an access manifest. `false` turns it off.' },
+    ai: { type: 'false | { env?: Record<string, string | undefined>; rateLimit?: number }', description: 'Ask AI and MCP. On automatically when the build has an AI index. `false` turns it off.' },
+  }}
+/>
+
+### auth
+
+| Key | Default | What it does |
+| --- | --- | --- |
+| `publicUrl` | The request's own origin | The docs origin, such as `https://api.acme.com`, when a proxy rewrites the `Host` header. Sign-in callback URLs are built from it. |
+| `env` | `process.env` | Where secrets are read from. When you pass it, `process.env` is not read. |
+
+### ai
+
+| Key | Default | What it does |
+| --- | --- | --- |
+| `rateLimit` | `30` | Questions per reader (by IP address) per 10 minutes. Over the limit, Ask AI answers 429. |
+| `env` | `process.env` | Where the LLM API key is read from. When you pass it, `process.env` is not read. |
+
+### spec
+
+The built site already serves each spec at `<path>/openapi/<api id>.json`. Use `spec` when you want it at another URL as well:
+
+```ts title="src/main.ts"
+mountOrbitDocs(app, {
+  root: join(__dirname, '../docs/out'),
+  path: '/docs',
+  spec: { file: join(__dirname, '../docs/openapi/travel.json'), path: '/openapi.json' },
+});
+```
+
+## What it serves
+
+Every request under `path` goes through these steps:
+
+1. `orbitdocs-access.json` and `orbitdocs-ai.json` answer 404. They are internal files.
+2. Ask AI (`<path>/_ai/…`) and MCP (`<path>/mcp`, `<path>/mcp/<api id>`) requests are answered, when the build has `ai`.
+3. Sign-in routes (`<path>/_auth/…`) are answered, when the build has `access`.
+4. The access gate checks the page. A reader without access is sent to sign in, or denied.
+5. The file is served. `/docs/quickstart` serves `quickstart/index.html`, and `.html` extensions are optional.
+6. Anything not found gets the site's `404.html`.
+
+<Callout type="info" title="Test Request without CORS">
+  When the docs and the API share an origin, requests from the reference and the API client are same-origin. You don't need CORS for the docs.
+</Callout>
+
+## Environment variables
+
+`mountOrbitDocs` reads secrets from the Nest process's environment at runtime. The build only stores their names. Set them where your API runs.
+
+| Variable | Required | Default | What it does |
+| --- | --- | --- | --- |
+| `ORBITDOCS_AUTH_SECRET` | Yes, with `access` | Name set by `access.session.secretEnv` | Signs reader session cookies. At least 32 random characters, e.g. `openssl rand -hex 32`. Sign-in fails without it. |
+| Each `access.providers[].clientSecretEnv` | Yes, per provider | None | The OAuth client secret of that sign-in provider, e.g. `GOOGLE_CLIENT_SECRET`. Sign-in with that provider fails without it. |
+| `access.personalization.secretEnv` | With `personalization` | None | Signs the call to your personalization hook (`x-orbitdocs-signature`). Without it, the hook is skipped. |
+| `access.appSession.jwtSecretEnv` | No | None | Supabase only: the legacy shared JWT secret. Without it, the project's public keys are used. |
+| `access.appSession.secretKeyEnv` | No | None | Clerk only: the secret key, to look up the reader's email when the session token has none. |
+| The name in `ai.apiKeyEnv` | Yes, with `ai` | None | Your LLM provider's API key, e.g. `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`. Questions fail with `… is not set (API key for Ask AI)` without it. |
+
+A complete example, from the sample app:
+
+```bash title="examples/nest-sample/.env.example"
+# Private docs (examples/nest-sample/docs/orbitdocs.config.ts → access)
+ORBITDOCS_AUTH_SECRET=change-me-to-a-random-string-of-32-plus-chars
+MOCK_OIDC_SECRET=anything
+DOCS_HOOK_SECRET=change-me-too
+DOCS_LLM_KEY=anything
+```
+
+There, `MOCK_OIDC_SECRET` is a provider's `clientSecretEnv`, `DOCS_HOOK_SECRET` the personalization secret and `DOCS_LLM_KEY` the `ai.apiKeyEnv`. OrbitDocs reads no variable for the output mode; that comes from `output.mode` in the config. See [Environment variables](/docs-reference/environment-variables) for every variable, including the CLI's and the platform's.
+
+## Gotchas
+
+<Callout type="error" title="Express only">
+  `mountOrbitDocs` supports the Express adapter. With Fastify it throws `mountOrbitDocs supports the Express adapter in this version.` Use [server mode](/deploy/server-mode) or a static host instead.
+</Callout>
+
+- **Start the server from the project root.** `mountOrbitDocs` loads `express` from the `package.json` in the current working directory, so it uses your app's copy.
+- **The global prefix doesn't apply.** `path` is an absolute URL path. `app.setGlobalPrefix('api')` does not move the docs to `/api/docs`.
+- **`path` and `basePath` must match.** Otherwise pages load but links, styles and scripts point to the wrong place.
+- **Ship the build with the app.** Copy `docs/out/` into your image or artifact, at the place `root` points to. In a Dockerfile, build the docs before the final stage and copy the folder.
+- **Rebuild the docs after API changes.** The server serves files; it doesn't re-extract. Run `orbitdocs build` in CI before you deploy.
+
+## Next steps
+
+<Cards>
+  <Card title="Deploy with Nest" href="/deploy/nest" description="CI, Docker and production setup for docs served by Nest." />
+  <Card title="Private docs" href="/private-docs" description="Rules, groups and sign-in providers." />
+  <Card title="Ask AI" href="/ai" description="Ask AI and MCP servers for your docs." />
+</Cards>

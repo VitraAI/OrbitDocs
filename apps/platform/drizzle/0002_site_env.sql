@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "site_env" jsonb DEFAULT '[]'::jsonb NOT NULL;

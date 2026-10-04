@@ -1,0 +1,155 @@
+---
+title: Sidebar
+description: Control how the guides sidebar opens, show root folders as tabs, and add a banner and links to it.
+---
+
+The sidebar lists every guide in `content/`, in the order your `meta.json` files give. This page covers how it behaves and what you can add around the page tree. To order pages and folders, see [Navigation](/writing/navigation).
+
+## Configure the sidebar
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme' },
+  layout: {
+    sidebar: {
+      collapsible: true,
+      defaultOpenLevel: 1,
+      prefetch: true,
+      banner: 'You are reading the v2 docs',
+    },
+  },
+});
+```
+
+- `defaultOpenLevel` opens folders down to that depth on first load. `0` keeps every folder closed; `1` opens top-level folders.
+- `collapsible` lets readers collapse the sidebar on desktop.
+- `prefetch` prefetches the pages the sidebar links to, so they open faster. It uses Next's automatic prefetching, which works on a server and in a static export. Set it to `false` to turn prefetching off.
+- `banner` is plain text (no Markdown) shown above the page tree. Use it for a version notice or a short hint.
+- `enabled: false` hides the sidebar in every layout. See [Pages without a sidebar](#pages-without-a-sidebar).
+
+## Pages without a sidebar
+
+```ts title="orbitdocs.config.ts"
+layout: {
+  sidebar: { enabled: false },
+},
+```
+
+On wide screens there is no sidebar, and no empty column for it: pages use the width. Small screens keep the menu button and its drawer, because that is where the header links go on a phone.
+
+| Layout | Without the sidebar |
+| --- | --- |
+| `notebook` (default) | The navbar keeps the title, links and search. `navMode: 'auto'` becomes `'top'`, and `tabMode: 'sidebar'` becomes `'navbar'`, so nothing is lost. |
+| `docs`, `glass` | These layouts show the title, header links and search in the sidebar on wide screens, so those go too. Use `notebook` for a top navbar without a sidebar. |
+| `flux` | The menu button and its page tree go on every screen size. Readers move between pages with links and search. |
+| `home` | Never has a sidebar. |
+
+`orbitdocs check` and the docs app's server log print a warning for the combinations that lose navigation. The `navigation.sidebar` links and `sidebar.banner` only show in the small-screen menu.
+
+## Add links under the page tree
+
+`navigation.sidebar` adds links at the bottom of the sidebar. Use it for support, status or community links.
+
+```ts title="orbitdocs.config.ts"
+navigation: {
+  sidebar: [
+    { text: 'Support', url: 'mailto:help@acme.com', icon: 'LifeBuoy' },
+    { text: 'Status', url: 'https://status.acme.com', icon: 'Activity' },
+    { text: 'Changelog', url: '/changelog', icon: 'ScrollText' },
+  ],
+},
+```
+
+`icon` is a [Lucide](https://lucide.dev/icons) icon name (`LifeBuoy` or `life-buoy`), or a Simple Icons brand name with the `Si` prefix (`SiDiscord`). Absolute URLs open in a new tab.
+
+These links show in the `notebook`, `docs` and `flux` layouts.
+
+## Show root folders as tabs
+
+Large docs often split into sections such as "Guides", "SDKs" and "Platform". Each section is a root folder: a folder whose `meta.json` has `"root": true`. Fumadocs then shows only the current section in the sidebar and lists every section as a tab.
+
+```json title="content/sdks/meta.json"
+{
+  "title": "SDKs",
+  "root": true,
+  "pages": ["index", "typescript", "python"]
+}
+```
+
+`layout.tabMode` decides where the tabs go:
+
+| Layout | `tabMode` values | Default |
+| --- | --- | --- |
+| `notebook` | `navbar` puts the tabs in the top bar. `sidebar` puts a section switcher at the top of the sidebar. | `navbar` |
+| `docs` | `top` or `auto` (Fumadocs decides). | `top` (the `navbar` default maps to `top`) |
+
+Other layouts show root folders their own way and ignore `tabMode`.
+
+### Choose the tabs
+
+By default there is one tab per root folder. `layout.tabs` replaces them with your own list, or turns them off with `false`:
+
+```ts title="orbitdocs.config.ts"
+layout: {
+  tabs: [
+    { title: 'Guides', url: '/guides', icon: 'BookOpen' },
+    { title: 'SDKs', url: '/sdks', icon: 'Package', description: 'TypeScript and Python' },
+  ],
+},
+```
+
+A tab is active on its URL and every page under it. With [private docs](/private-docs), a tab whose page a reader can't open is left out.
+
+## Sidebar options
+
+<TypeTable
+  type={{
+    'sidebar.enabled': { type: 'boolean', description: 'Show the sidebar. false hides it on wide screens in every layout.', default: 'true' },
+    'sidebar.collapsible': { type: 'boolean', description: 'Readers can collapse the sidebar on desktop.', default: 'true' },
+    'sidebar.defaultOpenLevel': { type: 'number', description: 'Folders open by default down to this depth.', default: '0' },
+    'sidebar.prefetch': { type: 'boolean', description: 'Prefetch pages linked from the sidebar.', default: 'true' },
+    'sidebar.banner': { type: 'string', description: 'Plain text shown above the page tree.' },
+    tabMode: { type: "'navbar' | 'sidebar' | 'top' | 'auto'", description: 'Where root folders appear as tabs. Notebook: navbar or sidebar. Docs: top or auto.', default: "'navbar'" },
+    tabs: { type: 'false | Array<{ title: string; url: string; description?: string; icon?: string }>', description: 'Your own tabs instead of one per root folder, or false for none.' },
+    'navigation.sidebar': { type: 'Array<{ text: string; url: string; icon?: string }>', description: 'Links at the bottom of the sidebar. http(s) URLs open in a new tab.', default: '[]' },
+  }}
+/>
+
+## Go further in code
+
+Some sidebar options take React: a banner or footer with links and components, your own page tree items, tabs with custom icons. Set them in `lib/overrides.tsx` of the docs app. They are merged over the config, so everything else stays as configured.
+
+```tsx title="lib/overrides.tsx"
+import type { OrbitOverrides } from '@orbitdocs/next';
+
+export const overrides: OrbitOverrides = {
+  layout: {
+    sidebar: {
+      // Replace layout.sidebar.banner and the navigation.sidebar links.
+      banner: <a href="https://v1.docs.acme.com" className="text-sm">Looking for v1?</a>,
+      footer: <p className="text-xs">© Acme</p>,
+    },
+    // Change the root-folder tabs, or pass your own list.
+    tabs: { transform: (tab) => ({ ...tab, description: undefined }) },
+  },
+};
+```
+
+| Override | Fumadocs prop | Layouts |
+| --- | --- | --- |
+| `layout.sidebar.banner` | `sidebar.banner` | `notebook`, `docs`, `flux` |
+| `layout.sidebar.footer` | `sidebar.footer` | `notebook`, `docs`, `flux` |
+| `layout.sidebar.components` | `sidebar.components` (page tree items) | `notebook`, `docs`, `flux` |
+| `layout.tabs` | `tabs` (a list, or `{ transform }`) | every layout with tabs |
+
+Fumadocs' `glass` sidebar takes none of the sidebar props. A component used here that runs in the browser (state, effects, event handlers) needs `'use client'` at the top of its file.
+
+## Next steps
+
+<Cards>
+  <Card title="Navigation" href="/writing/navigation" description="Order pages and folders with meta.json." />
+  <Card title="Table of contents" href="/customization/table-of-contents" description="Choose the TOC style on the right of each page." />
+  <Card title="Navigation bar" href="/customization/navigation-bar" description="Links, buttons and menus in the header." />
+</Cards>

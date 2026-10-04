@@ -1,0 +1,205 @@
+---
+title: NestJS
+description: Install the Nest integration, point the docs at your app and choose which routes appear.
+---
+
+`@orbitdocs/nestjs` connects your Nest app to the docs. It builds on `@nestjs/swagger`: extraction calls your app's own `SwaggerModule.createDocument`. Everything you already describe with Swagger shows up in the docs. The `@Docs*` decorators are optional extras on top.
+
+There is no Nest module to import and nothing changes at runtime. The package gives you decorators, the extractor the CLI runs, and `mountOrbitDocs` to serve the built site.
+
+## What's in this section
+
+<Cards>
+  <Card title="Decorators" href="/nestjs/decorators" description="@DocsOperation, @DocsErrors, @DocsSamples, @DocsContent and how they combine with Swagger's." />
+  <Card title="Extraction" href="/nestjs/extraction" description="How the spec is built in preview mode, every option, and troubleshooting." />
+  <Card title="Serve from Nest" href="/nestjs/serve-from-nest" description="Serve the built docs from your Nest app with mountOrbitDocs." />
+</Cards>
+
+## Install
+
+<Steps>
+<Step>
+
+### Add the packages to your Nest project
+
+```npm
+npm install @orbitdocs/nestjs @nestjs/swagger
+```
+
+`@orbitdocs/nestjs` needs `@nestjs/common` and `@nestjs/core` 10 or later, `@nestjs/swagger` 7 or later, and `reflect-metadata`. Install it in the Nest project, not in the docs app: the extractor is loaded from there so it shares your copy of Nest.
+
+</Step>
+<Step>
+
+### Turn on the Swagger CLI plugin
+
+```json title="nest-cli.json"
+{
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "@nestjs/swagger",
+        "options": { "introspectComments": true, "classValidatorShim": true }
+      }
+    ]
+  }
+}
+```
+
+With the plugin, DTO property types become schemas without `@ApiProperty`. With `introspectComments`, JSDoc comments become descriptions and `@example` tags become examples:
+
+```ts title="src/bookings/booking.dto.ts"
+export class PassengerDto {
+  /**
+   * Full name as on the travel document.
+   * @example "Ada Lovelace"
+   */
+  @IsString()
+  name: string;
+}
+```
+
+</Step>
+<Step>
+
+### Create the docs app
+
+```npm
+npx orbitdocs init
+```
+
+This writes `docs/` with a config that points at your compiled module. See [Quickstart](/get-started/quickstart) for the full walkthrough.
+
+</Step>
+</Steps>
+
+## Point the docs at your app
+
+Each API in `orbitdocs.config.ts` has a `source`. For a Nest app it is `source.nest`:
+
+```ts title="docs/orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Orbit Travel' },
+  apis: [
+    {
+      id: 'travel',
+      title: 'Orbit Travel API',
+      source: {
+        nest: {
+          module: 'dist/app.module.js',
+          build: 'nest build',
+          routes: 'opt-in',
+          versioning: { type: 'uri', prefix: 'v' },
+        },
+      },
+    },
+  ],
+});
+```
+
+<TypeTable
+  type={{
+    module: { type: 'string', required: true, description: 'Compiled module file, relative to the Nest project root, e.g. `dist/app.module.js`.' },
+    export: { type: 'string', default: '"AppModule"', description: 'Name of the exported module class.' },
+    routes: { type: "'opt-in' | 'all'", default: '"opt-in"', description: '`opt-in`: only routes marked with `@DocsOperation`. `all`: every route `@nestjs/swagger` documents.' },
+    build: { type: 'string', description: 'Command that compiles the app before extraction, e.g. `nest build`. Runs in the Nest root. Skipped when omitted.' },
+    root: { type: 'string', default: '".."', description: 'Nest project root, relative to the docs app.' },
+    globalPrefix: { type: 'string', description: 'Mirrors `app.setGlobalPrefix()`, e.g. `api`.' },
+    versioning: { type: "{ type: 'uri'; prefix?: string; defaultVersion?: string }", description: 'Mirrors `app.enableVersioning({ type: VersioningType.URI })`. `prefix` defaults to `"v"`.' },
+    configure: { type: 'string', description: 'Compiled file exporting a `configure(app)` hook, as `path#exportName`. The export defaults to `configure`.' },
+    env: { type: 'Record<string, string>', default: '{}', description: 'Environment variables set before your module loads. Real values win.' },
+  }}
+/>
+
+[Extraction](/nestjs/extraction) explains each option with examples.
+
+## Choose which routes appear
+
+`routes` decides which of your routes reach the docs. Both modes use the same Swagger metadata.
+
+<Tabs items={["'opt-in' (default)", "'all'"]}>
+<Tab value="'opt-in' (default)">
+
+Only routes marked with `@DocsOperation` appear. Health checks, admin routes and internal hooks stay out until you mark them. Choose this when the API serves more than your public clients.
+
+```ts title="src/flights/flights.controller.ts"
+@Get()
+@DocsOperation({ group: 'Flights', title: 'Search flights', order: 1 })
+search(@Query() query: SearchFlightsQueryDto): FlightListDto {
+  // ...
+}
+
+@Get('internal/stats') // not marked: never in the docs
+stats() {}
+```
+
+</Tab>
+<Tab value="'all'">
+
+Every route that `@nestjs/swagger` documents appears. Choose this when you already describe your API with Swagger decorators.
+
+```ts title="docs/orbitdocs.config.ts"
+source: { nest: { module: 'dist/app.module.js', build: 'nest build', routes: 'all' } },
+```
+
+Hide a route with Swagger's `@ApiExcludeEndpoint()` or with `@DocsHidden()`. Hide a whole controller with Swagger's `@ApiExcludeController()`.
+
+</Tab>
+</Tabs>
+
+In both modes:
+
+- `@ApiOperation({ summary })` gives the title, and `@ApiTags` the sidebar group, unless `@DocsOperation` sets `title` or `group`.
+- The title also becomes the operation's URL slug: `Create a booking` becomes `/reference/travel/create-a-booking/`.
+- `@DocsOperation` still adds `order` and `stability`, and `@DocsErrors`, `@DocsSamples` and `@DocsContent` work on any route.
+
+<Callout type="warn" title="Give every route a title in 'all' mode">
+  A route without `@ApiOperation({ summary })` or a `title` is named after Nest's operation id, such as `BookingsController_create`. Its URL becomes `/reference/travel/bookingscontroller-create/`.
+</Callout>
+
+## What drives the docs
+
+Everything `@nestjs/swagger` understands is used. Common ones:
+
+| Swagger feature | Shows up as |
+| --- | --- |
+| DTO classes and the CLI plugin | Request and response schemas, with types, enums, formats and limits |
+| `@ApiProperty({ description, example })`, JSDoc and `@example` | Field descriptions and examples in samples |
+| `@ApiOperation({ summary, description })` | Operation title and description |
+| `@ApiTags('Bookings')` | Sidebar group |
+| `@ApiParam`, `@ApiQuery`, `@ApiHeader` | Parameters, with descriptions and examples |
+| `@ApiBody`, `@ApiConsumes('multipart/form-data')` | Request body and media type |
+| `@ApiResponse`, `@ApiOkResponse`, … | Responses and their schemas |
+| `@ApiExtraModels()` | Schemas referenced only through `getSchemaPath()` |
+| `@ApiExcludeEndpoint()`, `@ApiExcludeController()` | Routes kept out |
+| `@ApiBearerAuth()`, `@ApiSecurity()` | Which routes need auth. Declare the schemes themselves in the config: see [Authentication](/api-reference/authentication). |
+
+OrbitDocs then adds what your routes return by construction: 400 when a route takes input, 401 and 403 when it is secured, 404 when its path has a parameter, and 500. Turn this off with `standardErrors: false` on the API. See [Extraction](/nestjs/extraction#standard-errors).
+
+## Environment variables
+
+OrbitDocs reads secrets from environment variables. The config only names them, so no secret is ever written to `orbitdocs.config.ts` or the build.
+
+| When | Variable | Required | What it does |
+| --- | --- | --- | --- |
+| Extraction | Any variable your app reads while its modules load | If your app needs it | Set placeholders with `source.nest.env`. Real values in the shell win. See [Extraction](/nestjs/extraction#environment-variables-during-extraction). |
+| Serving from Nest, with `access` | `ORBITDOCS_AUTH_SECRET` (the name in `access.session.secretEnv`) | Yes | Signs reader sessions. At least 32 characters. |
+| Serving from Nest, with `access` | Each `clientSecretEnv` of `access.providers` | Yes, per provider | The OAuth client secret of that sign-in provider. |
+| Serving from Nest, with `access` | `access.personalization.secretEnv`, `appSession.jwtSecretEnv`, `appSession.secretKeyEnv` | When you use that option | Personalization hook signing, a Supabase legacy JWT secret, a Clerk secret key. |
+| Serving from Nest, with `ai` | The name in `ai.apiKeyEnv` | Yes | Your LLM provider's API key for Ask AI. |
+
+The serving variables are read by the Nest process at runtime, not by the build. [Serve from Nest](/nestjs/serve-from-nest#environment-variables) explains each one. `examples/nest-sample/.env.example` in the repository shows a complete set, and [Environment variables](/docs-reference/environment-variables) lists every variable OrbitDocs uses.
+
+<Callout type="info" title="Output mode is not an environment variable">
+  OrbitDocs reads `output.mode` from the config only. The sample app's config picks it from its own `ORBITDOCS_MODE` variable, which you can copy: `mode: process.env.ORBITDOCS_MODE === 'server' ? 'server' : 'static'`.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Decorators" href="/nestjs/decorators" description="Every @Docs* decorator with examples." />
+  <Card title="Extraction" href="/nestjs/extraction" description="Preview mode, every option, troubleshooting." />
+  <Card title="Serve from Nest" href="/nestjs/serve-from-nest" description="Host the docs at /docs on your API server." />
+</Cards>

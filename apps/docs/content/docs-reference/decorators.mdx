@@ -1,0 +1,169 @@
+---
+title: NestJS decorators and functions
+description: Signatures of every @Docs* decorator and every function exported by @orbitdocs/nestjs.
+---
+
+`@orbitdocs/nestjs` adds a few optional decorators on top of `@nestjs/swagger`, plus functions to build the document and serve the docs. The decorators only write OpenAPI extensions or Swagger responses. They never change routing, guards or behavior.
+
+```ts
+import { DocsContent, DocsErrors, DocsExtension, DocsHidden, DocsOperation, DocsSamples, mountOrbitDocs } from '@orbitdocs/nestjs';
+```
+
+Every Swagger decorator (`@ApiOperation`, `@ApiTags`, `@ApiResponse`, `@ApiProperty`, `@ApiBearerAuth`, `@ApiExcludeEndpoint`, …) and the Swagger CLI plugin drive the docs as usual. With `routes: 'all'` you need none of the decorators below.
+
+## Decorators
+
+| Decorator | Applies to | Writes |
+| --- | --- | --- |
+| `@DocsOperation(options?)` | Route method | `x-orbitdocs` |
+| `@DocsHidden()` | Route method | `x-orbitdocs: { hidden: true }` |
+| `@DocsErrors(errors)` | Route method | One Swagger `@ApiResponse` per status |
+| `@DocsSamples(samples)` | Route method | `x-codeSamples` |
+| `@DocsExtension(key, value)` | Route method | Any `x-` extension |
+| `@DocsContent(markdown, position?)` | Route method | `x-orbitdocs-content` |
+
+### @DocsOperation
+
+```ts
+function DocsOperation(options?: DocsOperationOptions)
+```
+
+Puts a route in the public reference. With `routes: 'opt-in'` (the default) only routes with this decorator appear.
+
+<TypeTable
+  type={{
+    group: { type: 'string', default: 'the route tags (@ApiTags)', description: 'Sidebar group. Becomes the operation only tag.' },
+    title: { type: 'string', default: 'summary (@ApiOperation)', description: 'Title, an action in plain words: Create a booking.' },
+    description: { type: 'string', default: 'description (@ApiOperation)', description: 'What it does and when to use it. Markdown.' },
+    order: { type: 'number', description: 'Position within its group, ascending.' },
+    stability: { type: "'stable' | 'beta' | 'alpha' | 'experimental' | 'deprecated'", description: 'Badge in the reference. deprecated also marks the operation deprecated.' },
+  }}
+/>
+
+```ts title="src/bookings/bookings.controller.ts"
+@Post()
+@DocsOperation({ group: 'Bookings', title: 'Create a booking', order: 1 })
+create(@Body() dto: CreateBookingDto) {}
+```
+
+When `title` is set and Swagger's `summary` differs, the summary becomes the description (unless one is given).
+
+### @DocsHidden
+
+```ts
+function DocsHidden()
+```
+
+Keeps a route out of the reference even when it is marked or `routes: 'all'` is on. Same effect as Swagger's `@ApiExcludeEndpoint()` for the docs.
+
+### @DocsErrors
+
+```ts
+function DocsErrors(errors: Partial<Record<number, string>>)
+```
+
+Documents the errors one route returns, and when. Generic codes are added automatically when `standardErrors` is on: 400 with input, 401 and 403 when secured, 404 with a path parameter, 500. List what this route adds or says more about.
+
+```ts
+@DocsErrors({ 404: 'No booking with this id.', 409: 'The flight is full.' })
+```
+
+### @DocsSamples
+
+```ts
+function DocsSamples(samples: CodeSample[])
+
+interface CodeSample {
+  lang: string;   // highlighting: typescript, python, go, shell…
+  label?: string; // tab label; defaults to lang
+  source: string;
+}
+```
+
+Hand-written samples, shown before the generated ones. A hand-written sample with the same label as a generated one replaces it.
+
+### @DocsExtension
+
+```ts
+function DocsExtension(key: `x-${string}`, value: unknown)
+```
+
+Any OpenAPI `x-` extension on the operation, for plugins or your own tools.
+
+### @DocsContent
+
+```ts
+function DocsContent(markdown: string, position?: ContentPosition)
+
+type ContentPosition = 'before-parameters' | 'after-description' | 'after-responses' | 'aside';
+```
+
+| Parameter | Default | What it is |
+| --- | --- | --- |
+| `markdown` | required | Markdown shown in the operation's section. GitHub alerts (`> [!WARNING]`) render as callouts. |
+| `position` | `'after-description'` | Where it appears. |
+
+```ts
+@DocsContent('> [!WARNING]\n> Cancelling within 24 h of departure is not refunded.', 'before-parameters')
+```
+
+For longer content with components, use `reference/<api>/<operation>.mdx`. See [Operation content](/writing/operation-content).
+
+## mountOrbitDocs
+
+```ts
+function mountOrbitDocs(app: INestApplication, options: MountOrbitDocsOptions): void
+```
+
+Serves the static docs build from the Nest app (Express adapter only). Call it in `main.ts` before `app.listen()`. Throws when `root` doesn't exist (`OrbitDocs build not found at …`) or the adapter isn't Express.
+
+<TypeTable
+  type={{
+    root: { type: 'string', required: true, description: 'Folder with the static build (orbitdocs build output).' },
+    path: { type: 'string', default: "'/docs'", description: 'URL path to serve under. Must match output.basePath.' },
+    spec: { type: '{ file: string; path: string }', description: 'Also serve this spec file as JSON at path.' },
+    auth: { type: 'false | { publicUrl?: string; env?: Record<string, string | undefined> }', default: 'on when the build has access', description: 'Private docs. publicUrl is the docs origin behind a proxy; env replaces process.env as the source of secrets.' },
+    ai: { type: 'false | { env?: Record<string, string | undefined>; rateLimit?: number }', default: 'on when the build has ai', description: 'Ask AI and MCP. rateLimit is questions per IP per 10 minutes (default 30).' },
+  }}
+/>
+
+See [Inside your Nest app](/deploy/nest).
+
+## Document helpers
+
+For building the document yourself, for example in a test or a custom script:
+
+```ts
+function createFullDocument(app: INestApplicationContext, base?: Omit<OpenAPIObject, 'paths'>): Document
+function createOrbitDocument(app: INestApplicationContext, options?: OrbitDocumentOptions): Document
+```
+
+- `createFullDocument` returns everything `SwaggerModule.createDocument` produces (with `deepScanRoutes`). `base` defaults to title `API`, version `1.0.0`.
+- `createOrbitDocument` returns the public document: marked routes only, readable operation ids, standard errors and unused schemas pruned.
+
+<TypeTable
+  type={{
+    base: { type: "Omit<OpenAPIObject, 'paths'>", description: 'Base document (title, version, servers).' },
+    mode: { type: "'opt-in' | 'opt-out'", default: "'opt-in'", description: 'opt-in keeps only operations with @DocsOperation. opt-out keeps all except hidden ones (the routes: all setting).' },
+    info: { type: 'Partial<Info>', description: 'Merged into the document info.' },
+    servers: { type: 'Server[]', description: 'Replaces the servers.' },
+    securitySchemes: { type: 'Record<string, object>', description: 'Merged into components.securitySchemes.' },
+    security: { type: 'string[]', description: 'Scheme names required by every kept operation (replaces the operation own security).' },
+    standardErrors: { type: 'boolean | { descriptions?: Record<string, string>; extra?: string[] }', default: 'true', description: 'Add the generic errors and the shared error schema.' },
+    keepOperationIds: { type: 'boolean', default: 'false', description: 'Keep the original operationId instead of a readable slug.' },
+  }}
+/>
+
+A schema that is referenced but never defined throws `DanglingReferenceError`. In NestJS, register it with `@ApiExtraModels()` or type the property.
+
+## extract
+
+```ts
+function extract(request: ExtractRequest): Promise<ExtractResult>
+```
+
+The function behind `orbitdocs extract`. It boots a compiled module in preview mode and writes the filtered document. The CLI calls it through `@orbitdocs/nestjs/extract-cli`; you rarely need it directly. See [Extraction](/nestjs/extraction).
+
+## Exported types
+
+`DocsOperationOptions`, `CodeSample`, `MountOrbitDocsOptions`, `OrbitDocumentOptions`, `ExtractRequest`, `ExtractResult`, and from `@orbitdocs/openapi`: `ORBIT_EXTENSION` (`'x-orbitdocs'`), `OrbitMarker`, `Stability`.

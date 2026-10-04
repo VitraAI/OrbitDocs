@@ -1,0 +1,35 @@
+/*
+ * Fumadocs preset palette (theme.preset other than 'orbit'): the preset's
+ * --color-fd-* tokens are the source, and HeroUI variables follow them so the
+ * API reference and API client match the preset.
+ */
+
+:root,
+.light,
+.dark,
+[data-theme='light'],
+[data-theme='dark'] {
+  --accent: var(--color-fd-primary);
+  --accent-foreground: var(--color-fd-primary-foreground);
+  --background: var(--color-fd-background);
+  --foreground: var(--color-fd-foreground);
+  --surface: var(--color-fd-card);
+  --surface-foreground: var(--color-fd-card-foreground);
+  --surface-secondary: var(--color-fd-muted);
+  --surface-secondary-foreground: var(--color-fd-foreground);
+  --surface-tertiary: var(--color-fd-secondary);
+  --surface-tertiary-foreground: var(--color-fd-secondary-foreground);
+  --overlay: var(--color-fd-popover);
+  --overlay-foreground: var(--color-fd-popover-foreground);
+  --muted: var(--color-fd-muted-foreground);
+  --default: var(--color-fd-secondary);
+  --default-foreground: var(--color-fd-secondary-foreground);
+  --field-background: var(--color-fd-background);
+  --field-foreground: var(--color-fd-foreground);
+  --field-border-width: 1px;
+  --field-border: var(--color-fd-border);
+  --border: var(--color-fd-border);
+  --separator: var(--color-fd-border);
+  --focus: var(--accent);
+  --link: var(--accent);
+}

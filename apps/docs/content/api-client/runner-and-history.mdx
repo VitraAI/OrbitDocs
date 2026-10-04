@@ -1,0 +1,94 @@
+---
+title: Runner and history
+description: Run a collection or folder top to bottom with iterations and tests, and reopen the requests you sent.
+---
+
+The **Collection runner** sends a list of requests in order, runs their scripts and tests, and shows one table of results. **History** keeps your last 50 sends, with their responses.
+
+## Run a collection
+
+<Steps>
+<Step>
+
+Open a request from the collection you want to run. The runner works on the collection of the open request.
+
+</Step>
+<Step>
+
+Open **Collection runner** from the rail, or from the command palette.
+
+</Step>
+<Step>
+
+Choose what to run in **Run**: **All of** the collection, or one folder. Untick requests you want to skip.
+
+</Step>
+<Step>
+
+Set the options, then press **Run N requests**.
+
+</Step>
+</Steps>
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| **Iterations** | `1` | How many times to run the list, from 1 to 100. |
+| **Delay (ms)** | `0` | Wait between requests, in steps of 100 ms. |
+| **Stop on first failure** | Off | Stop when a request fails. |
+
+Requests run in the order they appear in the collection. Each one uses the active environment, and its pre-request and post-response scripts run as usual.
+
+## Read the results
+
+While it runs, a progress bar shows `done/total requests · N succeeded · tests passed/total`. The table lists each request:
+
+| Column | Shows |
+| --- | --- |
+| **Request** | Method and name, with `#2`, `#3`… for later iterations |
+| **Status** | The status code, green for 2xx and 3xx, red otherwise. `ERR` when the request didn't complete. |
+| **Time** | Milliseconds |
+| **Tests** | Each test with ✓ or ✗; hover a failed one for its message. Script errors appear here too. |
+
+Press **Stop** to end the run after the current request. When it's done, **Edit selection** returns to the list of requests.
+
+A request counts as failed when it doesn't complete, a script throws, a test fails, or the status is 400 or above. **Stop on first failure** uses the same rule.
+
+## Chain requests with variables
+
+Variables flow from one request to the next during a run:
+
+- `pm.variables.set(…)` sets a request variable that the following requests in the same run can use.
+- `pm.environment.set(…)` and `pm.globals.set(…)` are saved right away, so later requests see them too.
+
+```js title="Create a booking · Post-response"
+pm.test('created', () => pm.response.to.have.status(201));
+pm.variables.set('bookingId', pm.response.json().id);
+```
+
+```txt title="Get a booking · URL"
+{{baseUrl}}/v1/bookings/{{bookingId}}
+```
+
+Order the folder so the request that creates the value runs first. See [Scripts and tests](/api-client/scripts).
+
+## History
+
+Every request you send, from the URL bar, a test request or the palette, is added to **History**. Open it from the rail.
+
+- The list shows the newest first: method, name, URL, status and time.
+- Click an entry to open its request with the response you got then.
+- **Clear** empties the list.
+
+History keeps the last 50 entries, in the browser's storage. It is included in **Export workspace**. Requests sent by the runner are not added.
+
+## Turn them off
+
+`client.features.runner: false` hides the runner, and `client.features.history: false` hides history, from the rail and the command palette. See [Customizing](/api-client/customizing).
+
+## Next steps
+
+<Cards>
+  <Card title="Scripts and tests" href="/api-client/scripts" description="Write the tests the runner reports." />
+  <Card title="Collections" href="/api-client/collections" description="How collections and folders are built." />
+  <Card title="Customizing" href="/api-client/customizing" description="Defaults and features for your site." />
+</Cards>

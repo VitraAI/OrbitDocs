@@ -1,0 +1,11 @@
+{
+  "title": "Guides",
+  "pages": [
+    "quickstart",
+    "authentication",
+    "pagination",
+    "payments",
+    "webhooks",
+    "internal"
+  ]
+}

@@ -1,0 +1,157 @@
+---
+title: Server mode
+description: Run the docs as a Next server so private docs, Ask AI, MCP and real redirects work on Vercel, a container or any Node host.
+---
+
+In server mode the docs app is a running Next server instead of a folder of files. A `proxy.ts` file sees every request first, so it can sign readers in, gate pages and answer Ask AI. Use it when you need those features and don't serve the docs from your Nest app.
+
+## When to use server mode
+
+| You need | Static | Server mode |
+| --- | --- | --- |
+| Private docs (`access`) | Not enforced | Enforced on every request |
+| Ask AI and the MCP servers (`ai`) | Hidden | Served |
+| Wildcard redirects (`/old/*`) | Netlify and Cloudflare only | Real HTTP redirects everywhere |
+| Cheapest hosting | Yes | Needs a Node runtime |
+
+If your Nest app already serves the docs, you don't need server mode. [`mountOrbitDocs`](/deploy/nest) enforces access and serves Ask AI from the static build.
+
+## Turn it on
+
+<Steps>
+<Step>
+
+**Set the mode:**
+
+```ts title="orbitdocs.config.ts"
+export default defineConfig({
+  // …
+  output: { mode: 'server', basePath: '' },
+});
+```
+
+</Step>
+<Step>
+
+**Keep `proxy.ts`** in the docs app root. `orbitdocs init` creates it:
+
+```ts title="proxy.ts"
+import { orbitProxy } from '@orbitdocs/next/proxy';
+
+export default orbitProxy();
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image).*)'],
+};
+```
+
+</Step>
+<Step>
+
+**Build:**
+
+```bash
+npx orbitdocs build
+```
+
+The CLI prints ``Server build in .next (start with `next start`)``.
+
+</Step>
+<Step>
+
+**Start it** from the docs app folder, with the secrets in the environment:
+
+```bash
+ORBITDOCS_AUTH_SECRET=$(openssl rand -hex 32) npx next start -p 3001
+```
+
+</Step>
+</Steps>
+
+## What proxy.ts does
+
+`orbitProxy()` reads two files that `orbitdocs build` writes: `.orbitdocs/access.json` (from `access`) and `.orbitdocs/ai.json` (from `ai`). For each request it:
+
+1. Returns 404 for `orbitdocs-access.json` and `orbitdocs-ai.json`, so the manifests are never served.
+2. Answers Ask AI (`/_ai/*`) and MCP (`/mcp`, `/mcp/<api id>`) when the config has `ai`.
+3. Answers sign-in routes (`/_auth/*`) when the config has `access`.
+4. Gates the page. Readers without access are sent to the login page.
+5. Lets the request through to Next.
+
+Without `access` and `ai`, it lets every request through. A site with neither section can keep the file.
+
+### Options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `appDir` | `string` | `process.cwd()` | Folder that holds `.orbitdocs/`. Set it when `next start` runs from another folder. |
+| `publicUrl` | `string` | The request's origin | Public origin, such as `https://docs.acme.com`, when a proxy in front rewrites the `Host` header. Used for sign-in callback URLs. |
+
+```ts title="proxy.ts"
+export default orbitProxy({ publicUrl: 'https://docs.acme.com' });
+```
+
+<Callout type="warn" title="Ship the .orbitdocs folder">
+  The proxy reads `.orbitdocs/access.json` and `.orbitdocs/ai.json` at runtime. Copy that folder along with `.next/` wherever you run the server.
+  Without it the proxy finds no rules and serves every page.
+</Callout>
+
+## Environment variables
+
+Secrets are read from the server's environment at request time, never from the build:
+
+| Variable | Needed for |
+| --- | --- |
+| `ORBITDOCS_AUTH_SECRET` (or your `access.session.secretEnv`) | Signing reader sessions. 32 or more characters. |
+| Each provider's `clientSecretEnv` | SSO sign-in. |
+| `jwtSecretEnv`, `secretKeyEnv` of `appSession` | Some app-session adapters. |
+| `access.personalization.secretEnv` | Signing the personalization hook call. |
+| `ai.apiKeyEnv` | Ask AI and MCP. |
+
+The full list with defaults is on [Environment variables](/docs-reference/environment-variables).
+
+## Run it in a container
+
+The CLI's `docker` target only covers static builds. For server mode, build first and copy the docs app into a Node image:
+
+```dockerfile title="docs/Dockerfile"
+FROM node:22-bookworm-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+ENV NODE_ENV=production
+EXPOSE 3000
+CMD ["npx", "next", "start", "-p", "3000"]
+```
+
+```text title="docs/.dockerignore"
+node_modules
+out
+```
+
+The image installs its own `node_modules` so native packages match Linux. `.next/`, `openapi/` and `.orbitdocs/` come from your build.
+
+```bash
+cd docs
+npx orbitdocs build          # writes .next/, openapi/ and .orbitdocs/
+docker build -t acme-docs .
+docker run -p 3000:3000 -e ORBITDOCS_AUTH_SECRET=… acme-docs
+```
+
+Build on the host or in CI, not inside the image: extraction needs your Nest app, which is outside the docs folder.
+
+## Differences from a static build
+
+- Redirects are real `301`/`302` responses, wildcards included.
+- URLs keep their trailing slash (`/quickstart/`), the same as static.
+- `orbitdocs deploy` accepts only `--target vercel` in this mode.
+- `orbitdocs publish` refuses server builds. The [platform](/platform) hosts static builds and adds its own server.
+
+## Next steps
+
+<Cards>
+  <Card title="Vercel" href="/deploy/vercel" description="Deploy server mode to Vercel." />
+  <Card title="Private docs" href="/private-docs" description="Groups, rules and sign-in providers." />
+  <Card title="Ask AI" href="/ai" description="Providers, keys and rate limits." />
+</Cards>

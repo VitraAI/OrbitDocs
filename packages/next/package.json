@@ -1,0 +1,96 @@
+{
+  "name": "@orbitdocs/next",
+  "version": "0.1.0",
+  "description": "OrbitDocs for Next.js: config wrapper, Scalar-style reference pages, layouts, search, llms.txt.",
+  "license": "MIT",
+  "author": "Vitra.ai (https://vitra.ai)",
+  "homepage": "https://github.com/VitraAI/OrbitDocs/tree/main/packages/next#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VitraAI/OrbitDocs.git",
+    "directory": "packages/next"
+  },
+  "bugs": {
+    "url": "https://github.com/VitraAI/OrbitDocs/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "default": "./dist/config.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "default": "./dist/plugin.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./mdx": {
+      "types": "./dist/mdx.d.ts",
+      "default": "./dist/mdx.js"
+    },
+    "./mdx-plugins": {
+      "types": "./dist/mdx-plugins.d.ts",
+      "default": "./dist/mdx-plugins.js"
+    },
+    "./source": {
+      "types": "./dist/source.d.ts",
+      "default": "./dist/source.js"
+    },
+    "./proxy": {
+      "types": "./dist/proxy.d.ts",
+      "default": "./dist/proxy.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@orbitdocs/ai": "workspace:*",
+    "@orbitdocs/auth": "workspace:*",
+    "@orbitdocs/core": "workspace:*",
+    "@orbitdocs/openapi": "workspace:*",
+    "@orbitdocs/ui": "workspace:*",
+    "@types/mdx": "^2.0.14",
+    "motion": "^13.5.1",
+    "react-icons": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@heroui/react": "^3.2.6",
+    "fumadocs-core": "^16.15.0",
+    "fumadocs-mdx": "^15.4.0",
+    "fumadocs-ui": "^16.15.0",
+    "next": ">=16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@heroui/react": "^3.2.6",
+    "@heroui/styles": "^3.2.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "fumadocs-core": "16.15.18",
+    "fumadocs-mdx": "15.4.6",
+    "fumadocs-ui": "npm:@fumadocs/base-ui@16.15.18",
+    "next": "16.3.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tsdown": "^0.23.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

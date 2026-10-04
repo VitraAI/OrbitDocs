@@ -1,0 +1,135 @@
+---
+title: SDK samples
+description: Show code samples for your generated SDKs next to the HTTP samples on every operation of the API reference.
+---
+
+Once you generate SDKs, every operation in the API reference gets a sample per SDK, labeled "TypeScript SDK", "Python SDK" and so on. Readers pick them in the language menu next to cURL and the other HTTP samples.
+
+## How samples are made
+
+`orbitdocs sdk` writes `.orbitdocs/sdk-samples.json` after generating. The reference reads it at build time and adds the samples to each operation as `x-codeSamples`.
+
+| SDK | Where the sample comes from |
+| --- | --- |
+| TypeScript | Written by OrbitDocs for each operation: it imports the generated function, sets the base URL, and calls it with the spec's examples. |
+| Python | OpenAPI Generator's usage example for the method, tidied by OrbitDocs: one `configuration` with the host and only the operation's own auth scheme, and the request model filled from the spec's example. |
+| Go, Java, C#, PHP | The usage example OpenAPI Generator writes into the SDK's `docs/` for each method, with its comments removed. |
+
+This is the real TypeScript sample for [Create a booking](op:demo/create-a-booking) in the Orbit Travel sample API (package `@orbit-travel/sdk`):
+
+```ts
+import { client, createABooking } from '@orbit-travel/sdk';
+
+client.setConfig({ baseUrl: 'http://localhost:3010', headers: { 'x-api-key': process.env.API_KEY } });
+
+const { data, error } = await createABooking({
+  headers: { "Idempotency-Key": "a3f1c2d4-booking-8812" },
+  body: {
+    "cabin": "economy",
+    "flightId": "flt_2031_proxima",
+    "passengers": [
+      {
+        "name": "Ada Lovelace",
+        "email": "ada@example.com"
+      }
+    ],
+    "reference": "order-8812"
+  },
+});
+```
+
+- The base URL is the API's first server.
+- Auth follows the operation's first security requirement (its own, else the API's): an API key in a header becomes `headers: { '<name>': process.env.<VAR> }`; a bearer, OAuth 2 or OpenID Connect scheme becomes `auth: process.env.<VAR>`. Public operations get no auth.
+- `<VAR>` is named after the security scheme: `apiKey` → `API_KEY`, `partner` (API key) → `PARTNER_API_KEY`, `bearer` → `BEARER_TOKEN`. A scheme name that already ends in `KEY`, `TOKEN` or `SECRET` is used as is.
+- Path, query and header parameters appear when they are required or have an example. The body uses the request body's example, or one generated from its schema.
+
+The Python sample for the same operation:
+
+```python
+import os
+import orbit_travel
+from orbit_travel.models.booking_dto import BookingDto
+from orbit_travel.models.create_booking_dto import CreateBookingDto
+from orbit_travel.rest import ApiException
+from pprint import pprint
+
+configuration = orbit_travel.Configuration(
+    host = "http://localhost:3010",
+)
+configuration.api_key["apiKey"] = os.environ["API_KEY"]
+
+with orbit_travel.ApiClient(configuration) as api_client:
+    api_instance = orbit_travel.BookingsApi(api_client)
+    create_booking_dto = orbit_travel.CreateBookingDto.from_dict({
+        "cabin": "economy",
+        "flightId": "flt_2031_proxima",
+        "passengers": [
+            {
+                "name": "Ada Lovelace",
+                "email": "ada@example.com",
+            },
+        ],
+        "reference": "order-8812",
+    })
+    idempotency_key = 'a3f1c2d4-booking-8812' # str | Unique key per booking attempt; retries with the same key return the first result. (optional)
+
+    try:
+        api_response = api_instance.create_a_booking(create_booking_dto, idempotency_key=idempotency_key)
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling BookingsApi->create_a_booking: %s\n" % e)
+```
+
+- OpenAPI Generator writes every scheme of the API into each example, one after the other, so a later one replaced `configuration` and dropped the host and API key. OrbitDocs keeps one `configuration` with only the schemes the operation uses: an API key goes in `configuration.api_key["<scheme>"]`, a token in `access_token`, HTTP basic in `username` and `password` (`<VAR>_USERNAME`, `<VAR>_PASSWORD`).
+- The request model is built with `from_dict()` from the request body's example (or one generated from its schema), instead of empty. Form bodies, which the generator splits into one argument per field, get each field's example; enums get a value.
+
+## Show samples in your build
+
+Samples come from the generated SDK folders. So `orbitdocs sdk` must run before `orbitdocs build`, on the machine that builds the site.
+
+```bash
+npx orbitdocs extract
+npx orbitdocs sdk
+npx orbitdocs build --skip-extract
+```
+
+<Callout type="warn" title="Samples vanish in CI">
+`.orbitdocs/` is in `.gitignore`, so `sdk-samples.json` isn't committed. A CI build that skips `orbitdocs sdk` has no SDK samples. Run `orbitdocs sdk` in the build job (it needs Java for non-TypeScript languages), or commit the SDKs and run it there.
+</Callout>
+
+## Hand-written samples win
+
+A sample you write with `@DocsSamples` (or `x-codeSamples` in a spec file) wins over a generated one with the same label. Use it to replace one operation's sample:
+
+```ts title="src/bookings/bookings.controller.ts"
+@DocsSamples([
+  {
+    lang: 'typescript',
+    label: 'TypeScript SDK',
+    source: "const booking = await travel.bookings.create({ flightId: 'flt_2031_proxima', cabin: 'economy' });",
+  },
+])
+@Post()
+create(@Body() body: CreateBookingDto) { /* … */ }
+```
+
+Labels are compared without case. Hand-written samples are listed before the generated ones.
+
+## Turn samples off
+
+```ts title="orbitdocs.config.ts"
+sdks: {
+  typescript: { package: '@acme/sdk' },
+  samples: false,
+},
+```
+
+The SDKs are still generated; the reference just doesn't show them. `sdks.apis` also limits which APIs get samples.
+
+## Next steps
+
+<Cards>
+  <Card title="Code samples" href="/api-reference/code-samples" description="All the samples the reference shows, and how to add your own." />
+  <Card title="Decorators" href="/nestjs/decorators" description="@DocsSamples and the other decorators." />
+  <Card title="Regenerate in CI" href="/sdks/ci" description="Keep SDKs and samples current." />
+</Cards>

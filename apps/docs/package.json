@@ -1,0 +1,40 @@
+{
+  "name": "@orbitdocs/docs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "orbitdocs dev",
+    "build": "orbitdocs build",
+    "extract": "orbitdocs extract",
+    "check": "orbitdocs check",
+    "typecheck": "next typegen && tsc --noEmit",
+    "demo:sync": "cp ../../examples/nest-sample/docs/openapi/travel.json demo/travel.json"
+  },
+  "dependencies": {
+    "@heroui/react": "^3.2.6",
+    "@heroui/styles": "^3.2.6",
+    "@orbitdocs/next": "workspace:*",
+    "@orbitdocs/ui": "workspace:*",
+    "fumadocs-core": "16.15.18",
+    "fumadocs-mdx": "15.4.6",
+    "fumadocs-ui": "npm:@fumadocs/base-ui@16.15.18",
+    "motion": "^13.5.1",
+    "next": "16.3.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-icons": "^5.7.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/mdx": "^2.0.14",
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "orbitdocs": "workspace:*",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.3"
+  }
+}

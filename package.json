@@ -1,0 +1,31 @@
+{
+  "name": "orbitdocs-monorepo",
+  "private": true,
+  "description": "Open-source, self-deployable API documentation: NestJS \u2192 OpenAPI \u2192 a docs site you deploy anywhere.",
+  "license": "MIT",
+  "packageManager": "pnpm@11.5.1",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "changeset": "changeset",
+    "version-packages": "changeset version && node scripts/changelog-page.mjs",
+    "changelog:page": "node scripts/changelog-page.mjs",
+    "release": "turbo run build --filter=./packages/* && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.3",
+    "@types/node": "^22.19.0",
+    "prettier": "^3.9.9",
+    "turbo": "^2.11.7",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3"
+  }
+}

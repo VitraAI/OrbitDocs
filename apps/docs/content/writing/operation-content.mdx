@@ -1,0 +1,180 @@
+---
+title: Operation content
+description: Add notes, warnings, examples and components inside the API reference, per API, group or operation.
+---
+
+The reference is generated from your spec, but some things don't belong in a spec: a warning about refunds, a diagram of booking states, a tip about idempotency. You can add them in three ways and combine them:
+
+| Way | Best for |
+| --- | --- |
+| [MDX files in `reference/`](#mdx-files-in-reference) | Longer content with components: tabs, steps, callouts |
+| [`@DocsContent` in code](#docscontent-in-code) | A short note that lives next to the handler |
+| [GitHub alerts in descriptions](#alerts-in-descriptions) | A warning inside any description from the spec |
+
+## MDX files in reference/
+
+The docs app has a `reference/` folder next to `content/`. Add a folder per API id, then one file per place you want content:
+
+```txt
+docs/reference/
+└── travel/                       the API id
+    ├── index.mdx                 under the API description, at the top
+    ├── _groups/
+    │   └── bookings.mdx          under the "Bookings" group heading
+    ├── create-a-booking.mdx      inside "Create a booking"
+    └── search-flights.mdx        inside "Search flights"
+```
+
+| File | Where it appears |
+| --- | --- |
+| `index.mdx` | Under the API's description in the introduction. With `replace: true`, instead of it. |
+| `_groups/<group>.mdx` | Under the group's heading. The file name is the group name in lowercase kebab case: `Bookings` is `bookings.mdx`, `Webhook endpoints` is `webhook-endpoints.mdx`. |
+| `<operation id>.mdx` | Inside that operation's section, at `position`. |
+
+### Add content to an operation
+
+```mdx title="docs/reference/travel/create-a-booking.mdx"
+---
+title: Create a booking
+position: before-parameters
+---
+
+<Tabs items={['Economy', 'Cryosleep']}>
+  <Tab value="Economy">Window seat, two meals a day, 210-day journey to Proxima b.</Tab>
+  <Tab value="Cryosleep">You sleep the whole way. Wake-up call is included.</Tab>
+</Tabs>
+
+<Callout type="warn" title="Passenger names must match passports">
+  Names are checked at boarding. Upload a passport scan with
+  [Upload a travel document](op:travel/upload-a-travel-document) after booking.
+</Callout>
+```
+
+The file name must be the operation id, the last part of its URL. Every component from [Components](/writing/components) works, including `op:` links and `<Endpoint>`.
+
+### Frontmatter
+
+<TypeTable
+  type={{
+    title: { type: 'string', description: 'Optional. A label for you; it is not displayed.' },
+    position: { type: "'after-description' | 'before-parameters' | 'after-responses' | 'aside'", default: '"after-description"', description: 'Operation files only: where the content goes.' },
+    replace: { type: 'boolean', default: 'false', description: '`index.mdx` only: show this file instead of the spec\'s description.' },
+  }}
+/>
+
+| `position` | Where |
+| --- | --- |
+| `after-description` | Right under the operation's description |
+| `before-parameters` | Above the parameter lists |
+| `after-responses` | At the end of the left column |
+| `aside` | In the right column, under the request and response samples |
+
+### Introduce the API
+
+```mdx title="docs/reference/travel/index.mdx"
+---
+title: Introduction
+---
+
+<Callout title="Rate limits">
+  Each API key can make **60 requests per minute**. Over the limit you get `429`
+  with a `Retry-After` header; wait that many seconds before retrying.
+</Callout>
+
+New here? Start with the [Quickstart](/get-started/quickstart), then book your first seat with
+[Create a booking](op:travel/create-a-booking).
+```
+
+### Explain a group
+
+```mdx title="docs/reference/travel/_groups/bookings.mdx"
+---
+title: Bookings
+---
+
+A booking moves through three states:
+
+<Steps>
+<Step>**pending**: seats are being held.</Step>
+<Step>**confirmed**: seats are yours; a `booking.confirmed` webhook is sent.</Step>
+<Step>**cancelled**: seats are released; a `booking.cancelled` webhook is sent.</Step>
+</Steps>
+```
+
+<Callout type="warn" title="Files must match real operations">
+  `orbitdocs check` and `orbitdocs build` fail when a file names an API or operation that doesn't exist: `reference/travel/old-name.mdx: no operation "old-name" in travel`. Rename the file when you rename the operation.
+</Callout>
+
+## @DocsContent in code
+
+Short content can live in the controller, next to the handler it describes:
+
+```ts title="src/bookings/bookings.controller.ts"
+@Post(':id/cancel')
+@DocsOperation({ group: 'Bookings', title: 'Cancel a booking', order: 4 })
+@DocsContent('> [!WARNING]\n> Cancelling less than 24 hours before departure is not refunded.')
+cancel(@Param('id') id: string) {}
+```
+
+The content is Markdown, not MDX: no components, but GitHub alerts work. The second argument is the position, `after-description` by default:
+
+```ts
+@DocsContent('Each change sends a `booking.updated` [webhook](https://docs.orbit-travel.example/webhooks).', 'after-responses')
+```
+
+When an operation has both a file and `@DocsContent` at the same position, the file's content comes first. See [Decorators](/nestjs/decorators#docscontent).
+
+## Alerts in descriptions
+
+GitHub alerts render as callouts in every description that comes from the spec: the API description, tags, operations, parameters and schema fields. That includes JSDoc comments read by the Nest CLI plugin:
+
+```ts title="src/bookings/bookings.controller.ts"
+/**
+ * Returns one booking.
+ *
+ * > [!TIP]
+ * > Store the booking `id` you get from Create a booking; it is the only way to fetch it later.
+ */
+@Get(':id')
+@DocsOperation({ group: 'Bookings', title: 'Get a booking', order: 3 })
+get(@Param('id') id: string): BookingDto {}
+```
+
+Five kinds are supported:
+
+```md
+> [!NOTE]
+> Useful information.
+
+> [!TIP]
+> A better way to do something.
+
+> [!IMPORTANT]
+> Something the reader must know.
+
+> [!WARNING]
+> Something that can go wrong.
+
+> [!CAUTION]
+> Something with a risky outcome.
+```
+
+Descriptions are GitHub Flavored Markdown, and raw HTML is allowed.
+
+<Callout type="info" title="In MDX files too">
+  The same alerts work in MDX files in `content/` and `reference/`, where they become Fumadocs `Callout`s. See [GitHub alerts](/writing/components#github-alerts).
+</Callout>
+
+## Gotchas
+
+- **Only built-in components.** Components you register in `app/(guides)/[...slug]/page.tsx` are not available in `reference/` files.
+- **Keep the `reference/` folder.** The docs app expects it, even when it is empty. `orbitdocs init` adds a `.gitkeep` for that reason.
+- **One file per operation.** Combine everything for one operation into its file, with one `position`. Use `@DocsContent` for a second position.
+
+## Next steps
+
+<Cards>
+  <Card title="API reference" href="/api-reference" description="How the reference is laid out." />
+  <Card title="Linking operations" href="/writing/linking-operations" description="op: links and <Endpoint>." />
+  <Card title="Decorators" href="/nestjs/decorators" description="@DocsContent and the other decorators." />
+</Cards>

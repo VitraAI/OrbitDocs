@@ -1,0 +1,31 @@
+---
+title: Pagination
+description: Walk through long lists with cursors.
+---
+
+List endpoints return a page of `data` and a `page` object:
+
+```json
+{
+  "data": [{ "id": "bk_7Hq2xP" }],
+  "page": { "nextCursor": "eyJpZCI6ImJrXzIwIn0", "hasMore": true }
+}
+```
+
+Pass `nextCursor` as `cursor` to get the next page; stop when `hasMore` is
+`false`. `limit` sets the page size (1–100, default 20).
+
+<Accordions>
+  <Accordion title="Why cursors instead of page numbers?">
+    New bookings arrive while you read. A cursor never skips or repeats an item.
+  </Accordion>
+  <Accordion title="Do cursors expire?">
+    No, but they are only valid for the list and filters that produced them.
+  </Accordion>
+</Accordions>
+
+<Callout title="Legacy page numbers">
+  The deprecated [Legacy flight search](op:travel/legacy-flight-search) still pages
+  with `page` and `perPage`. Move to [Search flights](op:travel/search-flights) and cursors
+  before it is switched off on 31 March 2032.
+</Callout>

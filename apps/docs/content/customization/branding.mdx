@@ -1,0 +1,158 @@
+---
+title: Branding
+description: Set the site title and description, add logos for light and dark mode, replace the favicon, and change the fonts.
+---
+
+Branding lives in two places. The `site` section of `orbitdocs.config.ts` sets the title, description, URL and logo. The favicon and fonts are files in the docs app that `orbitdocs init` created for you.
+
+## Site title, description and URL
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: {
+    title: 'Acme',
+    description: 'Guides and API reference for the Acme API.',
+    url: 'https://docs.acme.com',
+  },
+});
+```
+
+| Key | Where it shows |
+| --- | --- |
+| `title` | The top bar (when there is no logo), every browser tab as `Page · Acme`, the sign-in page of private docs, `llms.txt`, Ask AI's instructions and the MCP server names. Required. |
+| `description` | The `<meta name="description">` of pages without their own, and the first line of `llms.txt`. |
+| `url` | Next's `metadataBase`, so relative metadata URLs become absolute. It also makes links absolute in `llms.txt`, page actions, and MCP results. |
+
+<Callout type="warn" title="Set site.url before you deploy">
+Without `site.url`, **Open in ChatGPT** and **Open in Claude** send a path such as `/quickstart` instead of a full URL, so the assistant can't read the page. `llms.txt` links and MCP results are relative too. Set it to the public URL of the site, without the base path.
+</Callout>
+
+## Add a logo
+
+```ts title="orbitdocs.config.ts"
+site: {
+  title: 'Acme',
+  // One image for both modes:
+  logo: '/logo.svg',
+},
+```
+
+For a logo that needs a different color in dark mode, give two images:
+
+```ts title="orbitdocs.config.ts"
+site: {
+  title: 'Acme',
+  logo: { light: '/logo-light.png', dark: '/logo-dark.png' },
+},
+```
+
+- Put the files in `public/`. A path that starts with `/` gets `output.basePath` added for you, so `/logo.svg` works under `/docs` too.
+- An absolute URL (`https://cdn.acme.com/logo.svg`) is used as is.
+- The logo is 24px tall and keeps its aspect ratio. Use a wide logo that includes your name, since the title text is replaced by the image.
+- The image's `alt` text is `site.title`.
+
+## Replace the favicon
+
+`orbitdocs init` puts two icons in `public/`: `icon.png` (the browser tab, 64×64) and `apple-icon.png` (home screens, 180×180). Both are the OrbitDocs mark until you replace them. `app/layout.tsx` links to them with `siteIcons(orbit)`, which adds your base path, because Next's automatic icon link ignores it:
+
+```tsx title="app/layout.tsx"
+export const metadata: Metadata = {
+  title: { default: orbit.site.title, template: `%s · ${orbit.site.title}` },
+  description: orbit.site.description,
+  icons: siteIcons(orbit),
+  ...(orbit.site.url ? { metadataBase: new URL(orbit.site.url) } : {}),
+};
+```
+
+To use your own, overwrite `public/icon.png` and `public/apple-icon.png` with square PNGs of the same names. For another file or format, put it in `public/` and point `site.favicon` at it:
+
+```ts title="orbitdocs.config.ts"
+site: {
+  title: 'Acme',
+  favicon: '/favicon.svg',
+},
+```
+
+The sign-in pages of [private docs](/private-docs) use the same icon.
+
+<Callout type="info">
+Sites created before this change have `app/icon.png/route.tsx`, which draws an orbit symbol on a blue square. Delete that folder before adding `public/icon.png`: Next can't serve two files at the same URL.
+</Callout>
+
+
+## Change the fonts
+
+The docs use Inter for text and JetBrains Mono for code. `app/layout.tsx` loads both from Google Fonts, and `@orbitdocs/ui/styles.css` sets them as Tailwind's `--font-sans` and `--font-mono`.
+
+To use other fonts, change both places.
+
+<Steps>
+<Step>
+
+### Load the fonts
+
+Replace the Google Fonts link in `app/layout.tsx`:
+
+```tsx title="app/layout.tsx"
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;600&display=swap"
+  />
+</head>
+```
+
+To self-host fonts instead, put the files in `public/` and declare them with `@font-face` in `app/global.css`.
+
+</Step>
+<Step>
+
+### Use them
+
+Override the font variables at the end of `app/global.css`. A later `@theme` block wins:
+
+```css title="app/global.css"
+@theme {
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+}
+```
+
+</Step>
+</Steps>
+
+The sign-in page of private docs is plain HTML served before the app loads. It uses Inter if the browser has it, then the system font.
+
+## Page titles and metadata
+
+`app/layout.tsx` sets the metadata every page shares:
+
+- The title template `%s · <site title>`, so a guide titled "Quickstart" shows "Quickstart · Acme".
+- The site description and the favicon.
+
+Each guide's `title` and `description` frontmatter fill its own `<title>` and description. Add anything else Next supports, such as Open Graph fields, to the `metadata` object in `app/layout.tsx`. OrbitDocs doesn't generate Open Graph images or a sitemap.
+
+## Site options
+
+<TypeTable
+  type={{
+    title: { type: 'string', description: 'Site name. Required.' },
+    description: { type: 'string', description: 'Default meta description; first line of llms.txt.' },
+    url: { type: 'string (URL)', description: 'Public URL of the deployed site, without the base path.' },
+    logo: { type: 'string | { light: string; dark: string }', description: 'Logo image, or one per color mode. Paths starting with / come from public/.' },
+    github: { type: 'string (URL)', description: 'Repository link shown as a GitHub icon in the top bar.' },
+    favicon: { type: 'string', description: 'Browser tab icon from public/, or a URL. Default /icon.png.' },
+    dir: { type: "'ltr' | 'rtl'", description: 'Text direction. rtl for right-to-left languages. Default ltr.' },
+  }}
+/>
+
+## Next steps
+
+<Cards>
+  <Card title="Themes and colors" href="/customization" description="Presets, accent color and CSS variables." />
+  <Card title="Navigation bar" href="/customization/navigation-bar" description="Header links, buttons, menus and the banner." />
+  <Card title="Configuration reference" href="/docs-reference/configuration" description="Every key of orbitdocs.config.ts." />
+</Cards>

@@ -1,0 +1,109 @@
+---
+title: llms.txt and page actions
+description: Every OrbitDocs site publishes llms.txt, llms-full.txt and a Markdown copy of each guide, and adds Copy page and Open in ChatGPT or Claude buttons.
+---
+
+AI tools read Markdown better than HTML. Every OrbitDocs site publishes Markdown versions of its docs, and every guide has buttons to copy it or open it in an AI chat. These are static files, so they work on any host, with or without an `ai` section.
+
+## llms.txt
+
+`/llms.txt` follows the [llms.txt](https://llmstxt.org) convention: an index of your docs that an AI tool reads first.
+
+```md title="/llms.txt"
+# Acme
+
+> Guides and API reference for the Acme API.
+
+## Guides
+
+- [Quickstart](https://docs.acme.com/quickstart): Make your first request in five minutes.
+- [Authentication](https://docs.acme.com/authentication): API keys and OAuth.
+
+## Acme API
+
+- [Create a booking](https://docs.acme.com/reference/travel/create-a-booking/): `POST /v1/bookings`
+- [List bookings](https://docs.acme.com/reference/travel/list-bookings/): `GET /v1/bookings`
+```
+
+- The heading is `site.title`; the quote is `site.description`.
+- **Guides** lists every guide with its frontmatter description.
+- Each API gets a section with every operation and its method and path.
+
+## llms-full.txt
+
+`/llms-full.txt` holds the full text of the docs in one file: every guide as Markdown, then every API reference as Markdown (operations, parameters, request and response schemas). Pieces are separated by `---`. Point an AI tool at it when you want it to know everything at once.
+
+## Markdown copy of each guide
+
+Each guide is also served as Markdown at `/md/<slug>/content.md`:
+
+| Guide | Markdown |
+| --- | --- |
+| `/` | `/md/content.md` |
+| `/quickstart` | `/md/quickstart/content.md` |
+| `/guides/pagination` | `/md/guides/pagination/content.md` |
+
+All of these sit under the base path when you have one.
+
+## Page actions
+
+Every guide shows three buttons under its title:
+
+| Button | What it does |
+| --- | --- |
+| **Copy page** | Fetches the guide's Markdown copy and puts it on the clipboard, ready to paste into any chat. |
+| **Open in ChatGPT** | Opens ChatGPT with the prompt "Read &lt;page URL&gt; and help me with it." |
+| **Open in Claude** | Opens Claude with the same prompt. |
+
+Choose which ones appear with `layout.pageActions`:
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme', url: 'https://docs.acme.com' },
+  layout: {
+    pageActions: ['copy-markdown', 'open-in-claude'],
+  },
+});
+```
+
+`pageActions: []` hides them all. The default is all three.
+
+## Set site.url
+
+`site.url` makes every link absolute: in `llms.txt`, in `llms-full.txt` headings, and in the page URL the **Open in** buttons send.
+
+<Callout type="warn">
+Without `site.url`, links are paths such as `/quickstart`. An AI tool reading `llms.txt` can't follow them, and ChatGPT or Claude get a page path they can't open. Set `site.url` to your public docs URL, without the base path.
+</Callout>
+
+## Private docs
+
+The Markdown files follow your access rules:
+
+- Guides and operations restricted by `access` frontmatter, by an `access.rules` entry or by `apis[].access` are left out of `llms.txt` and `llms-full.txt`.
+- A guide's Markdown copy needs the same access as the guide, whether frontmatter or a rule restricts it.
+- In `access.mode: 'private'`, every file needs sign-in, `llms.txt` included. Guides open to any signed-in reader stay in it; guides limited to some groups are left out.
+
+See [Access rules](/private-docs/access-rules).
+
+## How it's built
+
+The docs app has a route for each file, created by `orbitdocs init`. All of them are rendered at build time:
+
+| File | Route |
+| --- | --- |
+| `/llms.txt` | `app/llms.txt/route.ts` (`createLlms(orbit, source).index()`) |
+| `/llms-full.txt` | `app/llms-full.txt/route.ts` (`createLlms(orbit, source).full()`) |
+| `/md/<slug>/content.md` | `app/md/[[...slug]]/route.ts` |
+
+Edit or delete a route to change or drop a file.
+
+## Next steps
+
+<Cards>
+  <Card title="MCP servers" href="/ai/mcp" description="Live search and read tools for coding agents." />
+  <Card title="Layouts" href="/customization/layouts" description="Page actions and other per-page options." />
+  <Card title="Branding" href="/customization/branding" description="Set site.url, title and description." />
+</Cards>

@@ -1,0 +1,173 @@
+---
+title: Code blocks
+description: Titles, tabs, line numbers, highlights and package-manager tabs in guide code blocks, and how to change the syntax theme or add MDX plugins.
+---
+
+Code blocks in guides are highlighted at build time with Shiki, through Fumadocs' default MDX pipeline. Everything on this page works in any `.mdx` file under `content/`, with no setup. The last sections show how to change the pipeline itself.
+
+This page covers code blocks in guides. Code samples in the API reference are generated: see [Code samples](/api-reference/code-samples).
+
+## Add a title
+
+````mdx
+```ts title="src/main.ts"
+await app.listen(3000);
+```
+````
+
+The title shows above the block, with an icon for the language.
+
+## Group blocks as tabs
+
+Give consecutive code blocks a `tab` and they become one block with tabs:
+
+````mdx
+```ts tab="TypeScript"
+const res = await fetch('/v1/bookings');
+```
+
+```python tab="Python"
+res = requests.get('/v1/bookings')
+```
+````
+
+For tabs that mix code and prose, use the `<Tabs>` component. See [Components](/writing/components).
+
+## Package-manager tabs
+
+A block with the language `npm` becomes tabs for npm, pnpm, yarn and bun, with the command translated for each:
+
+````mdx
+```npm
+npm install @orbitdocs/nestjs
+```
+````
+
+## Line numbers and copy button
+
+````mdx
+```ts lineNumbers
+const a = 1;
+const b = 2;
+```
+
+```ts lineNumbers=10
+// numbering starts at 10
+```
+
+```bash noCopy
+echo "no copy button on this block"
+```
+````
+
+## Highlight, diff and focus lines
+
+Add a comment at the end of a line. The comment is removed from the output. `word:` goes on its own line and applies to the lines after it.
+
+````mdx
+```ts
+// [!code word:API_KEY]
+const client = createClient(); // [!code highlight]
+const key = process.env.API_KEY;
+const old = 'v1'; // [!code --]
+const next = 'v2'; // [!code ++]
+await client.connect(); // [!code focus]
+```
+````
+
+| Comment | Effect |
+| --- | --- |
+| `[!code highlight]` | Highlights the line. |
+| `[!code word:<text>]` | Highlights every occurrence of `<text>` in the lines that follow. |
+| `[!code ++]` / `[!code --]` | Marks the line as added or removed. |
+| `[!code focus]` | Blurs the other lines until the reader hovers over the block. |
+
+Use the comment syntax of the block's language: `# [!code highlight]` in Python or Bash.
+
+## Change the syntax theme
+
+The default themes are `github-light` and `github-dark`. Pick others with `codeBlocks` in the config:
+
+```ts title="orbitdocs.config.ts"
+codeBlocks: {
+  themes: { light: 'catppuccin-latte', dark: 'catppuccin-mocha' },
+  // Language of a fence without one (default `plaintext`).
+  defaultLanguage: 'ts',
+},
+```
+
+Any [Shiki theme](https://shiki.style/themes) name works. `codeBlocks` applies to guides and to the MDX files in `reference/`; the API reference highlights its own samples. Restart `orbitdocs dev` after changing it.
+
+The other Shiki options (`langs`, `langAlias`, `inline`, `transformers`, …) go in `lib/source.ts`, as `rehypeCodeOptions` of `orbitMdxOptions()`. They are merged over `codeBlocks`:
+
+```ts title="lib/source.ts"
+import { orbitMdxOptions } from '@orbitdocs/next/mdx-plugins';
+import { defineDocs } from 'fumadocs-mdx/macro';
+
+const docs = defineDocs({
+  dir: 'content',
+  docs: {
+    // …keep the schema, postprocess and lastModified options that are already here
+    mdxOptions: orbitMdxOptions({
+      rehypeCodeOptions: { langAlias: { conf: 'ini' } },
+    }),
+  },
+  meta: { schema: metaSchema },
+});
+```
+
+<Callout type="warn" title="Always start from orbitMdxOptions">
+Setting `mdxOptions` replaces Fumadocs' default MDX options. `orbitMdxOptions()` takes the same options as Fumadocs' `applyMdxPreset`: it starts from the defaults, adds [GitHub alerts](/writing/components#github-alerts) and applies your changes. Without it you lose syntax highlighting, heading anchors, code tabs, the search structure and the alerts. Change it on both collections (`content/` and `reference/`) to keep them alike.
+</Callout>
+
+## Add MDX plugins
+
+The default pipeline includes GitHub-flavored Markdown, heading anchors, image sizes, code tabs, package-manager tabs, search structure and Shiki highlighting. Math, diagrams and other syntax need a plugin.
+
+Example: LaTeX math with KaTeX.
+
+```bash
+npm install remark-math rehype-katex katex
+```
+
+```ts title="lib/source.ts"
+import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math';
+
+mdxOptions: orbitMdxOptions({
+  remarkPlugins: [remarkMath],
+  // rehypeKatex must run before Shiki: put it first.
+  rehypePlugins: (plugins) => [rehypeKatex, ...plugins],
+}),
+```
+
+```css title="app/global.css"
+@import 'katex/dist/katex.css';
+```
+
+`remarkPlugins` and `rehypePlugins` take a list, added to the defaults, or a function that receives the default list and returns the final one.
+
+<Callout type="info">
+Plugins change how guides compile. They don't affect the API reference, or Ask AI and the docs MCP, which read the raw MDX source.
+</Callout>
+
+## Code block options
+
+| Where | Option | Default |
+| --- | --- | --- |
+| Code fence meta | `title="…"` | none |
+| Code fence meta | `tab="…"` | none |
+| Code fence meta | `lineNumbers`, `lineNumbers=<start>` | off |
+| Code fence meta | `noCopy` | copy button shown |
+| Language | `npm` | package-manager tabs |
+| `codeBlocks.themes` in the config | `{ light, dark }` | `github-light`, `github-dark` |
+| `codeBlocks.defaultLanguage` in the config | language of fences without one | `plaintext` |
+| `rehypeCodeOptions` in `lib/source.ts` | any other Shiki option | Fumadocs' defaults |
+
+## Next steps
+
+<Cards>
+  <Card title="MDX components" href="/customization/mdx-components" description="Add Fumadocs components or override the defaults." />
+  <Card title="Components" href="/writing/components" description="Callouts, steps, tabs, cards and more in your guides." />
+  <Card title="Code samples" href="/api-reference/code-samples" description="Generated samples in the API reference." />
+</Cards>

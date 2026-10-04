@@ -1,0 +1,158 @@
+---
+title: Vercel
+description: Deploy the docs to Vercel with one command, as static files or as a Next server.
+---
+
+`orbitdocs deploy --target vercel` builds the docs and runs the Vercel CLI for you. Static mode uploads the finished `out/` folder. Server mode uploads the docs app so private docs and Ask AI work on Vercel.
+
+## Deploy a static site
+
+<Steps>
+<Step>
+
+**Sign in to Vercel once.** The CLI is fetched with `npx`, so there is nothing to install.
+
+```bash
+npx vercel login
+```
+
+</Step>
+<Step>
+
+**Deploy a preview.** Run this in the docs app folder (where `orbitdocs.config.ts` is):
+
+```bash
+npx orbitdocs deploy --target vercel
+```
+
+The first run asks which Vercel scope and project to use. Later runs reuse that answer.
+
+</Step>
+<Step>
+
+**Deploy to production** when the preview looks right:
+
+```bash
+npx orbitdocs deploy --target vercel --prod
+```
+
+</Step>
+</Steps>
+
+Under the hood this runs `orbitdocs build`, then `npx --yes vercel@latest deploy out [--prod]`. Vercel serves `out/` as plain files, so no build runs on Vercel's side.
+
+<Callout type="info" title="Redirects on Vercel">
+  Vercel ignores the `_redirects` file. In static mode each redirect without a `*` becomes a small HTML page that forwards the reader.
+  Wildcard redirects (`/old/*`) need server mode on Vercel.
+</Callout>
+
+## Deploy in server mode
+
+Use server mode when the site has private docs (`access`) or Ask AI (`ai`). Both need code that runs on every request.
+
+<Steps>
+<Step>
+
+**Switch the mode:**
+
+```ts title="orbitdocs.config.ts"
+export default defineConfig({
+  // …
+  output: { mode: 'server', basePath: '' },
+});
+```
+
+</Step>
+<Step>
+
+**Check that `proxy.ts` exists** in the docs app. `orbitdocs init` creates it. It gates pages and answers sign-in, Ask AI and MCP requests. See [Server mode](/deploy/server-mode) for what it does.
+
+</Step>
+<Step>
+
+**Tell Vercel to reuse your specs.** Vercel builds the uploaded folder again on its own servers. Your Nest app is not there, so extraction would fail. Make the remote build skip it:
+
+```json title="vercel.json"
+{
+  "buildCommand": "npx orbitdocs build --skip-extract"
+}
+```
+
+Then make sure the specs and manifests are uploaded. A `.vercelignore` file decides what the CLI uploads:
+
+```text title=".vercelignore"
+node_modules
+.next
+out
+```
+
+`openapi/` and `.orbitdocs/` are in `.gitignore` but must reach Vercel, so do not list them here.
+
+</Step>
+<Step>
+
+**Add the secrets** to the Vercel project (Settings, Environment Variables, or `npx vercel env add`):
+
+| Variable | When |
+| --- | --- |
+| `ORBITDOCS_AUTH_SECRET` | Private docs. 32 or more random characters (`openssl rand -hex 32`). The name is `access.session.secretEnv`. |
+| Each provider's `clientSecretEnv` | Private docs with SSO, for example `OKTA_CLIENT_SECRET`. |
+| `ai.apiKeyEnv` | Ask AI, for example `ANTHROPIC_API_KEY`. |
+
+</Step>
+<Step>
+
+**Deploy:**
+
+```bash
+npx orbitdocs deploy --target vercel --prod
+```
+
+The CLI builds locally first, which runs extraction and writes `openapi/` and `.orbitdocs/`. Then it uploads the docs app folder.
+
+</Step>
+</Steps>
+
+<Callout type="warn">
+  Every variable in the table is read on the server at request time. Set them in the Vercel project, not in your shell.
+  A missing session secret fails sign-in with `ORBITDOCS_AUTH_SECRET must be set to a random string of at least 32 characters`.
+</Callout>
+
+## Deploy from CI
+
+In CI, build with OrbitDocs and call the Vercel CLI yourself so you can pass a token. Vercel reads the project from `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` (both are in `.vercel/project.json` after the first local deploy).
+
+```yaml title=".github/workflows/docs.yml"
+name: Docs
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci                 # the Nest app: extraction compiles it
+      - run: npm ci
+        working-directory: docs
+      - run: npx orbitdocs build
+        working-directory: docs
+      - run: npx vercel@latest deploy out --prod --yes --token "${{ secrets.VERCEL_TOKEN }}"
+        working-directory: docs
+```
+
+For server mode, deploy the folder instead of `out`: replace `deploy out` with `deploy .`.
+
+## Next steps
+
+<Cards>
+  <Card title="Server mode" href="/deploy/server-mode" description="What proxy.ts does and how to run the Next server anywhere." />
+  <Card title="Private docs" href="/private-docs" description="Decide who can read what and add sign-in." />
+  <Card title="Ask AI" href="/ai" description="Answer questions from your docs with your own LLM key." />
+</Cards>

@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+@import '@heroui/styles';
+/* Preset, layout CSS and palette, generated from `theme` and `layout` in orbitdocs.config.ts. */
+@import '../.orbitdocs/theme.css';
+@import '@orbitdocs/ui/styles.css';
+
+/* Tailwind scans the OrbitDocs packages for the classes they use. */
+@source '../node_modules/@orbitdocs/ui/dist';
+@source '../node_modules/@orbitdocs/next/dist';
+
+/* Your styles: override any HeroUI/OrbitDocs variable here, e.g. --accent. */

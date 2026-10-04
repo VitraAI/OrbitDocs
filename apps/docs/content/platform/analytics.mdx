@@ -1,0 +1,69 @@
+---
+title: Analytics
+description: Count page views without cookies, or send them to Plausible, Umami or PostHog, and see what readers ask Ask AI.
+---
+
+Every site the platform hosts can report traffic. Built-in analytics need no setup and set no cookies. You can send page views to Plausible, Umami or PostHog instead. Ask AI questions are always counted in the platform, so you can see what the docs don't answer.
+
+## Pick a provider
+
+Open the project, **Settings → General → Analytics** (admin role), pick a provider and select **Save**:
+
+| Provider | Site id | Host (optional) |
+| --- | --- | --- |
+| **Built-in** (default) | none | none |
+| **Plausible** | Your site's domain, such as `docs.acme.com` | Self-hosted Plausible URL. Default `https://plausible.io`. |
+| **Umami** | The website ID | Self-hosted Umami URL. Default `https://cloud.umami.is`. |
+| **PostHog** | The project API key | PostHog host. Default `https://us.i.posthog.com`. |
+
+The platform adds the provider's script to every HTML page when it serves it. Nothing in your build changes, and switching providers takes effect on the next page load.
+
+## Built-in analytics
+
+The built-in option adds a small script, `/_orbit/a.js`, that sends a page view to `/_orbit/e` on every page change. It uses `navigator.sendBeacon` and sets no cookies.
+
+- **Visitors** are counted by a hash of the day, the IP address and the browser's user agent, salted with `PLATFORM_SECRET`. The raw IP is never stored, and the hash changes every day, so readers can't be followed across days.
+- **Referrers** only count other sites. Links inside the docs are not referrers.
+- Page views on previews are counted too, under the same project.
+
+## The Analytics tab
+
+Pick 7, 30 or 90 days. The tab shows:
+
+| Panel | What it shows |
+| --- | --- |
+| Page views, Visitors | Totals for the period (built-in only). |
+| Ask AI questions | Questions asked in the period. |
+| Not covered by docs | Questions whose answer found no source in the docs. |
+| Traffic | Views and visitors per day. |
+| Top pages | The 10 most viewed paths. |
+| Referrers | The 10 sites that sent the most readers. |
+| What readers ask | The 20 most recent questions, with how many sources each answer used. |
+
+With Plausible, Umami or PostHog, page views go to that tool and these panels stay empty. The Ask AI panels keep working.
+
+<Callout type="info" title="Use 'Not covered by docs' as a to-do list">
+  A question with zero sources means search found nothing relevant. Write the missing guide, then watch the count drop.
+</Callout>
+
+## Ask AI questions
+
+Questions are recorded only for sites with Ask AI (`ai` in `orbitdocs.config.ts`). The first 500 characters of each question are stored with its source count. The same daily visitor hash is stored; the answer is not.
+
+## API
+
+Viewers can read the same numbers as JSON:
+
+```bash
+curl -b od_platform=… "https://docs.acme.com/api/projects/payments/analytics?days=30"
+```
+
+`days` is 1 to 365 (default 30). The response has `provider`, `totals`, `series` (one entry per day, zeros filled in), `pages`, `referrers` and `questions`.
+
+## Next steps
+
+<Cards>
+  <Card title="Ask AI" href="/ai" description="Add an assistant to the docs and see what readers ask." />
+  <Card title="Team and access" href="/platform/team" description="Who can see analytics." />
+  <Card title="Operations" href="/platform/operations" description="Where analytics data lives and how to back it up." />
+</Cards>

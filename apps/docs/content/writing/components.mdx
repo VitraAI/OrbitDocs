@@ -1,0 +1,287 @@
+---
+title: Components
+description: Callouts, steps, tabs, cards, accordions, type tables and code blocks you can use in any page.
+---
+
+Every component on this page works in any MDX file in `content/` or `reference/`, without an import. Each section shows the code, then the result.
+
+## Callout
+
+Draws attention to a note, a tip or a gotcha.
+
+```mdx
+<Callout type="warn" title="Keys are secret">
+  Never send your API key from a browser.
+</Callout>
+```
+
+<Callout type="warn" title="Keys are secret">
+  Never send your API key from a browser.
+</Callout>
+
+| Prop | Type | Default |
+| --- | --- | --- |
+| `type` | `info`, `warn`, `error`, `success`, `warning` or `idea` | `info` |
+| `title` | Text | None |
+| `icon` | A React element | The type's icon |
+
+`warning` is the same as `warn`.
+
+### GitHub alerts
+
+GitHub's alert syntax works too, in guides, in `reference/<api>/*.mdx` and in descriptions from the spec:
+
+```mdx
+> [!TIP]
+> Send an `Idempotency-Key` with every booking.
+```
+
+> [!TIP]
+> Send an `Idempotency-Key` with every booking.
+
+| Alert | Callout `type` | Title |
+| --- | --- | --- |
+| `[!NOTE]` | `info` | Note |
+| `[!TIP]` | `success` | Tip |
+| `[!IMPORTANT]` | `idea` | Important |
+| `[!WARNING]` | `warning` | Warning |
+| `[!CAUTION]` | `error` | Caution |
+
+The `[!KIND]` marker must open the blockquote, on its own line or followed by the text. Other blockquotes stay blockquotes. `llms.txt`, the `/md/` pages and **Copy Markdown** keep the `> [!TIP]` form. Apps made before this need `mdxOptions: orbitMdxOptions()` (from `@orbitdocs/next/mdx-plugins`) on both collections in `lib/source.ts`, as `orbitdocs init` now writes it.
+
+## Steps
+
+Numbered steps for a procedure. Put a heading and content inside each `Step`, with blank lines around Markdown:
+
+```mdx
+<Steps>
+<Step>
+
+### Install
+
+Run `npm install @orbitdocs/nestjs`.
+
+</Step>
+<Step>
+
+### Mark a route
+
+Add `@DocsOperation()` to a controller method.
+
+</Step>
+</Steps>
+```
+
+<Steps>
+<Step>
+
+### Install
+
+Run `npm install @orbitdocs/nestjs`.
+
+</Step>
+<Step>
+
+### Mark a route
+
+Add `@DocsOperation()` to a controller method.
+
+</Step>
+</Steps>
+
+## Tabs
+
+Alternatives the reader picks from, such as languages or package managers:
+
+```mdx
+<Tabs items={['npm', 'pnpm']} groupId="package-manager" persist>
+  <Tab value="npm">`npm install @orbitdocs/nestjs`</Tab>
+  <Tab value="pnpm">`pnpm add @orbitdocs/nestjs`</Tab>
+</Tabs>
+```
+
+<Tabs items={['npm', 'pnpm']} groupId="package-manager" persist>
+  <Tab value="npm">`npm install @orbitdocs/nestjs`</Tab>
+  <Tab value="pnpm">`pnpm add @orbitdocs/nestjs`</Tab>
+</Tabs>
+
+| Prop | On | What it does |
+| --- | --- | --- |
+| `items` | `Tabs` | Tab labels, in order. |
+| `defaultIndex` | `Tabs` | The tab open first. Default `0`. |
+| `groupId` | `Tabs` | Tab sets with the same id switch together, for this browser tab's session. |
+| `persist` | `Tabs` | With `groupId`, remember the choice across visits. |
+| `label` | `Tabs` | Extra text in the tab bar. |
+| `value` | `Tab` | Must equal one of `items`. |
+
+## Cards
+
+Links with a title and a description, in a grid:
+
+```mdx
+<Cards>
+  <Card title="Quickstart" href="/get-started/quickstart" description="Docs for your Nest app in five minutes." />
+  <Card title="GitHub" href="https://github.com/VitraAI/OrbitDocs" description="Source code." external />
+</Cards>
+```
+
+<Cards>
+  <Card title="Quickstart" href="/get-started/quickstart" description="Docs for your Nest app in five minutes." />
+  <Card title="GitHub" href="https://github.com/VitraAI/OrbitDocs" description="Source code." external />
+</Cards>
+
+`Card` takes `title`, `description`, `href`, `icon` (a React element) and `external`. A card without `href` is a plain box.
+
+## Accordions
+
+Collapsed details, for FAQs and long options:
+
+```mdx
+<Accordions>
+  <Accordion title="Does extraction start my database?">
+    No. Providers are never created in preview mode.
+  </Accordion>
+  <Accordion title="Can I use a spec file instead?" id="spec-file">
+    Yes. Use `source: { file: './openapi.yaml' }`.
+  </Accordion>
+</Accordions>
+```
+
+<Accordions>
+  <Accordion title="Does extraction start my database?">
+    No. Providers are never created in preview mode.
+  </Accordion>
+  <Accordion title="Can I use a spec file instead?" id="spec-file">
+    Yes. Use `source: { file: './openapi.yaml' }`.
+  </Accordion>
+</Accordions>
+
+`Accordion` takes `title` and an optional `id`. With an `id`, the URL `#spec-file` opens that item.
+
+## TypeTable
+
+A table of options or fields, with types and defaults:
+
+```mdx
+<TypeTable
+  type={{
+    group: { type: 'string', description: 'Sidebar group.' },
+    order: { type: 'number', description: 'Position in the group.', default: 'last' },
+    title: { type: 'string', description: 'Operation title.', required: true },
+  }}
+/>
+```
+
+<TypeTable
+  type={{
+    group: { type: 'string', description: 'Sidebar group.' },
+    order: { type: 'number', description: 'Position in the group.', default: 'last' },
+    title: { type: 'string', description: 'Operation title.', required: true },
+  }}
+/>
+
+Each field takes `type`, `description`, `default`, `required`, `deprecated`, and `typeDescription` (the full type, shown on click).
+
+## Code blocks
+
+Fenced code blocks are highlighted and get a copy button. Add a title after the language:
+
+````mdx
+```ts title="src/main.ts"
+await app.listen(3000);
+```
+````
+
+```ts title="src/main.ts"
+await app.listen(3000);
+```
+
+### Highlight lines, show diffs, focus
+
+Add a comment at the end of a line. The comment is removed from the output:
+
+````mdx
+```ts
+const app = await NestFactory.create(AppModule);
+mountOrbitDocs(app, { root, path: '/docs' }); // [!code highlight]
+await app.listen(3000); // [!code --]
+await app.listen(3010); // [!code ++]
+```
+````
+
+```ts
+const app = await NestFactory.create(AppModule);
+mountOrbitDocs(app, { root, path: '/docs' }); // [!code highlight]
+await app.listen(3000); // [!code --]
+await app.listen(3010); // [!code ++]
+```
+
+| Comment | Effect |
+| --- | --- |
+| `// [!code highlight]` | Highlights the line |
+| `// [!code ++]` and `// [!code --]` | Marks an added or removed line |
+| `// [!code focus]` | Dims every other line |
+| `// [!code word:baseUrl]` | Highlights a word |
+
+Use the comment syntax of the block's language, such as `# [!code ++]` in shell.
+
+### Line numbers
+
+````mdx
+```ts lineNumbers
+const a = 1;
+const b = 2;
+```
+````
+
+### Code tabs
+
+Consecutive code blocks with a `tab` attribute become one tabbed block:
+
+````mdx
+```ts tab="TypeScript"
+const booking = await orbit.bookings.create({ flightId });
+```
+
+```python tab="Python"
+booking = orbit.bookings.create(flight_id=flight_id)
+```
+````
+
+```ts tab="TypeScript"
+const booking = await orbit.bookings.create({ flightId });
+```
+
+```python tab="Python"
+booking = orbit.bookings.create(flight_id=flight_id)
+```
+
+### Package manager tabs
+
+A block with the language `npm` becomes tabs for npm, pnpm, yarn and bun:
+
+````mdx
+```npm
+npm install @orbitdocs/nestjs
+```
+````
+
+```npm
+npm install @orbitdocs/nestjs
+```
+
+## Links to operations
+
+`[Create a booking](op:demo/create-a-booking)` links to an operation, and `<Endpoint api="demo" op="create-a-booking" />` shows its method and path: <Endpoint api="demo" op="create-a-booking" />. See [Linking operations](/writing/linking-operations).
+
+## Landing components
+
+`Hero`, `Features`, `ApiCards`, `CodeShowcase`, `Stats`, `Logos` and `CallToAction` build landing pages. They also work on any page. See [Landing pages](/writing/landing-pages).
+
+## Next steps
+
+<Cards>
+  <Card title="Component reference" href="/docs-reference/components" description="Every component and prop in one place." />
+  <Card title="Linking operations" href="/writing/linking-operations" description="op: links and <Endpoint>." />
+  <Card title="Navigation" href="/writing/navigation" description="Order pages and folders." />
+</Cards>

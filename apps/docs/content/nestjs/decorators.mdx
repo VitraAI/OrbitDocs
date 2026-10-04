@@ -1,0 +1,218 @@
+---
+title: Decorators
+description: Every @Docs* decorator, what it writes to the spec, and how it combines with @nestjs/swagger.
+---
+
+The `@Docs*` decorators from `@orbitdocs/nestjs` are thin wrappers around Swagger's `ApiExtension` and `ApiResponse`. They only add documentation metadata. They never change routing, guards or behavior.
+
+You need them in one case: with `routes: 'opt-in'` (the default), `@DocsOperation` is what puts a route in the docs. With `routes: 'all'`, every decorator here is optional.
+
+```ts title="src/bookings/bookings.controller.ts"
+import { DocsContent, DocsErrors, DocsOperation, DocsSamples } from '@orbitdocs/nestjs';
+```
+
+| Decorator | Writes | Use it to |
+| --- | --- | --- |
+| [`@DocsOperation(options?)`](#docsoperation) | `x-orbitdocs` | Publish a route and set its group, title, description, order and stability. |
+| [`@DocsHidden()`](#docshidden) | `x-orbitdocs` | Keep a route out, even when it is marked or in `all` mode. |
+| [`@DocsErrors(errors)`](#docserrors) | `responses` | Say when a route returns each error code. |
+| [`@DocsSamples(samples)`](#docssamples) | `x-codeSamples` | Add hand-written code samples. |
+| [`@DocsContent(markdown, position?)`](#docscontent) | `x-orbitdocs-content` | Add a note or warning inside the operation. |
+| [`@DocsExtension(key, value)`](#docsextension) | any `x-` key | Add any OpenAPI extension. |
+
+## @DocsOperation
+
+Publishes one route and describes how it reads in the reference.
+
+```ts title="src/bookings/bookings.controller.ts"
+/**
+ * Books seats on a flight for one or more passengers. The booking is
+ * confirmed immediately when seats are available.
+ */
+@Post()
+@DocsOperation({ group: 'Bookings', title: 'Create a booking', order: 1 })
+create(@Body() dto: CreateBookingDto): BookingDto {
+  // ...
+}
+```
+
+<TypeTable
+  type={{
+    group: { type: 'string', description: 'Sidebar group. It becomes the operation\'s only tag. Defaults to the route\'s `@ApiTags`.' },
+    title: { type: 'string', description: 'An action in plain words: "Create a booking". Defaults to `@ApiOperation({ summary })`. It also sets the URL slug.' },
+    description: { type: 'string', description: 'What the operation does and when to use it. Markdown. Defaults to `@ApiOperation({ description })` or the JSDoc comment.' },
+    order: { type: 'number', description: 'Position within its group, ascending. Operations without `order` come after, in source order.' },
+    stability: { type: "'stable' | 'beta' | 'alpha' | 'experimental' | 'deprecated'", description: '`beta`, `alpha` and `experimental` show a badge. `deprecated` marks the operation deprecated.' },
+  }}
+/>
+
+Every option is optional. `@DocsOperation()` with no options publishes the route with its Swagger title and tags.
+
+### Titles become URLs
+
+The title is turned into the operation's slug: lowercase, words joined by `-`, text in parentheses dropped, at most eight words. Two operations with the same slug get `-2`, `-3` and so on.
+
+| Title | URL |
+| --- | --- |
+| `Create a booking` | `/reference/travel/create-a-booking/` |
+| `Upload a travel document (beta)` | `/reference/travel/upload-a-travel-document/` |
+
+<Callout type="warn" title="Renaming a title changes its URL">
+  Links like `[Create a booking](op:travel/create-a-booking)` use the slug. After a rename, `orbitdocs build` fails and lists every link to fix. See [Linking operations](/writing/linking-operations).
+</Callout>
+
+### Where the description comes from
+
+With the Swagger CLI plugin and `introspectComments`, the JSDoc comment above a method lands in Swagger's `summary`. When `@DocsOperation` sets a `title`, OrbitDocs moves that comment into the description. So a JSDoc comment plus a `title` is all you need.
+
+In `routes: 'all'` mode without `@DocsOperation`, the plugin's rules apply as they are:
+
+- No `@ApiOperation`: the JSDoc comment becomes the **title**.
+- `@ApiOperation({ summary })`: the plugin ignores the JSDoc comment. Put the text in `@ApiOperation({ description })`.
+
+To keep JSDoc comments as descriptions in `all` mode, set the plugin's `controllerKeyOfComment` to `description` and give each route a `summary`:
+
+```json title="nest-cli.json"
+{
+  "name": "@nestjs/swagger",
+  "options": { "introspectComments": true, "controllerKeyOfComment": "description" }
+}
+```
+
+### Mark a whole controller
+
+Put `@DocsOperation` on the class to publish every route in it:
+
+```ts title="src/flights/flights.controller.ts"
+@DocsOperation({ group: 'Flights' })
+@Controller('flights')
+export class FlightsController {
+  @Get()
+  @ApiOperation({ summary: 'Search flights' })
+  search() {}
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a flight' })
+  get() {}
+}
+```
+
+<Callout type="warn" title="A method-level marker replaces the class one">
+  A `@DocsOperation` on a method does not merge with the one on the class. Repeat `group` on the method if you set any option there.
+</Callout>
+
+## @DocsHidden
+
+Keeps a route out of the docs. Use it on routes in a marked controller, or on any route with `routes: 'all'`:
+
+```ts title="src/bookings/bookings.controller.ts"
+@Get('legacy')
+@DocsHidden()
+legacy() {}
+```
+
+`@ApiExcludeEndpoint()` from `@nestjs/swagger` has the same effect for the docs and also hides the route from Swagger UI.
+
+<Callout type="warn" title="Put @DocsHidden below @DocsOperation">
+  `@DocsOperation` and `@DocsHidden` write the same extension, and the decorator closest to the method wins. Write `@DocsHidden()` on the line just above the method.
+</Callout>
+
+## @DocsErrors
+
+Documents the errors one route returns, and when:
+
+```ts title="src/bookings/bookings.controller.ts"
+@Post()
+@DocsOperation({ group: 'Bookings', title: 'Create a booking' })
+@DocsErrors({
+  404: 'No flight with this id.',
+  409: 'Not enough seats left in this cabin.',
+})
+create(@Body() dto: CreateBookingDto) {}
+```
+
+The argument maps a status code to a description. Each entry becomes an `@ApiResponse({ status, description })`.
+
+You don't list the generic codes. OrbitDocs adds them to every operation:
+
+| Code | Added when |
+| --- | --- |
+| `400` | The route takes parameters or a body |
+| `401`, `403` | The route is secured |
+| `404` | The path has a parameter, such as `/bookings/{id}` |
+| `500` | Always |
+
+A description you give wins over the generic one. Every 4xx and 5xx response without its own body gets the shared `ErrorResponse` schema (Nest's `{ statusCode, message, error }`) and an example. Set `standardErrors: false` on the API to turn all of this off.
+
+## @DocsSamples
+
+Hand-written code samples, shown before the generated ones:
+
+```ts title="src/bookings/bookings.controller.ts"
+@DocsSamples([
+  {
+    lang: 'typescript',
+    label: 'TypeScript SDK',
+    source: "const booking = await orbit.bookings.create({ flightId: 'flt_2031_proxima', cabin: 'economy' });",
+  },
+])
+```
+
+<TypeTable
+  type={{
+    lang: { type: 'string', required: true, description: 'Language for highlighting: `typescript`, `python`, `go`, `shell`, `java`, `php`, `ruby`, `csharp`, `rust`, `swift`, `kotlin`, `json`, `http`…' },
+    label: { type: 'string', description: 'Tab label. Defaults to `lang`. Use the same label on every operation: a reader who picks "TypeScript SDK" sees it everywhere.' },
+    source: { type: 'string', required: true, description: 'The code.' },
+  }}
+/>
+
+`orbitdocs sdk` can generate SDK samples for every operation instead. See [Code samples](/api-reference/code-samples).
+
+## @DocsContent
+
+Adds Markdown inside the operation's section:
+
+```ts title="src/bookings/bookings.controller.ts"
+@Post(':id/cancel')
+@DocsOperation({ group: 'Bookings', title: 'Cancel a booking' })
+@DocsContent('> [!WARNING]\n> Cancelling less than 24 hours before departure is not refunded.')
+cancel(@Param('id') id: string) {}
+```
+
+GitHub alerts (`NOTE`, `TIP`, `IMPORTANT`, `WARNING`, `CAUTION`) render as callouts. The second argument sets where the content goes:
+
+| Position | Where |
+| --- | --- |
+| `after-description` (default) | Under the operation's description |
+| `before-parameters` | Above the parameter lists |
+| `after-responses` | At the end of the left column |
+| `aside` | In the right column, under the request and response samples |
+
+Use one `@DocsContent` per method; only the one closest to the method is kept. For longer content with components, write `reference/<api id>/<operation>.mdx` instead. See [Operation content](/writing/operation-content).
+
+## @DocsExtension
+
+Adds any OpenAPI `x-` extension to the operation. The key must start with `x-`:
+
+```ts title="src/flights/flights.controller.ts"
+@DocsExtension('x-internal-owner', 'team-flights')
+```
+
+The reference doesn't display unknown extensions. They stay in the spec for your own tools and for `orbitdocs lint`.
+
+## Order of decorators
+
+Decorators that write the same extension don't merge. The one closest to the method wins. This affects:
+
+- `@DocsOperation` and `@DocsHidden` (both write `x-orbitdocs`).
+- Two `@DocsContent` or two `@DocsSamples` on one method.
+
+`@DocsErrors` and Swagger's response decorators merge normally.
+
+## Next steps
+
+<Cards>
+  <Card title="Extraction" href="/nestjs/extraction" description="How these decorators become the spec." />
+  <Card title="Operation content" href="/writing/operation-content" description="MDX content inside the reference." />
+  <Card title="Code samples" href="/api-reference/code-samples" description="Generated samples, custom ones and SDK samples." />
+</Cards>

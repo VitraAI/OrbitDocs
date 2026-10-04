@@ -1,0 +1,145 @@
+---
+title: Inside your Nest app
+description: Serve the static docs build from the NestJS server you already deploy, with private docs and Ask AI included.
+---
+
+Your Nest app can serve the docs itself. One `mountOrbitDocs` call in `main.ts` serves the static build under a path such as `/docs`. It also enforces private docs and answers Ask AI and MCP, so you get every feature without a second server.
+
+## Serve the docs at /docs
+
+<Steps>
+<Step>
+
+**Match the base path.** The site must be built for the path Nest serves it on:
+
+```ts title="docs/orbitdocs.config.ts"
+output: { mode: 'static', basePath: '/docs' },
+```
+
+</Step>
+<Step>
+
+**Install the package in the Nest app:**
+
+```bash
+npm install @orbitdocs/nestjs
+```
+
+</Step>
+<Step>
+
+**Mount the build** in `main.ts`, before `app.listen()`:
+
+```ts title="src/main.ts"
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { NestFactory } from '@nestjs/core';
+import { mountOrbitDocs } from '@orbitdocs/nestjs';
+
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // dist/main.js → ../docs/out
+  const docs = join(__dirname, '../docs/out');
+  if (existsSync(docs)) mountOrbitDocs(app, { root: docs, path: '/docs' });
+
+  await app.listen(3000);
+}
+void bootstrap();
+```
+
+The `existsSync` check lets the API start before the docs are built.
+
+</Step>
+<Step>
+
+**Build the docs, then start the API:**
+
+```bash
+(cd docs && npx orbitdocs build)
+npm run build && npm start
+```
+
+Open `http://localhost:3000/docs/`.
+
+</Step>
+</Steps>
+
+`npx orbitdocs deploy --target nest` builds the docs and prints the exact `mountOrbitDocs` line for your folder layout.
+
+## mountOrbitDocs options
+
+```ts
+mountOrbitDocs(app: INestApplication, options: MountOrbitDocsOptions): void
+```
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `root` | `string` | required | Folder with the static build (`docs/out`). |
+| `path` | `string` | `'/docs'` | URL path to serve under. Must equal `output.basePath`. |
+| `spec` | `{ file: string; path: string }` | none | Also serves a spec file as JSON at `path`. |
+| `auth` | `false \| { publicUrl?: string; env?: Record<string, string \| undefined> }` | on when the build has `access` | `false` turns private docs off. `publicUrl` is the docs origin behind a proxy. `env` replaces `process.env` as the source of secrets. |
+| `ai` | `false \| { env?: Record<string, string \| undefined>; rateLimit?: number }` | on when the build has `ai` | `false` turns Ask AI and MCP off. `rateLimit` is questions per IP per 10 minutes (default `30`). |
+
+For every request under `path`, in order: the internal manifests return 404, Ask AI and sign-in routes answer, the access gate runs, then the file is served. Missing files get the site's `404.html`.
+
+<Callout type="warn" title="Express only">
+  `mountOrbitDocs` supports the Express adapter (`@nestjs/platform-express`). On Fastify it throws `mountOrbitDocs supports the Express adapter in this version.`
+  Deploy the docs to a [static host](/deploy/static-hosts) or in [server mode](/deploy/server-mode) instead.
+</Callout>
+
+## Ship the docs with the API
+
+The docs build is a folder, so it travels with your app. In a Docker image, build both and copy `docs/out` next to `dist`:
+
+```dockerfile title="Dockerfile"
+FROM node:22-bookworm-slim AS build
+WORKDIR /app
+COPY . .
+RUN npm ci && npm ci --prefix docs
+RUN cd docs && npx orbitdocs build
+
+FROM node:22-bookworm-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/docs/out ./docs/out
+CMD ["node", "dist/main.js"]
+```
+
+```text title=".dockerignore"
+node_modules
+docs/node_modules
+```
+
+`orbitdocs build` compiles the Nest app (the `build` command in the config) and extracts the spec, so the build stage needs both installs.
+
+## Secrets
+
+Private docs and Ask AI read their secrets from the Nest process environment:
+
+| Variable | Needed for |
+| --- | --- |
+| `ORBITDOCS_AUTH_SECRET` (or `access.session.secretEnv`) | Reader sessions. 32 or more characters. |
+| Each provider's `clientSecretEnv` | SSO sign-in. |
+| `ai.apiKeyEnv` | Ask AI and MCP. |
+
+See [Environment variables](/docs-reference/environment-variables) for the full list.
+
+## Gotchas
+
+- **Run Nest from the project root.** `mountOrbitDocs` loads `express` from `process.cwd()`, so the working directory must be the app that has `express` installed.
+- **Path and base path must match.** A build for `/docs` served at `/help` loads no CSS or scripts.
+- **Global prefix.** `app.setGlobalPrefix('api')` does not apply to `mountOrbitDocs`; the docs stay at `path`.
+
+## Next steps
+
+<Cards>
+  <Card title="Serve from Nest" href="/nestjs/serve-from-nest" description="Everything mountOrbitDocs does, in depth." />
+  <Card title="Private docs" href="/private-docs" description="Decide who can read what." />
+  <Card title="Ask AI" href="/ai" description="Add an AI assistant and MCP servers to the docs." />
+</Cards>

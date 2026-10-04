@@ -1,0 +1,71 @@
+{
+  "name": "@orbitdocs/auth",
+  "version": "0.1.0",
+  "description": "Private docs for OrbitDocs: access rules, SSO (Google, Microsoft, Okta, Auth0, Clerk, Keycloak), product-session reuse (Supabase, Clerk, Firebase, Appwrite), personalization and audit.",
+  "license": "MIT",
+  "author": "Vitra.ai (https://vitra.ai)",
+  "homepage": "https://github.com/VitraAI/OrbitDocs/tree/main/packages/auth#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VitraAI/OrbitDocs.git",
+    "directory": "packages/auth"
+  },
+  "bugs": {
+    "url": "https://github.com/VitraAI/OrbitDocs/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./edge": {
+      "types": "./dist/edge.d.ts",
+      "import": "./dist/edge.js",
+      "require": "./dist/edge.cjs"
+    },
+    "./express": {
+      "types": "./dist/express.d.ts",
+      "import": "./dist/express.js",
+      "require": "./dist/express.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "jose": "^6.2.12",
+    "openid-client": "^6.8.8",
+    "react": "^19.3.0",
+    "react-icons": "^5.7.0"
+  },
+  "devDependencies": {
+    "oauth2-mock-server": "^9.2.0",
+    "tsup": "^8.5.1",
+    "@types/react": "^19.3.0"
+  },
+  "typesVersions": {
+    "*": {
+      "express": [
+        "dist/express.d.ts"
+      ],
+      "edge": [
+        "dist/edge.d.ts"
+      ]
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

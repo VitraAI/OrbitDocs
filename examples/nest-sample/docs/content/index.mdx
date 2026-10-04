@@ -1,0 +1,110 @@
+---
+title: Orbit Travel API
+description: Book interstellar flights from your own app.
+layout: landing
+---
+
+<Hero
+  badge="New: webhooks for seat changes"
+  badgeHref="/webhooks"
+  title="Book interstellar flights from your own app"
+  description="Search destinations and flights, book seats for your customers, attach their travel documents and hear about every change by webhook."
+  actions={[
+    { text: 'Get started', href: '/quickstart', icon: 'rocket' },
+    { text: 'API reference', href: '/reference/travel', icon: 'book-open' },
+  ]}
+>
+
+```ts title="book.ts"
+const res = await fetch(`${API}/v1/bookings`, {
+  method: 'POST',
+  headers: {
+    'x-api-key': process.env.ORBIT_KEY!,
+    'Idempotency-Key': crypto.randomUUID(),
+  },
+  body: JSON.stringify({
+    flightId: 'flt_2031_proxima',
+    cabin: 'economy',
+    passengers: [{ name: 'Ada Lovelace', email: 'ada@example.com' }],
+  }),
+});
+const booking = await res.json();
+// { id: 'bk_7Hq2xP', status: 'confirmed', … }
+```
+
+</Hero>
+
+<Logos title="Trusted by crews across the galaxy">
+  <Logo name="Proxima Lines" icon="orbit" />
+  <Logo name="Kepler Air" icon="plane" />
+  <Logo name="Nebula Tours" icon="sparkles" />
+  <Logo name="Vega Cargo" icon="package" />
+  <Logo name="Lumen Space" icon="sun" />
+</Logos>
+
+<Features title="Everything to sell space travel" description="One API from search to boarding pass. Every endpoint is documented, typed and testable from this site.">
+  <Feature icon="search" title="Search" href="/reference/travel/search-flights">
+    Destinations by climate, flights by departure window, paged with cursors.
+  </Feature>
+  <Feature icon="ticket" title="Book" href="/reference/travel/create-a-booking">
+    Seats for up to nine passengers, safe to retry with an idempotency key.
+  </Feature>
+  <Feature icon="file-up" title="Documents" href="/reference/travel/upload-a-travel-document">
+    Attach passports and visas to a booking with one multipart upload.
+  </Feature>
+  <Feature icon="webhook" title="Webhooks" href="/webhooks">
+    Signed events when a booking is confirmed, changed or cancelled.
+  </Feature>
+  <Feature icon="key-round" title="API keys and OAuth" href="/authentication">
+    Test and live keys per project, or OAuth client credentials for bearer tokens.
+  </Feature>
+  <Feature icon="credit-card" title="Payments" href="/payments">
+    Card, wallet or bank transfer in one call, safe to retry with an idempotency key.
+  </Feature>
+  <Feature icon="gauge" title="Rate limits" href="/authentication#rate-limits">
+    60 requests a minute per key, with Retry-After on every 429.
+  </Feature>
+</Features>
+
+<Stats>
+  <Stat value="33" label="endpoints" />
+  <Stat value="10" label="code languages" />
+  <Stat value="99.95%" label="uptime last year" />
+  <Stat value="< 120 ms" label="p95 latency" />
+</Stats>
+
+<CodeShowcase
+  title="Hear about every change"
+  description="Register an endpoint once. Every booking and payment event arrives signed, so you can trust it and act on it."
+  actions={[{ text: 'Webhook guide', href: '/webhooks', variant: 'secondary' }]}
+>
+
+```json title="booking.confirmed"
+{
+  "id": "evt_N3wB9k",
+  "type": "booking.confirmed",
+  "apiVersion": "2031-01-01",
+  "data": {
+    "object": {
+      "id": "bk_7Hq2xP",
+      "flightId": "flt_2031_proxima",
+      "seats": ["24A"]
+    },
+    "previousAttributes": null
+  },
+  "createdAt": "2031-01-01T09:30:00Z"
+}
+```
+
+</CodeShowcase>
+
+<ApiCards title="APIs" description="Open a reference, or try every request in the API client." />
+
+<CallToAction
+  title="Make your first booking in five minutes"
+  description="Get a test key, search a flight and book it. No credit card, no review."
+  actions={[
+    { text: 'Start the quickstart', href: '/quickstart', icon: 'rocket' },
+    { text: 'Open the API client', href: '/client', icon: 'send', variant: 'secondary' },
+  ]}
+/>

@@ -1,0 +1,179 @@
+---
+title: Authentication
+description: Declare security schemes and servers, and let readers enter a key once for every sample and test request.
+---
+
+When your API needs a key or a token, declare how in the config. The reference then shows an **Auth Required** badge on secured operations, adds 401 and 403 responses, and gives readers an **Authentication** card. A key entered there fills every code sample and every test request.
+
+## Declare a security scheme
+
+Add the scheme under `securitySchemes`, then apply it with `security`:
+
+```ts title="docs/orbitdocs.config.ts"
+apis: [
+  {
+    id: 'travel',
+    source: { nest: { module: 'dist/app.module.js', build: 'nest build' } },
+    securitySchemes: {
+      apiKey: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'x-api-key',
+        description: 'Your API key. Create one in the dashboard.',
+      },
+    },
+    security: ['apiKey'],
+  },
+],
+```
+
+`securitySchemes` takes [OpenAPI security scheme objects](https://spec.openapis.org/oas/v3.1.0#security-scheme-object), keyed by a name you choose. `security` lists scheme names that every documented operation requires.
+
+<Callout type="warn" title="main.ts's DocumentBuilder is not used">
+  Extraction builds its own document, so `addBearerAuth()` or `addApiKey()` in `main.ts` don't reach the docs. Declare schemes here.
+</Callout>
+
+### Common schemes
+
+<Tabs items={['API key', 'Bearer token', 'Basic', 'OAuth 2.0']}>
+<Tab value="API key">
+
+```ts
+securitySchemes: {
+  apiKey: { type: 'apiKey', in: 'header', name: 'x-api-key' },
+},
+```
+
+Use `in: 'query'` for a key in the query string.
+
+</Tab>
+<Tab value="Bearer token">
+
+```ts
+securitySchemes: {
+  bearer: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+},
+```
+
+</Tab>
+<Tab value="Basic">
+
+```ts
+securitySchemes: {
+  basic: { type: 'http', scheme: 'basic' },
+},
+```
+
+Readers type `username:password`. It is Base64-encoded for them.
+
+</Tab>
+<Tab value="OAuth 2.0">
+
+```ts
+securitySchemes: {
+  oauth: {
+    type: 'oauth2',
+    flows: {
+      clientCredentials: {
+        tokenUrl: 'https://auth.orbit-travel.example/oauth/token',
+        scopes: { 'bookings:write': 'Create and cancel bookings' },
+      },
+    },
+  },
+},
+```
+
+In the reference, readers paste an access token. In the API client, the client credentials flow can fetch one for them.
+
+</Tab>
+</Tabs>
+
+### Secure only some routes
+
+Leave out `security` and mark routes with Swagger's decorators instead. The name must match a key in `securitySchemes`:
+
+```ts title="src/bookings/bookings.controller.ts"
+import { ApiBearerAuth } from '@nestjs/swagger';
+
+@ApiBearerAuth('bearer') // matches securitySchemes.bearer
+@Controller('bookings')
+export class BookingsController {}
+```
+
+`@ApiBearerAuth()` without an argument uses the name `bearer`. `@ApiSecurity('apiKey')` works the same way for other schemes.
+
+`security` in the config only applies to Nest sources, and it replaces each operation's own security. For a spec file, declare `security` in the spec itself.
+
+## Servers
+
+`servers` sets where requests go. It replaces the servers in the spec:
+
+```ts title="docs/orbitdocs.config.ts"
+servers: [
+  { url: 'http://localhost:3010', description: 'Local' },
+  { url: 'https://api.orbit-travel.example', description: 'Production' },
+],
+```
+
+With more than one server, the **Server** card in the introduction becomes a picker. The choice is remembered in the reader's browser.
+
+- **Code samples** use the first server's URL.
+- **Test Request** opens the API client with the environment of the selected server.
+- A server whose URL or description contains `prod` or `live` becomes a production environment in the client. The client asks before sending to it.
+
+### The mock server
+
+With `mock` in the config, a **Mock server** entry is added to the servers. That happens in `orbitdocs dev`, or always when you set `mock.url` for a hosted mock. Its credentials are pre-filled, because the mock accepts any key. See [Mock server](/sdks/mock-server).
+
+## What readers see
+
+### The Authentication card
+
+The introduction's right column shows an **Authentication** card for the API's schemes:
+
+1. With several schemes, the reader picks one from the menu.
+2. They type the value: the key, the token, or `username:password` for Basic.
+3. The eye button shows or hides what they typed.
+
+The value is stored in the reader's browser only, under `orbitdocs:<api id>` in `localStorage`. It is sent only to your API, with their requests.
+
+### Credentials in samples
+
+Samples contain a placeholder until the reader enters a credential. Then the placeholder is replaced in every sample, and in what **Copy** copies.
+
+| Scheme | Sample contains | Replaced with |
+| --- | --- | --- |
+| `apiKey` in a header or the query | `YOUR_API_KEY` | The key |
+| `http` `basic` | `Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=` | `username:password`, Base64-encoded |
+| `http` `bearer`, `oauth2`, `openIdConnect` | `Authorization: Bearer YOUR_TOKEN` | The token |
+
+An `apiKey` with `in: 'cookie'` is not added to samples.
+
+### Credentials in Test Request
+
+**Test Request** opens the [API client](/api-client). The client's collection uses the operation's scheme with variables: `{{apiKey}}`, `{{token}}`, or `{{username}}` and `{{password}}`. The value from the Authentication card fills those variables when they are still empty.
+
+### Pre-filled for signed-in readers
+
+With [private docs](/private-docs), your personalization hook can return each reader's own test key. The Authentication card is then filled in when they sign in. See [Access rules](/private-docs/access-rules).
+
+## Allow the docs origin in CORS
+
+Test Request sends real requests from the reader's browser. Unless the docs are served from the API's own origin, your API must allow the docs origin and the headers you use:
+
+```ts title="src/main.ts"
+app.enableCors({
+  origin: ['https://docs.orbit-travel.example', 'http://localhost:3000'],
+  allowedHeaders: ['content-type', 'x-api-key', 'idempotency-key'],
+});
+```
+
+Without it, the client shows `Network error` and suggests a CORS fix. Serving the docs [from Nest](/nestjs/serve-from-nest) avoids CORS entirely.
+
+## Next steps
+
+<Cards>
+  <Card title="API client requests" href="/api-client/requests" description="Auth types in the client, including OAuth 2.0." />
+  <Card title="Environments" href="/api-client/environments" description="Secret variables and production environments." />
+  <Card title="Private docs" href="/private-docs" description="Sign-in and per-reader keys." />
+</Cards>

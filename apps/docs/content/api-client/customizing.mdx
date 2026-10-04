@@ -1,0 +1,87 @@
+---
+title: Customizing
+description: Set the API client's defaults and features for your site with the client config, and what readers can change in settings.
+---
+
+The `client` key in `orbitdocs.config.ts` sets how the API client looks and which features your readers get. Each reader can then adjust layout and appearance in the client's settings drawer. Their choices are kept in their browser.
+
+## Site defaults
+
+```ts title="docs/orbitdocs.config.ts"
+export default defineConfig({
+  // ...
+  client: {
+    layout: 'stacked',
+    density: 'compact',
+    accent: '#8B5CF6',
+    features: {
+      scripts: false,
+      runner: false,
+    },
+  },
+});
+```
+
+<TypeTable
+  type={{
+    enabled: { type: 'boolean', default: 'true', description: 'Show **Test Request** in the reference and **API Client** in the top bar.' },
+    layout: { type: "'side-by-side' | 'stacked'", default: '"side-by-side"', description: 'Request and response next to each other, or one above the other.' },
+    density: { type: "'comfortable' | 'compact'", default: '"comfortable"', description: 'Spacing of rows and controls.' },
+    accent: { type: 'string', description: 'Accent color of the client, as a hex value. Defaults to the site accent.' },
+    features: { type: 'object', default: 'all true', description: 'Turn individual features off. See below.' },
+  }}
+/>
+
+### Features
+
+| Feature | Default | When `false` |
+| --- | --- | --- |
+| `scripts` | `true` | The **Scripts** tab is hidden. |
+| `runner` | `true` | **Collection runner** leaves the rail and the command palette. |
+| `history` | `true` | **History** leaves the rail and the command palette. |
+| `import` | `true` | **Import** (cURL) leaves the rail. |
+| `environments` | `true` | The **Environments** view, ⌘ E and its palette entry are hidden. The environment menu in the top bar stays. |
+
+Turn features off to keep the client simple for your audience. For example, a public API for beginners might hide scripts and the runner.
+
+### Turn the client off
+
+```ts title="docs/orbitdocs.config.ts"
+client: { enabled: false },
+```
+
+This removes **Test Request** from every operation and **API Client** from the top bar. The `/client` page is still built from `app/client/[[...variant]]/page.tsx`; delete that file too if you don't want the page.
+
+## Reader settings
+
+Readers open settings with the gear at the bottom of the rail, or from the command palette.
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| **Layout** | Site `layout` | Side by side or stacked. ⌘ J toggles it. |
+| **Density** | Site `density` | Comfortable or compact. |
+| **Show sidebar** | On | The collections panel. ⌘ B toggles it. |
+| **Editor font size** | 13 px | From 11 to 18 px, for editors and responses. |
+| **Accent** | Site `accent` | A color from the swatches. **Use the site accent** clears it. |
+| **Wrap long lines** | On | Wrap long lines in the response body. |
+| **Confirm before sending to production** | On | Ask before each send to an environment marked Production. |
+
+The drawer also lists the keyboard shortcuts. **Reset to defaults** returns every setting to the site defaults.
+
+The client also remembers the size of the request and response panes (drag the divider, from 20% to 80%) and the language of the **Code** tab.
+
+<Callout type="info" title="Saved settings win over new defaults">
+  Settings are saved per browser under `orbitdocs:client:settings`, as soon as a reader changes one. After that, changing `client.layout` or `client.density` in your config doesn't affect that reader until they press **Reset to defaults**.
+</Callout>
+
+## Style the client further
+
+The client uses the site's theme and HeroUI components, so `theme` in the config applies to it too. To change it further, override CSS variables in `app/global.css`, below the imports. See [Themes](/customization).
+
+## Next steps
+
+<Cards>
+  <Card title="Themes" href="/customization" description="Presets, colors and the accent." />
+  <Card title="Configuration" href="/docs-reference/configuration" description="Every config key, including client." />
+  <Card title="API client" href="/api-client" description="Back to the overview." />
+</Cards>

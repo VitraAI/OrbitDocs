@@ -1,0 +1,153 @@
+---
+title: MCP servers
+description: Serve an MCP server that lets coding agents search and read your docs, and one per API that turns every operation into a tool.
+---
+
+With an `ai` section in the config, your docs server also speaks the [Model Context Protocol](https://modelcontextprotocol.io). Coding agents such as Claude Code, Cursor and VS Code connect to it over HTTP.
+
+- **Docs MCP** at `/mcp`: search and read your guides and API reference.
+- **API MCP** at `/mcp/<api id>`: every operation of that API becomes a tool that calls your API with the agent's own credentials.
+
+Like Ask AI, both need a server: Nest with `mountOrbitDocs`, Next server mode, or the self-hosted platform. See [Ask AI needs a server](/ai#ask-ai-needs-a-server).
+
+## Turn them on
+
+They are on as soon as the config has an `ai` section. The `mcp` options choose what is served:
+
+```ts title="orbitdocs.config.ts"
+ai: {
+  provider: 'anthropic',
+  model: 'claude-sonnet-5-5',
+  apiKeyEnv: 'ANTHROPIC_API_KEY',
+  mcp: {
+    docs: true,
+    apis: ['payments'],
+    tools: 'per-operation',
+  },
+},
+```
+
+<TypeTable
+  type={{
+    'mcp.docs': { type: 'boolean', description: 'Serve the docs MCP at <base>/mcp.', default: 'true' },
+    'mcp.apis': { type: 'boolean | string[]', description: 'true: an MCP server for every API. false: none. A list: only those API ids.', default: 'true' },
+    'mcp.tools': { type: "'per-operation' | 'search-execute'", description: 'API MCP tools: one per operation, or two tools that search and call operations.', default: "'per-operation'" },
+  }}
+/>
+
+The MCP servers use no LLM: the provider settings only matter for Ask AI. They still need the `ai` section.
+
+## Connect a client
+
+The servers use the Streamable HTTP transport and are stateless. With docs at `https://docs.acme.com` (add your base path if you have one):
+
+<Tabs items={['Claude Code', 'Cursor', 'VS Code']}>
+<Tab value="Claude Code">
+
+```bash
+claude mcp add --transport http acme-docs https://docs.acme.com/mcp
+claude mcp add --transport http acme-api https://docs.acme.com/mcp/payments --header "x-api-key: $ACME_API_KEY"
+```
+
+</Tab>
+<Tab value="Cursor">
+
+```json title=".cursor/mcp.json"
+{
+  "mcpServers": {
+    "acme-docs": { "url": "https://docs.acme.com/mcp" },
+    "acme-api": {
+      "url": "https://docs.acme.com/mcp/payments",
+      "headers": { "x-api-key": "<your API key>" }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab value="VS Code">
+
+```json title=".vscode/mcp.json"
+{
+  "servers": {
+    "acme-docs": { "type": "http", "url": "https://docs.acme.com/mcp" },
+    "acme-api": {
+      "type": "http",
+      "url": "https://docs.acme.com/mcp/payments",
+      "headers": { "x-api-key": "<your API key>" }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+Put these snippets in one of your guides, so your readers can connect in one step.
+
+## Docs MCP
+
+| Tool | Input | Returns |
+| --- | --- | --- |
+| `search_docs` | `query`, optional `limit` (default 5, max 10) | The best passages, each with its page title, section and absolute URL. |
+| `read_page` | `url`: a full URL or a path from `search_docs` or `list_pages` | The page as Markdown. |
+| `list_pages` | none | Every guide and API operation with its URL. |
+
+All three are marked read-only. The server tells clients to call `search_docs` first, then `read_page`. Search uses the same index as Ask AI.
+
+URLs are absolute when `site.url` is set, so agents can cite them. Set it.
+
+## API MCP
+
+`/mcp/<api id>` lists one tool per operation:
+
+- **Name**: the `operationId` in snake case (`createBooking` becomes `create_booking`), or the operation's URL slug when there is none. Names are unique and at most 64 characters.
+- **Description**: the summary, `METHOD /path` and the start of the description.
+- **Input**: path, query and header parameters by name, plus `body` for the request body. Schemas are inlined so each tool stands alone.
+- **Hints**: `GET` and `HEAD` tools are marked read-only, `DELETE` tools destructive, so clients can ask before running them.
+
+### Which server it calls
+
+The tool calls the **first server** of the API's spec (`servers` in the config, or the spec's own), with server variables set to their defaults. A relative server URL is resolved against `site.url`.
+
+<Callout type="warn" title="Put the production server first">
+If your first server is `http://localhost:3000`, agents call localhost. List the server agents should use first in `apis[].servers`.
+</Callout>
+
+### Credentials
+
+The docs server never holds API credentials. Each tool call forwards the credentials the MCP client sent when it connected:
+
+- `Authorization`, always.
+- The header of each `apiKey` security scheme in a header (`x-api-key`, for example).
+- `Cookie`, when a scheme uses a cookie.
+
+Query-string API keys are not forwarded. Agents act as whoever owns the key, with that key's permissions.
+
+### Large APIs
+
+Hundreds of tools crowd an agent's context. `mcp.tools: 'search-execute'` replaces them with two:
+
+| Tool | What it does |
+| --- | --- |
+| `search_operations` | Finds operations by what they do; returns up to 8 with their tool name and input schema. |
+| `call_operation` | Calls one: `{ "operation": "create_booking", "arguments": { "body": { … } } }`. |
+
+Responses over 50,000 characters are cut. Non-2xx responses are returned as tool errors with the status and body.
+
+## Private docs and MCP
+
+MCP clients carry no docs session. They only see what an anonymous reader sees:
+
+- The docs MCP searches and lists public pages only.
+- An API with `access`, or under a rule that restricts `/reference/<id>/`, has no MCP server (`404`).
+- An operation under a rule of its own (such as `/reference/<id>/<operation>`) is not a tool of its API's MCP server.
+- In `access.mode: 'private'`, nothing is public: the docs MCP finds nothing and no API MCP is served.
+
+## Next steps
+
+<Cards>
+  <Card title="llms.txt and page actions" href="/ai/llms-txt" description="Static Markdown for any AI tool." />
+  <Card title="Authentication" href="/api-reference/authentication" description="Security schemes and servers in your spec." />
+  <Card title="Providers and keys" href="/ai/providers" description="The model behind Ask AI." />
+</Cards>

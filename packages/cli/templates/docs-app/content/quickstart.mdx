@@ -1,0 +1,41 @@
+---
+title: Quickstart
+description: Make your first request.
+---
+
+<Steps>
+<Step>
+
+### Document a route
+
+Mark a controller method with `@DocsOperation` — only marked routes are published:
+
+```ts title="bookings.controller.ts"
+import { DocsOperation } from '@orbitdocs/nestjs';
+
+@Post()
+@DocsOperation({ group: 'Bookings', title: 'Create a booking' })
+create(@Body() dto: CreateBookingDto) {}
+```
+
+</Step>
+<Step>
+
+### Preview
+
+```bash
+npm run dev
+```
+
+The reference updates whenever your API changes.
+
+</Step>
+<Step>
+
+### Link to an operation
+
+Write `[Create a booking](op:{{API_ID}}/create-a-booking)` in any guide; the build
+fails if the operation is renamed or removed.
+
+</Step>
+</Steps>

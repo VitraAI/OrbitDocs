@@ -1,0 +1,59 @@
+{
+  "name": "orbitdocs",
+  "version": "0.1.0",
+  "description": "OrbitDocs CLI: init, dev, extract, check, build and deploy API documentation sites.",
+  "license": "MIT",
+  "author": "Vitra.ai (https://vitra.ai)",
+  "homepage": "https://github.com/VitraAI/OrbitDocs/tree/main/packages/cli#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VitraAI/OrbitDocs.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/VitraAI/OrbitDocs/issues"
+  },
+  "type": "module",
+  "bin": {
+    "orbitdocs": "./bin/orbitdocs.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@orbitdocs/core": "workspace:*",
+    "@orbitdocs/openapi": "workspace:*",
+    "chokidar": "^5.0.0",
+    "commander": "^15.0.0",
+    "picocolors": "^1.1.1",
+    "@orbitdocs/auth": "workspace:*",
+    "yaml": "^2.8.1",
+    "@orbitdocs/ai": "workspace:*",
+    "@hey-api/openapi-ts": "^0.99.0",
+    "@hono/node-server": "^2.1.3",
+    "@openapitools/openapi-generator-cli": "^2.41.0",
+    "@scalar/mock-server": "^0.17.3",
+    "@stoplight/spectral-core": "^1.24.0",
+    "@stoplight/spectral-parsers": "^1.0.5",
+    "@stoplight/spectral-rulesets": "^1.23.0",
+    "@stoplight/spectral-ruleset-bundler": "^1.8.0",
+    "typescript": "~6.0.3",
+    "esbuild": "^0.27.0",
+    "tar": "^7.5.22"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

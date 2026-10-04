@@ -1,0 +1,183 @@
+---
+title: SDKs
+description: Generate client SDKs in TypeScript, Python, Go, Java, C# and PHP from your API spec, and keep your own code when you regenerate.
+---
+
+`orbitdocs sdk` generates a client library for your API in up to six languages, from the spec OrbitDocs extracted from your Nest app. Each SDK gets code samples in your API reference. Your own additions to an SDK survive every regeneration.
+
+This section also covers the mock server and spec linting:
+
+<Cards>
+  <Card title="SDK samples" href="/sdks/samples" description="SDK code samples next to the HTTP samples in the reference." />
+  <Card title="Regenerate in CI" href="/sdks/ci" description="A GitHub or GitLab workflow that opens a pull request with new SDKs." />
+  <Card title="Mock server" href="/sdks/mock-server" description="A mock of your API that validates requests against the spec." />
+  <Card title="SDK contract tests" href="/sdks/testing" description="Call every operation through the TypeScript SDK against the mock." />
+  <Card title="Lint your spec" href="/sdks/linting" description="Spectral's OpenAPI rules, or your own ruleset." />
+</Cards>
+
+## Generate your first SDK
+
+<Steps>
+<Step>
+
+### Configure the languages
+
+Add an `sdks` section with one entry per language:
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme' },
+  apis: [{ id: 'travel', source: { nest: { module: 'dist/app.module.js', build: 'nest build' } } }],
+  sdks: {
+    typescript: { package: '@acme/sdk' },
+    python: { package: 'acme_sdk' },
+    go: { module: 'github.com/acme/acme-go' },
+    java: { groupId: 'com.acme', artifactId: 'acme-sdk', package: 'com.acme.sdk' },
+    csharp: { package: 'Acme.Sdk' },
+    php: { namespace: 'Acme\\Sdk', package: 'acme/sdk' },
+  },
+});
+```
+
+</Step>
+<Step>
+
+### Extract the spec
+
+```bash
+npx orbitdocs extract
+```
+
+`orbitdocs sdk` reads `openapi/<api>.json` and doesn't extract it for you.
+
+</Step>
+<Step>
+
+### Generate
+
+```bash
+npx orbitdocs sdk                          # every configured language, every API
+npx orbitdocs sdk --lang typescript,python # only these languages
+npx orbitdocs sdk --api travel             # only this API
+```
+
+Each SDK is written to `sdks/<api>/<language>/`, relative to the docs app. The command also writes `.orbitdocs/sdk-samples.json`, the code samples for the reference.
+
+</Step>
+</Steps>
+
+## Languages
+
+| Language | Generator | Needs |
+| --- | --- | --- |
+| TypeScript | [Hey API](https://heyapi.dev) (`@hey-api/openapi-ts`): a fetch client with typed functions, no runtime dependency | Node only |
+| Python, Go, Java, C#, PHP | [OpenAPI Generator](https://openapi-generator.tech) | Java 11 or later on `PATH` |
+
+Both generators ship with the OrbitDocs CLI. If Java is missing, the command fails with `openapi-generator failed for <lang> (it needs Java 11 or later on PATH)`.
+
+### Settings per language
+
+| Language | Required | Optional | Passed to the generator as |
+| --- | --- | --- | --- |
+| `typescript` | `package` (npm name) | `version` (default `0.1.0`), `out` | `package.json` `name` and `version` |
+| `python` | `package` (import name) | `project` (default: `package` with `_` → `-`), `version`, `out` | `packageName`, `projectName`, `packageVersion` |
+| `go` | `module` (`github.com/acme/acme-go`) | `package` (default: last part of the module, letters and digits only), `version`, `out` | `packageName`, `packageVersion`; git host, user and repo from `module` |
+| `java` | `groupId`, `artifactId`, `package` | `version`, `out` | `groupId`, `artifactId`, `artifactVersion`, `invokerPackage`; APIs in `<package>.api`, models in `<package>.model`; `native` HTTP client |
+| `csharp` | `package` | `version`, `out` | `packageName`, `packageVersion`; targets `net8.0` |
+| `php` | `namespace` | `package` (Composer name), `version`, `out` | `invokerPackage`, `composerPackageName`, `artifactVersion` |
+
+`out` is a folder relative to the docs app. It replaces `sdks/<api>/<language>`.
+
+### Several APIs
+
+Each API gets its own SDK. Without `out`, they go to `sdks/<api>/<language>`. With `out`, write `{api}` where the API id goes; without `{api}` and with more than one API, each API gets a subfolder of `out` (`<out>/<api>`), so no SDK overwrites another. One API uses `out` as written.
+
+`{api}` also works in package names, so each API's SDK has its own name. In Python, Java and Go packages and PHP namespaces a `-` in the id becomes `_`.
+
+```ts title="orbitdocs.config.ts"
+sdks: {
+  typescript: { package: '@acme/{api}-sdk', out: 'packages/{api}-sdk' },
+  python: { package: 'acme_{api}' },
+},
+```
+
+`orbitdocs sdk` warns when several APIs would share one package name. The reference's code samples (`.orbitdocs/sdk-samples.json`) are kept per API, each from that API's SDK.
+
+## Keep your own code
+
+Regeneration rewrites generated code only. Where your code is safe depends on the language.
+
+### TypeScript
+
+```txt
+sdks/travel/typescript/
+├── package.json        written once, then yours
+├── tsconfig.json       written once, then yours
+├── README.md           written once, then yours
+└── src/
+    ├── index.ts        written once, then yours (re-exports generated/)
+    └── generated/      deleted and rewritten on every run
+```
+
+Add helpers next to `src/generated/` and export them from `src/index.ts`. The package builds with `npm run build` (tsup) to `dist/`.
+
+```ts title="sdks/travel/typescript/src/index.ts"
+export * from './generated';
+export { client } from './generated/client.gen';
+
+// Yours: survives regeneration.
+export { withRetry } from './retry';
+```
+
+### Python, Go, Java, C# and PHP
+
+OpenAPI Generator writes the whole folder, except the files listed in `.openapi-generator-ignore`. OrbitDocs creates that file on the first run with:
+
+```txt title=".openapi-generator-ignore"
+# Files OrbitDocs never overwrites when it regenerates this SDK.
+CHANGELOG.md
+custom/**
+.github/**
+.gitlab-ci.yml
+LICENSE
+```
+
+Put your own code in `custom/`, or add your own paths to the file. OrbitDocs never rewrites it after the first run.
+
+<Callout type="info">
+OrbitDocs generates code. It doesn't version, publish or release SDKs to npm, PyPI or other registries. Commit the `sdks/` folder and publish from your own pipeline.
+</Callout>
+
+## Options
+
+<TypeTable
+  type={{
+    apis: { type: 'string[]', description: 'API ids to build SDKs for.', default: 'every API' },
+    typescript: { type: '{ package: string; version?: string; out?: string }', description: 'TypeScript SDK (Hey API).' },
+    python: { type: '{ package: string; project?: string; version?: string; out?: string }', description: 'Python SDK.' },
+    go: { type: '{ module: string; package?: string; version?: string; out?: string }', description: 'Go SDK.' },
+    java: { type: '{ groupId: string; artifactId: string; package: string; version?: string; out?: string }', description: 'Java SDK.' },
+    csharp: { type: '{ package: string; version?: string; out?: string }', description: 'C# SDK.' },
+    php: { type: '{ namespace: string; package?: string; version?: string; out?: string }', description: 'PHP SDK.' },
+    samples: { type: 'boolean', description: 'Show SDK code samples in the API reference.', default: 'true' },
+  }}
+/>
+
+## orbitdocs sdk flags
+
+| Flag | Default | |
+| --- | --- | --- |
+| `--lang <languages>` | every configured language | Comma-separated: `typescript,python,go,java,csharp,php`. Each must be configured. |
+| `--api <id>` | every API in `sdks.apis` | Generate for one API. |
+| `--workflow <github\|gitlab>` | | Write a CI workflow instead of generating. See [Regenerate in CI](/sdks/ci). |
+| `test` (argument) | | Run the contract tests. See [SDK contract tests](/sdks/testing). |
+
+## Next steps
+
+<Cards>
+  <Card title="SDK samples" href="/sdks/samples" description="How SDK samples reach the reference." />
+  <Card title="Regenerate in CI" href="/sdks/ci" description="Keep SDKs in step with the API." />
+  <Card title="CLI reference" href="/docs-reference/cli" description="Every command and flag." />
+</Cards>

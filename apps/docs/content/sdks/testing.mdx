@@ -1,0 +1,77 @@
+---
+title: SDK contract tests
+description: Call every operation through the generated TypeScript SDK against the mock server with the examples from your spec, and fail CI when anything breaks.
+---
+
+`orbitdocs sdk test` checks that your TypeScript SDK, your spec and its examples agree. It calls every operation through the SDK against an in-process mock server built from the spec, and fails on anything but a 2xx. Run it in CI to catch a broken SDK, a wrong example or a spec change the SDK didn't follow.
+
+## Run the tests
+
+```bash
+npx orbitdocs extract
+npx orbitdocs sdk --lang typescript
+npx orbitdocs sdk test
+```
+
+```txt
+› travel: 12 operations through the TypeScript SDK against the mock
+  ✓ listBookings GET /v1/bookings → 200
+  ✓ createABooking POST /v1/bookings → 201
+  ✗ getABooking → 422 {"error":"Request validation failed","violations":[…]}
+  …
+✗ travel: 11/12 SDK calls passed
+```
+
+The command exits with code 1 when any call fails, so CI stops.
+
+| Flag | Default | |
+| --- | --- | --- |
+| `--api <id>` | every API in `sdks.apis` | Test one API. |
+
+## What it does
+
+For each API:
+
+1. Bundles the SDK from `sdks/<api>/typescript/src/index.ts` with esbuild, as it would ship.
+2. Starts the [mock server](/sdks/mock-server) on a free port, in the same process. Your `mock.handlers` and `mock.validate` settings apply.
+3. Sets placeholder credentials for each security scheme: `test-key` for header API keys, `Bearer test-token` for bearer, OAuth 2 and OpenID Connect, and `test:test` for Basic. The mock only checks that they are present and well formed.
+4. Calls each operation, in spec order, with arguments built from the spec:
+   - path, query and header parameters that are required or have an example, using the example or a value generated from the schema;
+   - the request body's example, or one generated from its schema. File fields in multipart bodies get a small test file.
+5. Passes when the response is 2xx and the SDK returned no error.
+
+An operation with no SDK function (for example, after a spec change without regenerating) fails with "no SDK function".
+
+## Read the failures
+
+| Failure | Usual cause |
+| --- | --- |
+| `→ 422` with violations | An example in your spec doesn't match its own schema. Fix the example (`@ApiProperty({ example })` or the DTO). |
+| `→ 401` | The operation uses a security scheme the test can't fill, such as an API key in a query string or cookie. |
+| `→ 404` | A mock handler's `store.get` or `update` found nothing. Seed the store in an earlier handler, or return a value. |
+| `no SDK function` | The SDK is older than the spec. Run `orbitdocs sdk --lang typescript`. |
+| `→ 500` | A mock handler threw. The message is in the output. |
+
+## Requirements
+
+- `sdks.typescript` must be configured, and the SDK generated. Other languages aren't tested.
+- The spec must be extracted (`openapi/<api>.json`).
+- Mock handlers share one store for the whole run. A `create` handler that runs before a `get` handler can make the `get` succeed.
+
+## In CI
+
+Add it after generating the SDK, for example in the workflow from [Regenerate in CI](/sdks/ci):
+
+```yaml title=".github/workflows/orbitdocs-sdks.yml"
+      - name: SDK contract tests
+        working-directory: docs
+        run: npx orbitdocs sdk --lang typescript && npx orbitdocs sdk test
+```
+
+## Next steps
+
+<Cards>
+  <Card title="Mock server" href="/sdks/mock-server" description="Handlers, validation and status codes." />
+  <Card title="Lint your spec" href="/sdks/linting" description="Find spec problems with Spectral." />
+  <Card title="Completeness checks" href="/api-reference/completeness" description="Fail the build on missing descriptions and examples." />
+</Cards>

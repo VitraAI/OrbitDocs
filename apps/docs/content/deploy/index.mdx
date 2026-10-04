@@ -1,0 +1,98 @@
+---
+title: Deploy
+description: Pick an output mode, set the base path, and ship the docs to any host with one command.
+---
+
+One OrbitDocs app can be deployed four ways. Pick the mode that matches where the docs will live and which features you need. You can switch modes later by changing one line of config.
+
+## Choose an output mode
+
+| | Static | Next server | Inside your Nest app | Self-hosted platform |
+| --- | --- | --- | --- | --- |
+| Config | `output.mode: 'static'` | `output.mode: 'server'` | `output.mode: 'static'` | `output.mode: 'static'` |
+| Build output | `out/` (plain files) | `.next/` (a Next app) | `out/` | `out/`, uploaded |
+| Runs on | Any static host | Vercel, any Node host, a container | Your Nest server | Your own servers |
+| Private docs | No (every file is public) | Yes, through `proxy.ts` | Yes, through `mountOrbitDocs` | Yes |
+| Ask AI and MCP | No | Yes | Yes | Yes |
+| Redirects | Redirect pages + a `_redirects` file | Real HTTP redirects | Redirect pages | Redirect pages |
+| Guide | [Static hosts](/deploy/static-hosts) | [Server mode](/deploy/server-mode) | [Nest](/deploy/nest) | [Platform](/platform) |
+
+Pick **static** unless you need private docs or Ask AI. Static files are the cheapest and fastest to host. URLs, search and `llms.txt` are the same in every mode.
+
+<Callout type="warn" title="Private docs need a server">
+  Access rules are checked by the server that serves the docs. A plain static host serves every file to everyone.
+  `orbitdocs build` prints a warning when the config has an `access` section and the mode is `static`.
+</Callout>
+
+## Set the mode and base path
+
+Both settings live in `output`:
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme API' },
+  apis: [/* … */],
+  output: {
+    mode: 'static', // 'static' (default) or 'server'
+    basePath: '/docs', // '' (default) serves the site at the root
+  },
+});
+```
+
+| Key | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `output.mode` | `'static' \| 'server'` | `'static'` | `static` builds plain files into `out/`. `server` builds a Next app you start with `next start`. |
+| `output.basePath` | `string` | `''` | URL path the site lives under, such as `/docs`. Empty, or `/segment` with more `/segment`s. No trailing slash. |
+
+`basePath` is baked into every link and asset URL at build time. Set it to the exact path the host serves the site on, then build. A site built for `/docs` breaks when it is served at `/`, and the other way round.
+
+<Callout type="info">
+  Serving the docs from your Nest app at `/docs`? Set `basePath: '/docs'` and pass the same path to `mountOrbitDocs`.
+</Callout>
+
+## Build and deploy
+
+`orbitdocs build` extracts the specs, checks every `op:` link, then runs `next build`. `orbitdocs deploy` runs the same build and ships it:
+
+```bash
+npx orbitdocs build                          # out/ (static) or .next/ (server)
+npx orbitdocs deploy --target vercel --prod  # build, then vercel deploy
+npx orbitdocs deploy --target static         # build, then print where to upload out/
+npx orbitdocs deploy --target nest           # build, then print the mountOrbitDocs call
+npx orbitdocs deploy --target docker         # build, then write a Dockerfile + nginx.conf
+```
+
+| Target | Needs mode | What it does |
+| --- | --- | --- |
+| `vercel` | `static` or `server` | Runs `npx vercel@latest deploy` on `out/` (static) or on the docs app folder (server). Add `--prod` for production. |
+| `static` | `static` | Builds `out/` and tells you to upload it. It uploads nothing itself. |
+| `nest` | `static` | Builds `out/` and prints the `mountOrbitDocs` line for your `main.ts`. |
+| `docker` | `static` | Writes a `Dockerfile` and `nginx.conf` that serve `out/` (only if no `Dockerfile` exists yet). |
+
+Add `--skip-build` to any target to deploy the build that is already there. Every flag is listed on the [CLI reference](/docs-reference/cli).
+
+<Callout type="warn">
+  Only the `vercel` target accepts `output.mode: 'server'`. The other targets stop with `Target "…" needs output.mode 'static'.`
+</Callout>
+
+## What a build writes
+
+| Path | Mode | Contents |
+| --- | --- | --- |
+| `out/` | static | The whole site: HTML per page (`page/index.html`), assets, `404.html`, `llms.txt`, `openapi/<id>.json`. |
+| `out/_redirects` | static | Redirect rules for Netlify and Cloudflare Pages. Only written when `redirects` is set. |
+| `.next/` | server | The Next build. Start it with `next start`. |
+| `openapi/<id>.json` | both | The extracted spec of each API. |
+| `.orbitdocs/` | both | Build metadata: the access manifest, the AI index and the theme CSS. Never served. |
+
+`out/` also holds `orbitdocs-access.json` and `orbitdocs-ai.json`. `mountOrbitDocs` and the platform read them to enforce access and answer Ask AI. Both servers refuse to serve these two files.
+
+## Next steps
+
+<Cards>
+  <Card title="Vercel" href="/deploy/vercel" description="One command to a production URL, static or server mode." />
+  <Card title="Static hosts" href="/deploy/static-hosts" description="Netlify, GitHub Pages, Cloudflare Pages, S3 + CloudFront and nginx." />
+  <Card title="Inside your Nest app" href="/deploy/nest" description="Serve the docs from the API server you already run." />
+</Cards>

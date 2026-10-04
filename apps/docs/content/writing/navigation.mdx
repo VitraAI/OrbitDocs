@@ -1,0 +1,177 @@
+---
+title: Navigation
+description: Order the sidebar with meta.json, group pages in folders, split the docs into tabs and add top bar links.
+---
+
+The sidebar mirrors the `content/` folder. A `meta.json` file in each folder sets the order and the titles. The top bar comes from `navigation` in `orbitdocs.config.ts`.
+
+## Order pages with meta.json
+
+```json title="docs/content/meta.json"
+{
+  "title": "Guides",
+  "pages": ["index", "quickstart", "authentication", "guides", "faq"]
+}
+```
+
+Each entry in `pages` is a file name without its extension, or a folder name. The sidebar shows them in that order. Pages and folders that are not listed are left out, unless you add `"..."`.
+
+Without a `meta.json`, a folder lists everything it contains in file name order, `index` first.
+
+### meta.json keys
+
+<TypeTable
+  type={{
+    title: { type: 'string', description: 'Folder label in the sidebar. Defaults to the title of the folder\'s `index` page, then to the folder name.' },
+    pages: { type: 'string[]', description: 'Order of the folder\'s items. See the item syntax below.' },
+    description: { type: 'string', description: 'Shown under the folder\'s name when it is a tab.' },
+    root: { type: 'boolean', description: 'Makes the folder a tab: the sidebar shows only its pages. See [Split the docs into tabs](#split-the-docs-into-tabs).' },
+    defaultOpen: { type: 'boolean', description: 'Open this folder in the sidebar when the page loads.' },
+    collapsible: { type: 'boolean', description: 'Set `false` to keep the folder always open.' },
+    pagesIndex: { type: 'string', description: 'Use another page than `index` as the page the folder links to.' },
+  }}
+/>
+
+### Item syntax
+
+| Item | Meaning |
+| --- | --- |
+| `"quickstart"` | The page `quickstart.mdx`, or the folder `quickstart/` |
+| `"..."` | Every item not listed elsewhere, in file name order |
+| `"z...a"` | The same, in reverse order |
+| `"...guides"` | The items of the `guides/` folder, inline, without the folder |
+| `"!draft"` | Leave `draft` out, when you use `"..."` |
+| `"---Advanced---"` | A separator with a label |
+| `"---"` | A separator without a label |
+| `"[Status](https://status.acme.com)"` | A link |
+| `"external:[Blog](https://acme.com/blog)"` | A link marked as external |
+
+```json title="docs/content/meta.json"
+{
+  "title": "Guides",
+  "pages": [
+    "index",
+    "quickstart",
+    "---Concepts---",
+    "authentication",
+    "pagination",
+    "webhooks",
+    "---More---",
+    "...",
+    "!internal",
+    "external:[Changelog](https://github.com/acme/api/releases)"
+  ]
+}
+```
+
+## Group pages in folders
+
+A folder becomes a collapsible group in the sidebar. Its pages get the folder name in their URL:
+
+```txt
+content/
+├── meta.json
+├── index.mdx                → /
+└── guides/
+    ├── meta.json            { "title": "Guides", "pages": ["index", "webhooks", "errors"] }
+    ├── index.mdx            → /guides  (opens when you click the folder)
+    ├── webhooks.mdx         → /guides/webhooks
+    └── errors.mdx           → /guides/errors
+```
+
+List the folder by name in the parent's `meta.json`, here `"guides"`.
+
+### Folders that don't change URLs
+
+Wrap a folder's name in parentheses to group files without adding to their URL. `content/(concepts)/webhooks.mdx` is served at `/webhooks`.
+
+`layout.sidebar.defaultOpenLevel` in the config opens folders down to that depth. The default `0` keeps them all closed except the current one.
+
+## Split the docs into tabs
+
+Add `"root": true` to a folder's `meta.json`. The folder becomes a tab, and the sidebar only shows the pages of the tab you are in. Use it for separate products, for SDKs, or for versions of your docs:
+
+```txt
+content/
+├── meta.json                { "pages": ["v2", "v1"] }
+├── v2/
+│   ├── meta.json            { "title": "v2", "description": "Current", "root": true }
+│   └── index.mdx            → /v2
+└── v1/
+    ├── meta.json            { "title": "v1", "description": "Legacy", "root": true }
+    └── index.mdx            → /v1
+```
+
+Where the tabs appear depends on `layout.tabMode` and the layout type:
+
+| Layout | `tabMode` | Tabs appear |
+| --- | --- | --- |
+| `notebook` (default) | `navbar` (default) | In the top bar |
+| `notebook` | `sidebar` | At the top of the sidebar |
+| `docs` | `top` | Above the sidebar |
+| `docs` | `auto` | Chosen by the layout |
+
+See [Layouts](/customization/layouts).
+
+## Top bar links
+
+The top bar is built from the config, in this order:
+
+1. **Guides** — from `navigation.guides`.
+2. **API Reference** — added for you. One API gives a link; several give a menu with each API's title.
+3. **API Client** — added when you have an API and `client.enabled` is `true`.
+4. Your own items from `navigation.header`.
+5. **Ask AI** and the reader's account menu, when `ai` and `access` are set.
+
+```ts title="docs/orbitdocs.config.ts"
+navigation: {
+  // The home page is a landing page, so "Guides" opens the first guide.
+  guides: { text: 'Guides', url: '/quickstart' },
+  header: [
+    { text: 'Status', url: 'https://status.orbit-travel.example' },
+    { type: 'icon', text: 'Discord', icon: 'SiDiscord', url: 'https://discord.gg/orbit' },
+    { type: 'button', text: 'Get an API key', url: 'https://app.orbit-travel.example/keys' },
+    {
+      type: 'menu',
+      text: 'Resources',
+      items: [
+        { text: 'Changelog', url: 'https://github.com/orbit/api/releases', description: 'What changed' },
+        { text: 'Support', url: 'mailto:support@orbit-travel.example' },
+      ],
+    },
+  ],
+  // Links at the bottom of the guides sidebar.
+  sidebar: [{ text: 'Contact us', url: 'mailto:support@orbit-travel.example', icon: 'Mail' }],
+},
+```
+
+| Key | Default | What it does |
+| --- | --- | --- |
+| `navigation.guides` | `{ text: 'Guides', url: '/' }` | The first top bar link. `false` hides it. Point `url` at your first guide when the home page is a [landing page](/writing/landing-pages). |
+| `navigation.header` | `[]` | Links (`type` omitted), icon links (`icon`), buttons (`button`) and menus (`menu`). `on: 'nav' \| 'menu' \| 'all'` limits an item to the top bar or the mobile menu. |
+| `navigation.sidebar` | `[]` | Links at the bottom of the guides sidebar. |
+
+Icons are [Lucide](https://lucide.dev/icons) names such as `Github` or `book-open`, or [Simple Icons](https://simpleicons.org) brand names prefixed with `Si`, such as `SiDiscord`. Links to `http` and `https` URLs open in a new tab unless you set `external: false`.
+
+The full list of header options, the banner and the GitHub link are in [Navigation bar](/customization/navigation-bar).
+
+## Redirects
+
+When you move a page, keep old links working:
+
+```ts title="docs/orbitdocs.config.ts"
+redirects: [
+  { from: '/getting-started', to: '/quickstart' },
+  { from: '/old-guides/*', to: '/guides/*', permanent: true },
+],
+```
+
+`permanent` defaults to `true` (301). A static build writes a redirect page for each `from` without `*`, plus a `_redirects` file that Netlify and Cloudflare Pages read. Server mode answers with real redirects.
+
+## Next steps
+
+<Cards>
+  <Card title="Layouts" href="/customization/layouts" description="Notebook, docs, flux, glass and home layouts." />
+  <Card title="Navigation bar" href="/customization/navigation-bar" description="Every header option, banner and GitHub link." />
+  <Card title="Linking operations" href="/writing/linking-operations" description="Link guides to the reference." />
+</Cards>

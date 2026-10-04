@@ -1,0 +1,102 @@
+/*
+ * OrbitDocs palette (theme.preset 'orbit', the default): HeroUI v3 variables are
+ * the single source of colour, and Fumadocs' --color-fd-* tokens follow them.
+ * Imported by the generated .orbitdocs/theme.css; do not import it together
+ * with a Fumadocs preset.
+ */
+
+@theme {
+
+  --color-fd-background: var(--background);
+  --color-fd-foreground: var(--foreground);
+  --color-fd-muted: var(--surface-secondary);
+  --color-fd-muted-foreground: var(--muted);
+  --color-fd-popover: var(--overlay);
+  --color-fd-popover-foreground: var(--overlay-foreground);
+  --color-fd-card: var(--surface);
+  --color-fd-card-foreground: var(--surface-foreground);
+  --color-fd-border: var(--border);
+  --color-fd-primary: var(--accent);
+  --color-fd-primary-foreground: var(--accent-foreground);
+  --color-fd-secondary: var(--surface-secondary);
+  --color-fd-secondary-foreground: var(--surface-secondary-foreground);
+  --color-fd-accent: color-mix(in oklch, var(--accent) 10%, transparent);
+  --color-fd-accent-foreground: var(--accent);
+  --color-fd-ring: color-mix(in oklch, var(--focus) 55%, transparent);
+}
+
+/* Neutral greys like Scalar's default theme; the accent is the only colour. */
+:root,
+.light,
+[data-theme='light'] {
+  --radius: 0.375rem;
+  --accent: var(--od-accent, oklch(55% 0.19 255));
+  --accent-foreground: oklch(99% 0 0);
+  --background: oklch(100% 0 0);
+  --foreground: oklch(21% 0 0);
+  --surface: oklch(100% 0 0);
+  --surface-foreground: var(--foreground);
+  --surface-secondary: oklch(97% 0 0);
+  --surface-secondary-foreground: var(--foreground);
+  --surface-tertiary: oklch(93% 0 0);
+  --surface-tertiary-foreground: var(--foreground);
+  --overlay: oklch(100% 0 0);
+  --overlay-foreground: var(--foreground);
+  --muted: oklch(52% 0 0);
+  --default: oklch(95.5% 0 0);
+  --default-foreground: var(--foreground);
+  --field-background: oklch(100% 0 0);
+  --field-foreground: var(--foreground);
+  /* Fields get a visible hairline in both themes (HeroUI's default is borderless). */
+  --field-border-width: 1px;
+  --field-border: oklch(88% 0 0);
+  --border: oklch(90% 0 0);
+  --separator: oklch(92% 0 0);
+  --focus: var(--accent);
+  --link: var(--accent);
+
+}
+
+.dark,
+[data-theme='dark'] {
+  --accent: var(--od-accent-dark, var(--od-accent, oklch(70% 0.15 255)));
+  --accent-foreground: oklch(15% 0 0);
+  --background: oklch(17% 0 0);
+  --foreground: oklch(93% 0 0);
+  --surface: oklch(20% 0 0);
+  --surface-foreground: var(--foreground);
+  --surface-secondary: oklch(22% 0 0);
+  --surface-secondary-foreground: var(--foreground);
+  --surface-tertiary: oklch(26% 0 0);
+  --surface-tertiary-foreground: var(--foreground);
+  --overlay: oklch(21% 0 0);
+  --overlay-foreground: var(--foreground);
+  --muted: oklch(70% 0 0);
+  --default: oklch(25% 0 0);
+  --default-foreground: var(--foreground);
+  --field-background: oklch(23.5% 0 0);
+  --field-foreground: var(--foreground);
+  --field-border: oklch(32% 0 0);
+  --border: oklch(29% 0 0);
+  --separator: oklch(25% 0 0);
+
+}
+
+.dark {
+  /* Fumadocs sets literal dark values on .dark; point them back at the palette. */
+  --color-fd-background: var(--background);
+  --color-fd-foreground: var(--foreground);
+  --color-fd-muted: var(--surface-secondary);
+  --color-fd-muted-foreground: var(--muted);
+  --color-fd-popover: var(--overlay);
+  --color-fd-popover-foreground: var(--overlay-foreground);
+  --color-fd-card: var(--surface);
+  --color-fd-card-foreground: var(--surface-foreground);
+  --color-fd-border: var(--border);
+  --color-fd-primary: var(--accent);
+  --color-fd-primary-foreground: var(--accent-foreground);
+  --color-fd-secondary: var(--surface-secondary);
+  --color-fd-secondary-foreground: var(--surface-secondary-foreground);
+  --color-fd-accent: color-mix(in oklch, var(--accent) 12%, transparent);
+  --color-fd-accent-foreground: var(--accent);
+}

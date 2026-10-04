@@ -1,0 +1,157 @@
+---
+title: Write docs
+description: Guides are MDX files in content/. Learn where they live, how URLs work and what frontmatter does.
+---
+
+Guides are the pages around your API reference: quickstarts, concepts, how-tos. Each one is an MDX file in the docs app's `content/` folder. MDX is Markdown that can also use components, such as callouts, tabs and links to operations.
+
+## What's in this section
+
+<Cards>
+  <Card title="Components" href="/writing/components" description="Callouts, steps, tabs, cards, accordions, type tables and code blocks." />
+  <Card title="Navigation" href="/writing/navigation" description="Sidebar order with meta.json, folders, tabs and top bar links." />
+  <Card title="Linking operations" href="/writing/linking-operations" description="op: links and <Endpoint> that fail the build when they break." />
+  <Card title="Operation content" href="/writing/operation-content" description="Notes, warnings and examples inside the API reference." />
+  <Card title="Landing pages" href="/writing/landing-pages" description="A full-width home page with hero, features and API cards." />
+</Cards>
+
+## Add a page
+
+<Steps>
+<Step>
+
+### Create the file
+
+```mdx title="docs/content/authentication.mdx"
+---
+title: Authentication
+description: Send your API key with every request.
+---
+
+Every request needs an API key in the `x-api-key` header.
+
+## Get a key
+
+Create a key in the dashboard, then try it with
+[List bookings](op:travel/list-bookings).
+```
+
+</Step>
+<Step>
+
+### Add it to the sidebar
+
+```json title="docs/content/meta.json"
+{
+  "title": "Guides",
+  "pages": ["index", "quickstart", "authentication"]
+}
+```
+
+Pages not listed in `pages` are left out of the sidebar. See [Navigation](/writing/navigation).
+
+</Step>
+<Step>
+
+### Preview it
+
+With `npm run dev` running, open `http://localhost:3000/authentication`. Saving the file reloads the page.
+
+</Step>
+</Steps>
+
+## Files and URLs
+
+A page's URL is its path in `content/`, without the extension. An `index.mdx` file takes its folder's URL.
+
+| File | URL |
+| --- | --- |
+| `content/index.mdx` | `/` (the home page) |
+| `content/quickstart.mdx` | `/quickstart` |
+| `content/guides/index.mdx` | `/guides` |
+| `content/guides/webhooks.mdx` | `/guides/webhooks` |
+
+Use `.mdx` for pages with components and `.md` for plain Markdown. `output.basePath` is added in front of every URL; don't include it in file names or links.
+
+<Callout type="warn" title="Don't create content/reference or content/client">
+  `/reference/…` and `/client` belong to the API reference and the API client. A guide at those paths would clash with them.
+</Callout>
+
+## Frontmatter
+
+Every page starts with YAML frontmatter between `---` lines.
+
+<TypeTable
+  type={{
+    title: { type: 'string', required: true, description: 'Page title: the H1, the sidebar label, the browser tab and search results.' },
+    description: { type: 'string', description: 'One line under the title. Also the meta description and the text in search, `llms.txt` and link cards.' },
+    full: { type: 'boolean', default: 'false', description: 'Use the full width, without the table of contents column.' },
+    access: { type: 'string[]', description: 'Access groups that can read the page. See [Access rules](/private-docs/access-rules).' },
+    layout: { type: "'docs' | 'landing'", default: '"docs"', description: 'On `content/index.mdx`, `landing` renders a full-width landing page. Pages with `landing` are left out of the sidebar.' },
+  }}
+/>
+
+```mdx title="docs/content/internal/runbook.mdx"
+---
+title: On-call runbook
+description: What to do when bookings fail.
+access: [staff]
+---
+```
+
+A page with `access` is left out of search, `llms.txt` and `llms-full.txt` for everyone, and its Markdown copy needs the same access. A rule in `access.rules` does the same for every page it matches. It still needs a server to protect it: see [Private docs](/private-docs).
+
+## Write Markdown
+
+Everything in GitHub Flavored Markdown works: headings, lists, links, images, tables, task lists, strikethrough, footnotes and fenced code blocks.
+
+- **Headings.** `##` and `###` headings appear in the table of contents and get an anchor link. Don't add a `#` H1; the title is the H1.
+- **Links to guides.** Write absolute paths such as `/guides/webhooks`, or relative file paths such as `./webhooks.mdx`.
+- **Links to operations.** Write `[Create a booking](op:travel/create-a-booking)`. See [Linking operations](/writing/linking-operations).
+- **Images.** Put files in `docs/public/` and link them by path, as in `![Dashboard](/images/dashboard.png)`. You can also keep an image next to the page and use a relative path.
+
+<Callout type="warn" title="Curly braces and angle brackets are code in MDX">
+  `{` starts a JavaScript expression and `<` starts a component. Write them inside backticks, as in `` `{{baseUrl}}` `` or `` `<api id>` ``, or escape them as `\{` and `\<`.
+</Callout>
+
+## Use your own components
+
+Register React components in the guide page. They become available in every MDX file, without an import:
+
+```tsx title="docs/app/(guides)/[...slug]/page.tsx"
+import { PricingTable } from '@/components/pricing-table';
+
+<GuidePage
+  config={orbit}
+  page={page}
+  components={orbitMdxComponents(orbit, {
+    a: createRelativeLink(source, page),
+    PricingTable,
+  }) as Record<string, unknown>}
+/>;
+```
+
+Add them to `app/(home)/page.tsx` too if the home page uses them.
+
+## What every page gets
+
+These come from `layout` in `orbitdocs.config.ts`. See [Layouts](/customization/layouts).
+
+| Feature | Config | Default |
+| --- | --- | --- |
+| Copy Markdown, Open in ChatGPT, Open in Claude buttons | `layout.pageActions` | All three |
+| "Last updated" date from git | `layout.lastUpdated` | On |
+| "Edit on GitHub" link | `layout.editOnGithub` | Off |
+| Previous and next links | `layout.footer` | On |
+| Table of contents | `layout.toc` | On, `clerk` style |
+| Breadcrumb | `layout.breadcrumb` | On |
+
+Each page is also available as Markdown at `/md/<slug>/content.md` and included in `/llms-full.txt`. Search indexes every heading and paragraph. Restricted pages are left out of search and `/llms-full.txt`, and their Markdown copy needs the same access as the page.
+
+## Next steps
+
+<Cards>
+  <Card title="Components" href="/writing/components" description="Everything you can use in a page." />
+  <Card title="Navigation" href="/writing/navigation" description="Order pages and folders." />
+  <Card title="Linking operations" href="/writing/linking-operations" description="Links that can't go stale." />
+</Cards>

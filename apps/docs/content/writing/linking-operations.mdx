@@ -1,0 +1,94 @@
+---
+title: Linking operations
+description: "Link guides to API operations with op: links and <Endpoint>, and let the build catch links that break."
+---
+
+Guides mention operations all the time. Instead of copying URLs, link to an operation by its id. The link follows the operation, and `orbitdocs build` fails if the operation is renamed or removed.
+
+## Link with op:
+
+Write a normal Markdown link whose target is `op:<api id>/<operation id>`:
+
+```mdx title="docs/content/quickstart.mdx"
+Find a flight with [Search flights](op:demo/search-flights), then
+[create a booking](op:demo/create-a-booking).
+```
+
+It renders as: Find a flight with [Search flights](op:demo/search-flights), then [create a booking](op:demo/create-a-booking).
+
+The link goes to `/reference/demo/search-flights/`, with the base path added. To link to the top of an API's reference, leave out the operation: `[the API reference](op:demo)`.
+
+## Show the method and path with Endpoint
+
+`<Endpoint>` renders the operation's method badge and path, linked to the operation:
+
+```mdx title="docs/content/quickstart.mdx"
+Create the booking with <Endpoint api="demo" op="create-a-booking" />.
+```
+
+Create the booking with <Endpoint api="demo" op="create-a-booking" />.
+
+| Prop | Required | What it is |
+| --- | --- | --- |
+| `api` | Yes | The API id from `orbitdocs.config.ts` |
+| `op` | Yes | The operation id |
+
+The props can come in any order and with either kind of quotes. `orbitdocs check` reads `api="…"`, `api='…'` and `api={"…"}`; a prop set from a variable (`api={id}`) is only checked when the page renders.
+
+## Find an operation's id
+
+The operation id is the last part of its reference URL. Open the operation in the reference and copy it from the address bar:
+
+```txt
+/reference/demo/create-a-booking/
+           ^^^^ ^^^^^^^^^^^^^^^^
+           api id   operation id
+```
+
+How ids are made:
+
+- **From a Nest app**, the id is the operation's title in kebab case: `Create a booking` becomes `create-a-booking`. See [Decorators](/nestjs/decorators#titles-become-urls).
+- **From a spec file or URL**, the id comes from the spec's `operationId`, lowercased, with other characters turned into `-`. `getPetById` becomes `getpetbyid` and `list_pets` becomes `list-pets`. Without an `operationId`, the `summary` is used.
+
+The ids of an API are also listed in `openapi/<api id>.json` as each operation's `operationId`.
+
+## Let the build check your links
+
+`orbitdocs check` reads every `.md` and `.mdx` file in `content/` (guides) and `reference/` (operation, group and API content) and reports:
+
+| Problem | Message |
+| --- | --- |
+| An `op:` link to a missing operation or API | `content/quickstart.mdx: link op:travel/create-booking does not exist` |
+| An `<Endpoint>` to a missing operation | `content/quickstart.mdx: <Endpoint api="travel" op="create-booking"> does not exist` |
+| The same in reference content | `reference/travel/get-a-booking.mdx: link op:travel/cancel-booking does not exist` |
+| A `reference/` file for a missing operation | `reference/travel/old-name.mdx: no operation "old-name" in travel` |
+| A `reference/` folder for a missing API | `reference/billing/index.mdx: no API with id "billing"` |
+| An API without an extracted spec | `travel: no spec at openapi/travel.json (run orbitdocs extract)` |
+
+```bash
+npx orbitdocs check
+```
+
+```txt title="Terminal"
+✗ content/quickstart.mdx: link op:travel/create-booking does not exist
+✗ 1 problem(s).
+```
+
+`orbitdocs build` runs the same check after extraction and stops on any problem. Links inside code blocks and inline code are ignored, so you can show examples.
+
+<Callout type="info" title="Run it in CI">
+  Add `orbitdocs check` (or `orbitdocs build`) to your pull request checks. A renamed controller method then fails the pull request that renames it, instead of breaking your docs later.
+</Callout>
+
+## Gotchas
+
+- **Ids are lowercase.** `op:` targets must use lowercase letters, digits and `-`, like the ids themselves.
+- **The check needs the specs.** Run `orbitdocs extract` first, or use `orbitdocs build`, which does both.
+
+## Next steps
+
+<Cards>
+  <Card title="Operation content" href="/writing/operation-content" description="Add notes and examples inside an operation." />
+  <Card title="Decorators" href="/nestjs/decorators" description="Titles, and so ids, come from your controllers." />
+  <Card title="CLI reference" href="/docs-reference/cli" description="orbitdocs check and every other command." />
+</Cards>

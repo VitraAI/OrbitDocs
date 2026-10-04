@@ -1,0 +1,152 @@
+---
+title: All Fumadocs options
+description: Every Fumadocs customization option and where to set it in OrbitDocs, in the config, in lib/overrides.tsx, or in a docs app file.
+---
+
+OrbitDocs guides are a Fumadocs site. Options that are plain data (text, numbers, switches) have a key in `orbitdocs.config.ts`. Options that take React (components, elements, functions) go in `lib/overrides.tsx` of the docs app, which every layout and page in `app/` reads. A few are set elsewhere in the docs app, because that app is yours.
+
+How to read the tables:
+
+- **Config**: a key in `orbitdocs.config.ts`.
+- **Override**: a key of the `overrides` object in `lib/overrides.tsx` (`root`, `layout` or `page`), merged over the config. See [Override React-only options](/customization/layouts#override-react-only-options).
+- **App file**: change the named file in the docs app.
+- **Content**: `meta.json`, frontmatter or code fence meta.
+
+```tsx title="lib/overrides.tsx"
+import type { OrbitOverrides } from '@orbitdocs/next';
+
+export const overrides: OrbitOverrides = {
+  root: {},   // RootProvider: search dialog, theme, banner content
+  layout: {}, // Every layout and the top bar: nav, links, slots, sidebar, tabs
+  page: {},   // Guide pages: TOC header and footer, previous / next, page slots
+};
+```
+
+## Layout and navbar
+
+| Fumadocs option | Where | Key or prop |
+| --- | --- | --- |
+| Layout (`docs`, `notebook`, `flux`, `glass`, `home`) | Config | `layout.type`. See [Layouts](/customization/layouts). |
+| Notebook navbar mode (`nav.mode`) | Config | `layout.navMode` |
+| Transparent navbar (`nav.transparentMode`) | Config | `layout.transparentNav` |
+| Nav title | Config | `site.logo` or `site.title`. See [Branding](/customization/branding). |
+| Nav title URL (`nav.url`) | Config | `navigation.titleUrl` |
+| Custom nav title (`nav.title`, `nav.children`) | Override | `layout.nav` |
+| Links: main, icon, button, menu | Config | `navigation.header`. See [Navigation bar](/customization/navigation-bar). |
+| Link `on` (navbar or mobile menu) | Config | `on: 'nav' \| 'menu' \| 'all'` on a header item |
+| Link `active` matching | Config | `active: 'url' \| 'nested-url' \| 'none'` on a header item |
+| Custom link items (`type: 'custom'`) | Override | `layout.links` (an array is added after the config's; a function returns the final list) |
+| GitHub link (`githubUrl`) | Config | `site.github` |
+| Theme switch on/off and mode | Config | `theme.switch.enabled`, `theme.switch.mode` |
+| Search button (`searchToggle`) | Config | `search.enabled`; its props in `layout.searchToggle` (Override) |
+| Layout slots (`navTitle`, `themeSwitch`, `searchTrigger`, `sidebar`, `header`, …) | Override | `layout.slots` |
+| `containerProps` | Override | `layout.containerProps` (`docs`, `notebook`, `flux`) |
+
+## Sidebar and tabs
+
+| Fumadocs option | Where | Key or prop |
+| --- | --- | --- |
+| `sidebar.enabled` | Config | `layout.sidebar.enabled` (every layout; notebook and glass through sidebar slots) |
+| `sidebar.collapsible` | Config | `layout.sidebar.collapsible` |
+| `sidebar.defaultOpenLevel` | Config | `layout.sidebar.defaultOpenLevel` |
+| `sidebar.prefetch` | Config | `layout.sidebar.prefetch` |
+| `sidebar.banner` | Config / Override | `layout.sidebar.banner` (text), or `layout.sidebar.banner` in overrides (React) |
+| `sidebar.footer` | Config / Override | `navigation.sidebar` links, or `layout.sidebar.footer` in overrides (React) |
+| `sidebar.components` (custom page tree items) | Override | `layout.sidebar.components` |
+| Root folders as tabs (`"root": true`) | Content | `meta.json`. See [Sidebar](/customization/sidebar). |
+| `tabMode` | Config | `layout.tabMode` |
+| `tabs` (a custom list, or none) | Config | `layout.tabs` (`false` or a list of `{ title, url, description, icon }`) |
+| `tabs` with React icons, or `{ transform }` | Override | `layout.tabs` |
+| Page tree order, separators, icons | Content | `meta.json` and frontmatter. See [Navigation](/writing/navigation). |
+
+The `glass` layout's sidebar takes no `banner`, `footer` or `components`.
+
+## Page
+
+| Fumadocs option | Where | Key or prop |
+| --- | --- | --- |
+| `full` | Config | `layout.full`, or `full: true` in a page's frontmatter |
+| Breadcrumb `enabled`, `includeRoot`, `includePage`, `includeSeparator` | Config | `layout.breadcrumb` |
+| Footer (previous / next) | Config | `layout.footer` |
+| Footer items (custom previous / next) | Override | `page.footer.items`; `page` can be a function of the page |
+| Last updated | Config | `layout.lastUpdated` (from git) |
+| Edit on GitHub | Config | `layout.editOnGithub` |
+| Page actions (copy Markdown, open in ChatGPT / Claude) | Config | `layout.pageActions`. OrbitDocs uses its own buttons. |
+| Fumadocs `ViewOptionsPopover` / `MarkdownCopyButton` | Not used | Replaced by `layout.pageActions` |
+| Page slots (`container`, `footer`, `breadcrumb`, `toc`) | Override | `page.slots` |
+
+## Table of contents
+
+| Fumadocs option | Where | Key or prop |
+| --- | --- | --- |
+| `tableOfContent.enabled` (and the mobile popover) | Config | `layout.toc.enabled` |
+| `style`: `normal`, `clerk`, `block` | Config | `layout.toc.style` (default `clerk`). See [Table of contents](/customization/table-of-contents). |
+| `single` | Config | `layout.toc.single` |
+| TOC `header` / `footer` content | Override | `page.tableOfContent`, `page.tableOfContentPopover` |
+| TOC style and `single` in the `glass` layout | Not possible | Glass's page takes no TOC style or `single` option (Fumadocs 16.15); `orbitdocs check` warns |
+| Inline TOC (`InlineTOC`) | App file | Register it. See [MDX components](/customization/mdx-components). |
+
+## Theme and colors
+
+| Fumadocs option | Where | Key or prop |
+| --- | --- | --- |
+| Color presets (`neutral`, `black`, `vitepress`, `dusk`, `catppuccin`, `ocean`, `purple`, `solar`, `emerald`, `ruby`, `aspen`, `shadcn`) | Config | `theme.preset`. See [Themes and colors](/customization). |
+| Primary color | Config | `theme.accent` |
+| Any `--color-fd-*` color | App file | `app/global.css` |
+| Layout widths (`--fd-layout-width`, `--fd-sidebar-width`, `--fd-toc-width`) | Config | `theme.widths` |
+| Default theme, system theme | Config | `theme.defaultMode` |
+| Theme hotkey (<kbd>D</kbd> toggles light and dark) | Config | `theme.hotKey` (one key, or `false`) |
+| Other `next-themes` options | Override | `root.theme` |
+| Fonts | App file | `app/layout.tsx` and `app/global.css`. See [Branding](/customization/branding). |
+| RTL (`dir="rtl"`) | Config | `site.dir` (sets `<html dir>` and Fumadocs' `dir`) |
+| Favicon | Config | `site.favicon` (default `public/icon.png`) |
+
+## Search
+
+| Fumadocs option | Where | Key or prop |
+| --- | --- | --- |
+| Enable search | Config | `search.enabled` |
+| Hotkey | Config | `search.hotKey` (one key) |
+| Suggested links | Config | `search.links` |
+| `delayMs` | Config | `search.delayMs` |
+| Tags and tag filters, `allowClear` | Config | `search.tags` (Guides and one per API), `search.allowClear` |
+| Static (Orama) search | Built in | `app/api/search/route.ts` |
+| Dialog `footer`, other dialog props | Override | `root.search.options` |
+| Algolia, Orama Cloud, server-side search (`SearchDialog`) | Override | `root.search.SearchDialog`, plus the index it needs. See [Search](/customization/search). |
+
+## Banner
+
+| Fumadocs option | Where | Key or prop |
+| --- | --- | --- |
+| Banner content and link | Config | `banner.content`, `banner.url` |
+| React content | Override | `root.banner` |
+| `variant` (`normal`, `rainbow`) | Config | `banner.variant` |
+| Dismissible `id` | Config | `banner.id`, `banner.dismissible` |
+| `height`, `rainbowColors`, `changeLayout` | Config | `banner.height`, `banner.rainbowColors`, `banner.changeLayout` (default `true`) |
+
+## Code blocks and MDX
+
+| Fumadocs option | Where | Key or prop |
+| --- | --- | --- |
+| Titles, language icons, `tab`, `lineNumbers`, `noCopy`, notation comments, `npm` tabs | Content | Code fence meta. See [Code blocks](/customization/code-blocks). |
+| Shiki themes, default language | Config | `codeBlocks.themes`, `codeBlocks.defaultLanguage` |
+| Other `rehypeCodeOptions` (`langs`, `langAlias`, `transformers`, …) | App file | `orbitMdxOptions({ rehypeCodeOptions })` in `lib/source.ts`, merged over `codeBlocks` |
+| Remark and rehype plugins (math, Mermaid, admonitions, Twoslash) | App file | `orbitMdxOptions({ remarkPlugins, rehypePlugins })` in `lib/source.ts`. See [Add MDX plugins](/customization/code-blocks#add-mdx-plugins). |
+| Heading anchors and custom ids (`[#id]`) | Built in | |
+| Default MDX components (callouts, cards, steps, tabs, accordions, type table) | Built in | See [MDX components](/customization/mdx-components). |
+| `Files`, `ImageZoom`, `InlineTOC`, `GithubInfo`, `DynamicCodeBlock` | App file | Register in `app/(guides)/[...slug]/page.tsx` |
+| Tabs `groupId`, `persist`, `updateAnchor` | Content | Props on `<Tabs>` |
+
+## Not supported yet
+
+- **Internationalization (i18n)**: one language per site. There is no language switch and no translated routes.
+- **Open Graph images** (`fumadocs-ui/og`) and a **sitemap**.
+- **TOC style** and `single` in the `glass` layout (Fumadocs' glass page has no such options).
+
+## Next steps
+
+<Cards>
+  <Card title="Layouts" href="/customization/layouts" description="Choose a layout, override React-only options, or render one yourself." />
+  <Card title="Themes and colors" href="/customization" description="Presets, accent color, light and dark mode." />
+  <Card title="Configuration reference" href="/docs-reference/configuration" description="Every key of orbitdocs.config.ts." />
+</Cards>

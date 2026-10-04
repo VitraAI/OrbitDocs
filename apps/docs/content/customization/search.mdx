@@ -1,0 +1,117 @@
+---
+title: Search
+description: Configure the search dialog, its keyboard shortcut and suggested links, and learn what it indexes and where it runs.
+---
+
+Every OrbitDocs site has full-text search over guides and API operations. It needs no search service: the index is built once at build time and searched in the reader's browser, so it works on any static host.
+
+## Configure search
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme' },
+  search: {
+    enabled: true,
+    hotKey: '/',
+    links: [
+      { text: 'Quickstart', url: '/quickstart' },
+      { text: 'API reference', url: '/reference/demo' },
+    ],
+  },
+});
+```
+
+- `hotKey`: `k` (default) opens search with <kbd>⌘ K</kbd> on macOS or <kbd>Ctrl K</kbd> elsewhere. Any other single character opens it when pressed on its own, such as `/`.
+- `links`: suggested links shown before the reader types anything.
+- `enabled: false` removes the search button and the shortcut.
+
+### Filter by guides or API
+
+`tags: true` adds filters under the search box: **Guides** and one per API. Readers pick one to search only there; `allowClear` (default `true`) lets them go back to searching everything. `delayMs` waits that many milliseconds after the reader stops typing before searching.
+
+```ts title="orbitdocs.config.ts"
+search: {
+  tags: true,
+  delayMs: 150,
+},
+```
+
+With private docs, an API limited to some groups has no filter, as it has no entries in the index.
+
+## What search finds
+
+The index has one entry per guide and one per API operation:
+
+| Entry | Indexed text |
+| --- | --- |
+| Guide | Title, description, and every heading and paragraph |
+| API operation | Summary, `METHOD /path`, description, and each parameter's name and description |
+
+Operations show their API title and group as a breadcrumb in the results, and open the operation in the reference.
+
+Pages and operations restricted by `access` frontmatter, by an `access.rules` entry or by `apis[].access` are left out. One index serves every reader, so restricted content never appears in it. In `access.mode: 'private'` the index itself needs sign-in, so pages open to any signed-in reader stay in it. See [Access rules](/private-docs/access-rules).
+
+## How it works
+
+`app/api/search/route.ts` builds the index with `createOrbitSearch` from `@orbitdocs/next/server`:
+
+```ts title="app/api/search/route.ts"
+import { createOrbitSearch } from '@orbitdocs/next/server';
+
+import { orbit } from '@/lib/orbit';
+import { source } from '@/lib/source';
+
+// Static index: built once, searched in the browser (works on any static host).
+export const revalidate = false;
+export const { staticGET: GET } = createOrbitSearch(orbit, source);
+```
+
+At build time this writes the index to `/api/search`. The search dialog downloads it on first use and searches it with Orama, the engine Fumadocs uses for static search.
+
+<Callout type="info">
+Search is separate from [Ask AI](/ai). Search matches words in titles and text. Ask AI answers questions with an LLM, using passages it finds with its own server-side index.
+</Callout>
+
+## Options
+
+<TypeTable
+  type={{
+    enabled: { type: 'boolean', description: 'Show the search button and enable the shortcut.', default: 'true' },
+    hotKey: { type: 'string (one character)', description: "'k' means Cmd/Ctrl+K. Any other key opens search on its own.", default: "'k'" },
+    links: { type: 'Array<{ text: string; url: string }>', description: 'Suggested links shown before the reader types.', default: '[]' },
+    delayMs: { type: 'number', description: 'Milliseconds to wait after typing stops before searching.' },
+    tags: { type: 'boolean', description: 'Filters under the search box: Guides and one per API.', default: 'false' },
+    allowClear: { type: 'boolean', description: 'With tags: readers can clear the filter.', default: 'true' },
+  }}
+/>
+
+## A dialog footer or another engine
+
+Options that take React go in `lib/overrides.tsx`, under `root.search`. They are merged over the config, so everything above still applies:
+
+```tsx title="lib/overrides.tsx"
+import type { OrbitOverrides } from '@orbitdocs/next';
+
+export const overrides: OrbitOverrides = {
+  root: {
+    search: {
+      // Props of the default dialog, e.g. a footer:
+      options: { footer: <p className="text-xs">Can't find it? Ask in our forum.</p> },
+      // Or your own dialog, a client component (Algolia, Orama Cloud):
+      // SearchDialog: AlgoliaSearch,
+    },
+  },
+};
+```
+
+With your own `SearchDialog`, build the index it needs yourself (Algolia's crawler, an Orama Cloud project) and leave `app/api/search/route.ts` as it is or remove it. See Fumadocs' [search docs](https://fumadocs.dev/docs/search) for ready-made dialogs.
+
+## Next steps
+
+<Cards>
+  <Card title="Ask AI" href="/ai" description="Answers from your docs with your own LLM key." />
+  <Card title="Navigation bar" href="/customization/navigation-bar" description="Links, buttons and menus in the header." />
+  <Card title="All Fumadocs options" href="/customization/fumadocs-options" description="Every Fumadocs option and where to set it." />
+</Cards>

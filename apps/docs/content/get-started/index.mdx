@@ -1,0 +1,62 @@
+---
+title: Introduction
+description: What OrbitDocs is, what you get, and where to start.
+---
+
+OrbitDocs turns your NestJS controllers into a Scalar-style API reference. You write guides in MDX next to your code. One command builds a site you can host on Vercel, any static host, or inside your Nest server.
+
+It is open source (MIT) and self-hosted. There is no account, no pricing tier and no feature behind a paywall.
+
+<Callout title="Already using @nestjs/swagger?">
+  Set `routes: 'all'` and you need zero OrbitDocs decorators. Your `@ApiOperation`, `@ApiTags`, `@ApiProperty` and DTOs already describe the API. OrbitDocs reads them through `@nestjs/swagger` itself.
+</Callout>
+
+## Start here
+
+<Cards>
+  <Card title="Quickstart" href="/get-started/quickstart" description="From an existing Nest app to a running docs site in five minutes." />
+  <Card title="How it works" href="/get-started/how-it-works" description="Extraction, the docs app, the build and the three ways to serve it." />
+  <Card title="Project structure" href="/get-started/project-structure" description="Every file `orbitdocs init` creates, and which ones you edit." />
+  <Card title="Live demo" href="/reference/demo" description="The reference for the sample Orbit Travel API." />
+</Cards>
+
+## What's in the box
+
+| Part | What you get |
+| --- | --- |
+| [NestJS integration](/nestjs) | The spec comes from your compiled app, booted in preview mode. No database or queue starts. Optional `@Docs*` decorators add titles, groups, errors and samples. |
+| [API reference](/api-reference) | One scrolling page per API, a URL per operation, code samples in 10 languages, auth fields that fill every sample. |
+| [API client](/api-client) | A Postman-style client in the browser: collections from your spec, environments, secrets, scripts, tests, a runner and history. |
+| [MDX guides](/writing) | Pages in `content/`, ordered by `meta.json`, with callouts, steps, tabs and links to operations that fail the build when they break. |
+| Search | One index over guides and operations, opened with ⌘K or Ctrl+K. It works on static hosts. |
+| [AI](/ai) | Ask AI over your docs with your own LLM key, an MCP server for your docs and one per API, and `llms.txt`. |
+| [Private docs](/private-docs) | Sign-in with Google, Microsoft, Okta, Auth0, Clerk or Keycloak, or reuse your product's own session. Rules per page, folder or API. |
+| [SDKs, mock and lint](/sdks) | `orbitdocs sdk`, `orbitdocs mock` and `orbitdocs lint`, all driven by the same spec. |
+| [Self-hosted platform](/platform) | Optional. Publishing, previews per pull request, custom domains, a team and a spec registry, on your own servers. |
+
+## How it works in four lines
+
+1. **Your API is the source.** OrbitDocs builds on `@nestjs/swagger`. Every Swagger decorator and the Swagger CLI plugin drive the docs.
+2. **Extraction needs no infrastructure.** OrbitDocs loads your compiled module with `NestFactory.create(AppModule, { preview: true })`. Controllers are scanned; providers are never created.
+3. **Guides are MDX.** They live in a `content/` folder inside a normal Next.js app that you own and can edit.
+4. **One build, any host.** `orbitdocs build` writes plain files with search, `llms.txt` and a page per operation. Or run it as a Next server, or serve it from Nest.
+
+Read [How it works](/get-started/how-it-works) for the details.
+
+## How it compares
+
+OrbitDocs follows Scalar's reference layout and client ideas, and Fumadocs for guides. The difference is where it runs and what it reads:
+
+- **Self-hosted and free.** Everything in this documentation runs on your own infrastructure.
+- **NestJS first.** The spec is extracted from your code. You never maintain a separate OpenAPI file. Any OpenAPI 3.x or Swagger 2.0 file or URL also works as a source.
+- **You own the app.** `orbitdocs init` writes a visible Next.js app. You can change any page, layout or style.
+
+See [OrbitDocs vs Scalar](/help/scalar-comparison) for an honest feature table.
+
+## Next steps
+
+<Cards>
+  <Card title="Quickstart" href="/get-started/quickstart" description="Add docs to your Nest app now." />
+  <Card title="NestJS" href="/nestjs" description="Install the Nest integration and choose which routes appear." />
+  <Card title="Deploy" href="/deploy" description="Pick static files, a Next server or your Nest app." />
+</Cards>

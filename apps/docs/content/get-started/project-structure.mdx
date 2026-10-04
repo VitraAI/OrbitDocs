@@ -1,0 +1,128 @@
+---
+title: Project structure
+description: Every file orbitdocs init creates, what it does, and which ones you edit.
+---
+
+`orbitdocs init` writes a complete Next.js app into a folder of your Nest project, `docs/` by default. This page lists every file. Most of the time you only touch `orbitdocs.config.ts`, `content/` and `reference/`.
+
+## Run init
+
+```npm
+npx orbitdocs init
+```
+
+Run it from the root of your Nest project. It accepts these flags:
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `-d, --dir <dir>` | `docs` | Folder for the docs app. |
+| `-t, --title <title>` | From `package.json` | Site title. |
+| `--routes <routes>` | Asks, or `opt-in` | `opt-in` documents routes marked with `@DocsOperation`. `all` documents every route `@nestjs/swagger` sees. |
+| `-f, --force` | Off | Write into a folder that is not empty. Existing files with the same name are overwritten. |
+| `--workspace` | Off | Use `workspace:*` versions. Only for the OrbitDocs monorepo itself. |
+
+### What init reads from your project
+
+| Source | Used for |
+| --- | --- |
+| `package.json` `name` | The API id and the site title. `@acme/orbit-travel-api` becomes the id `orbit-travel` and the title `Orbit Travel`. |
+| `nest-cli.json` | Its presence sets `build: 'nest build'`. Its `sourceRoot` (default `src`) locates `main.ts`, and is the folder `orbitdocs dev` watches. |
+| `main.ts` | `app.setGlobalPrefix('…')` becomes `globalPrefix`. `app.enableVersioning(…)` becomes `versioning`, with its `prefix` and `defaultVersion`. |
+| `@ApiOperation(` in your `.ts` files | Counted to suggest `routes: 'all'` in the prompt. |
+
+The compiled module is always set to `dist/app.module.js`. Check that path against your `dist/` folder after the first build.
+
+## The files
+
+```txt
+docs/
+├── orbitdocs.config.ts        the site config: APIs, theme, navigation, features
+├── package.json               scripts: dev, build, extract, check, typecheck
+├── next.config.ts             withOrbitDocs(config): static export, basePath, MDX
+├── proxy.ts                   private docs and Ask AI in Next server mode
+├── tsconfig.json
+├── postcss.config.mjs         Tailwind CSS 4
+├── .gitignore
+├── content/                   your guides (MDX)
+│   ├── index.mdx              the home page
+│   ├── quickstart.mdx
+│   └── meta.json              sidebar order
+├── reference/                 extra content inside the API reference (MDX)
+│   └── .gitkeep
+├── lib/
+│   ├── orbit.ts               the validated config, shared by every page
+│   ├── overrides.tsx          React-only Fumadocs options (slots, custom links, search dialog)
+│   └── source.ts              the content/ and reference/ collections
+└── app/
+    ├── layout.tsx             <html>, fonts, metadata, <OrbitRoot>
+    ├── global.css             Tailwind, HeroUI and OrbitDocs styles
+    ├── (home)/page.tsx        renders content/index.mdx at /
+    ├── (guides)/layout.tsx    sidebar layout for guides
+    ├── (guides)/[...slug]/page.tsx   every other guide
+    ├── ~/[variant]/…          private docs: the guides with the sidebar of readers who may see more
+    ├── reference/[api]/[[...slug]]/page.tsx   the API reference
+    ├── reference/[api]/sections/[file]/route.ts   the rest of the reference, loaded as you scroll
+    ├── reference-samples/[file]/route.ts      code samples on demand
+    ├── client/[[...variant]]/page.tsx   the API client at /client
+    ├── api/search/route.ts    the search index
+    ├── llms.txt/route.ts
+    ├── llms-full.txt/route.ts
+    ├── md/[[...slug]]/route.ts        each guide as Markdown
+    ├── orbitdocs-access.json/route.ts internal: private docs rules
+    └── orbitdocs-ai.json/route.ts     internal: Ask AI index
+```
+
+### Files you edit
+
+| File | Edit it to |
+| --- | --- |
+| `orbitdocs.config.ts` | Add APIs, change the theme, layout and navigation, turn on private docs, AI, SDKs or the mock server. Every key is in [Configuration](/docs-reference/configuration). |
+| `content/` | Write guides. See [Write docs](/writing). |
+| `reference/<api id>/` | Add notes, warnings and examples inside the reference. See [Operation content](/writing/operation-content). |
+| `app/global.css` | Override CSS variables, such as `--accent`, below the imports. |
+| `public/icon.png`, `public/apple-icon.png` | Replace the favicons (the OrbitDocs mark by default). |
+| `app/(guides)/[...slug]/page.tsx` | Register your own MDX components in `orbitMdxComponents(orbit, { … })`. |
+| `public/` | Add images and logos; files in it are served from the site root. |
+
+You can edit any other file too. It is a normal Next.js app.
+
+### package.json scripts
+
+| Script | Runs | Does |
+| --- | --- | --- |
+| `npm run dev` | `orbitdocs dev` | Extracts, starts `next dev` and re-extracts when the API changes. |
+| `npm run build` | `orbitdocs build` | Extracts, checks links, then builds the site. |
+| `npm run extract` | `orbitdocs extract` | Writes `openapi/<api id>.json` only. |
+| `npm run check` | `orbitdocs check` | Finds broken `op:` links and `<Endpoint>`s (guides and `reference/` content) and missing specs. |
+| `npm run typecheck` | `next typegen && tsc --noEmit` | Type-checks the app. |
+
+Every command and flag is in the [CLI reference](/docs-reference/cli).
+
+## Generated files
+
+These are written by the CLI or by `next.config.ts`. They are in `.gitignore`; don't edit them.
+
+| Path | Written by | Contains |
+| --- | --- | --- |
+| `openapi/<api id>.json` | `orbitdocs extract` | The spec the reference renders. |
+| `public/openapi/<api id>.json` | `orbitdocs extract` | A copy for the download link. |
+| `.orbitdocs/theme.css` | `next.config.ts` | CSS for `theme` and `layout` in the config. |
+| `.orbitdocs/access.json` | `orbitdocs extract` | Private docs rules, when `access` is set. |
+| `.orbitdocs/ai.json` | `orbitdocs extract` | The Ask AI and MCP index, when `ai` is set. |
+| `.orbitdocs/sdk-samples.json` | `orbitdocs sdk` | SDK code samples for the reference. |
+| `.orbitdocs/build.json` | `orbitdocs build` | The base path and output mode of the last build. |
+| `.source/` | fumadocs-mdx | The compiled MDX collections. |
+| `out/` | `orbitdocs build` | The static site. |
+| `.next/` | Next.js | Build cache, or the server build in server mode. |
+
+<Callout type="info" title="Commit the specs when you build elsewhere">
+  `openapi/` is ignored because `orbitdocs build` regenerates it. If you build the docs where the Nest app can't compile, remove `openapi/` from `.gitignore`, commit it, and build with `orbitdocs build --skip-extract`.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Configuration" href="/docs-reference/configuration" description="Every key in orbitdocs.config.ts." />
+  <Card title="Write docs" href="/writing" description="Pages, frontmatter and components." />
+  <Card title="NestJS" href="/nestjs" description="The Nest source options and route modes." />
+</Cards>

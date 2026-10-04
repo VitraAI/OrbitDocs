@@ -1,0 +1,23 @@
+packages:
+  - packages/*
+  - apps/*
+  - apps/platform/web
+  - examples/nest-sample
+  - examples/nest-sample/docs
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  '@swc/core': true
+  '@nestjs/core': false
+  unrs-resolver: true
+  '@scarf/scarf': false
+  # Its postinstall only prints a donation notice; the generator jar downloads on first use.
+  '@openapitools/openapi-generator-cli': false
+
+minimumReleaseAgeExclude:
+  - pg-boss@12.36.0
+
+# One @types/node everywhere, so every package shares one copy of Next and Fumadocs.
+overrides:
+  '@types/node': ^22.20.5

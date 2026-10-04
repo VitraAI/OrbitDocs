@@ -1,0 +1,242 @@
+---
+title: CLI
+description: Every orbitdocs command and flag, with defaults, what each one writes and when it fails.
+---
+
+The `orbitdocs` CLI creates, builds and ships the docs app. `orbitdocs init` adds it to the docs app's `devDependencies`, so run it with `npx orbitdocs` or through the app's npm scripts.
+
+```bash
+npx orbitdocs --help
+npx orbitdocs <command> --help
+```
+
+Except `init`, every command loads `orbitdocs.config.ts` from the **current folder**. Run them in the docs app folder. A missing or invalid config stops the command with every problem listed.
+
+| Command | What it does |
+| --- | --- |
+| [`init`](#init) | Create a docs app in a Nest project. |
+| [`dev`](#dev) | Run the docs locally and refresh the reference when the API changes. |
+| [`extract`](#extract) | Write `openapi/<id>.json` for each API. |
+| [`check`](#check) | Find missing specs and broken operation links. |
+| [`build`](#build) | Extract, check and build the site. |
+| [`deploy`](#deploy) | Build and ship to Vercel, a static host, Nest or Docker. |
+| [`publish`](#publish) | Build and upload to a self-hosted OrbitDocs platform. |
+| [`lint`](#lint) | Lint the specs with Spectral. |
+| [`mock`](#mock) | Serve a mock of an API that validates requests. |
+| [`sdk`](#sdk) | Generate SDKs, test them, or write a CI workflow. |
+
+Global flags: `-V, --version` prints the version; `-h, --help` prints help.
+
+All commands exit with code `1` on failure and print the reason after `✗`.
+
+## init
+
+Creates the docs app (a Next.js app) inside a Nest project. Run it in the Nest project root.
+
+```bash
+npx orbitdocs init [options]
+```
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `-d, --dir <dir>` | `docs` | Folder for the docs app. |
+| `-t, --title <title>` | from `package.json` `name` | Site title. `orbit-travel-api` becomes `Orbit Travel`. |
+| `--routes <routes>` | asks; `opt-in` when not a terminal | `opt-in`: only routes marked with `@DocsOperation`. `all`: every route `@nestjs/swagger` documents. |
+| `-f, --force` | off | Write into a folder that isn't empty. |
+| `--workspace` | off | Use `workspace:*` versions (inside the OrbitDocs monorepo). |
+
+What it reads from the Nest project to fill in the config:
+
+| Fact | Source | Config |
+| --- | --- | --- |
+| API id and title | `package.json` `name` (scope and `-api` dropped) | `apis[0].id`, `site.title` |
+| Build command | `nest-cli.json` exists | `build: 'nest build'` |
+| Global prefix | `setGlobalPrefix('…')` in `main.ts` | `globalPrefix` |
+| URI versioning | `enableVersioning(` with `prefix` and `defaultVersion` | `versioning` |
+| Swagger usage | Count of `@ApiOperation(` in `src/` | Suggests `routes: 'all'` when above zero |
+
+Without `--routes` in a terminal it asks which routes to show, suggesting `all` when the project already has `@ApiOperation` decorators. The source folder is `sourceRoot` from `nest-cli.json` (default `src`); the module is always `dist/app.module.js`.
+
+Fails when the target folder isn't empty (`… is not empty (use --force to write into it).`). Warns when no Nest project is found.
+
+## dev
+
+```bash
+npx orbitdocs dev [-p <port>]
+```
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `-p, --port <port>` | Next's default, `3000` | Port of the docs dev server. |
+
+1. Extracts every API. If that fails, it prints the error and starts anyway.
+2. Starts `next dev`.
+3. Watches each Nest API. With a `build` command it watches the source folder, `sourceRoot` from `nest-cli.json` in `root` (default `src`), then rebuilds and re-extracts. If that folder doesn't exist it watches `root` itself, ignoring `node_modules`, the build output and the docs app. Without one it watches the compiled module's folder (for example while `nest start --watch` runs) and re-extracts.
+
+Changes are debounced by 600 ms. Reload the page to see the new reference.
+
+<Callout type="warn">
+  Nest apps listen on `3000` by default too. Run `npx orbitdocs dev -p 3001` when the API is running.
+</Callout>
+
+## extract
+
+```bash
+npx orbitdocs extract [--api <id>] [--skip-build]
+```
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `--api <id>` | every API | Extract only this API. |
+| `--skip-build` | off | Don't run the `build` command first. |
+
+For each API:
+
+- **`nest` source:** runs `build` in `root` (unless skipped), then loads the compiled module in Nest preview mode (no provider starts, so nothing connects to a database) and builds the document with the app's own `@nestjs/swagger`.
+- **`file` source:** reads the file (JSON or YAML).
+- **`url` source:** fetches the URL.
+
+It writes:
+
+| File | Contents |
+| --- | --- |
+| `openapi/<id>.json` | The spec the site uses. |
+| `public/openapi/<id>.json` | A copy for the Download link in the reference. |
+| `.orbitdocs/access.json` | The access manifest (or `null`). |
+| `.orbitdocs/ai.json` | The Ask AI index (or `null`). |
+
+Prints the operation count per API and any documentation gaps (up to 50). Fails when `completeness: 'error'` finds gaps, when a `build` command fails, or when `@orbitdocs/nestjs` isn't installed in the Nest root.
+
+## check
+
+```bash
+npx orbitdocs check
+```
+
+No flags. Reports problems a build would ship:
+
+- An API with no spec at `openapi/<id>.json`.
+- `[text](op:<api>/<operation>)` links and `<Endpoint>` tags in `content/` and in `reference/<api>/*.mdx` that point at a missing API or operation. `<Endpoint>` props may come in any order, with single or double quotes. Links inside code blocks and inline code are skipped.
+- Files in `reference/<api>/<operation>.mdx` whose API or operation doesn't exist.
+
+Exits `1` when it finds any, `0` with `No problems found.` otherwise. It also warns (without failing) about `layout` options the chosen layout can't apply, such as `toc.style` with `glass`.
+
+## build
+
+```bash
+npx orbitdocs build [--skip-extract]
+```
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `--skip-extract` | off | Use the specs already in `openapi/`. The AI index and the access manifest (`.orbitdocs/access.json`) are still refreshed from the current guides and config, and unknown access groups fail the build as in `extract`. |
+
+Runs extract, check, then `next build`. Fails on documentation gaps with `completeness: 'error'`, on any `check` problem, or when `next build` fails.
+
+| Mode | Output | Extra |
+| --- | --- | --- |
+| `static` | `out/` | Writes redirect pages and `out/_redirects`. Warns when the config has `access`. |
+| `server` | `.next/` | Start it with `next start`. |
+
+Both modes write `.orbitdocs/build.json` with the base path and mode, for the platform and CI.
+
+## deploy
+
+```bash
+npx orbitdocs deploy --target <target> [--prod] [--skip-build]
+```
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `--target <target>` | required | `vercel`, `static`, `nest` or `docker`. |
+| `--prod` | off | Production deployment (Vercel only). |
+| `--skip-build` | off | Deploy the existing build. |
+
+| Target | Mode | Action |
+| --- | --- | --- |
+| `vercel` | `static` or `server` | `npx --yes vercel@latest deploy <out/ or app folder> [--prod]`. Fails with a hint to run `npx vercel login`. |
+| `static` | `static` | Prints the folder to upload. Warns about the base path. |
+| `nest` | `static` | Prints the `mountOrbitDocs` call for `main.ts`. Warns when `basePath` is empty. |
+| `docker` | `static` | Writes `Dockerfile` and `nginx.conf` when no `Dockerfile` exists, then prints the `docker build` command. |
+
+Other targets with `output.mode: 'server'` fail with `Target "…" needs output.mode 'static'.` See [Deploy](/deploy).
+
+## publish
+
+```bash
+npx orbitdocs publish [options]
+```
+
+| Flag | Environment variable | Default | What it does |
+| --- | --- | --- | --- |
+| `--platform <url>` | `ORBITDOCS_PLATFORM_URL` | required | Platform URL, such as `https://docs.acme.com`. |
+| `--token <token>` | `ORBITDOCS_TOKEN` | required | A project token (`odp_…`). |
+| `--preview <label>` | | production | Publish a preview with this label, such as `mr-42`. |
+| `--skip-build` | | off | Upload the existing `out/`. |
+| `-m, --message <text>` | | last commit subject | Describes this publish. |
+
+Needs `output.mode: 'static'`. Uploads `out/`, `openapi/*.json` and the Git branch and commit as a `.tar.gz` to `<platform>/api/publish`. See [Publishing](/platform/publishing).
+
+It then prints what the platform reports: for production, each API's registry revision; for production and previews, each spec's lint counts; then the site URL.
+
+```txt title="Terminal"
+✓ travel: 0 lint errors, 2 warnings
+✓ Preview mr-42: https://docs.acme.com/preview/mr-42/
+```
+
+## lint
+
+```bash
+npx orbitdocs lint [--api <id>]
+```
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `--api <id>` | every API | Lint only this API. |
+
+Runs Spectral on each `openapi/<id>.json`: the file in `lint.ruleset`, or Spectral's recommended OpenAPI rules. Prints each problem with its severity, path and rule. Exits `1` when a problem is at or above `lint.failOn` (default `error`). APIs without a spec are skipped with a warning. See [Linting](/sdks/linting).
+
+## mock
+
+```bash
+npx orbitdocs mock [--api <id>] [-p <port>]
+```
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `--api <id>` | the first API | Which API to mock. |
+| `-p, --port <port>` | `mock.port`, else `4010` | Port. |
+
+Serves `http://localhost:<port>` until you stop it. Requests that don't match the spec get `422` when `mock.validate` is on (default). `mock.handlers` add custom responses. Needs the spec from `orbitdocs extract`. See [Mock server](/sdks/mock-server).
+
+## sdk
+
+```bash
+npx orbitdocs sdk [--lang <languages>] [--api <id>]
+npx orbitdocs sdk test [--api <id>]
+npx orbitdocs sdk --workflow <github|gitlab>
+```
+
+| Argument or flag | Default | What it does |
+| --- | --- | --- |
+| `[action]` | none | `test`: call every operation through the TypeScript SDK against an in-process mock. |
+| `--lang <languages>` | every configured language | Comma-separated: `typescript`, `python`, `go`, `java`, `csharp`, `php`. |
+| `--api <id>` | every API in `sdks.apis` | Only this API. |
+| `--workflow <provider>` | none | Write a CI workflow that regenerates the SDKs, then exit. `github` writes `.github/workflows/orbitdocs-sdks.yml`; `gitlab` writes `orbitdocs-sdks.gitlab-ci.yml`, both at the Git root. |
+
+- **Generate:** writes each SDK to `sdks.<lang>.out` (default `sdks/<api>/<lang>`) and `.orbitdocs/sdk-samples.json` for the reference. Fails when `sdks` or a requested language isn't configured, or when a spec is missing. Languages other than TypeScript need Java 11 or later.
+- **`test`:** needs `sdks.typescript` and a generated TypeScript SDK. Fails on any non-2xx response.
+
+See [SDKs](/sdks), [SDK testing](/sdks/testing) and [SDK CI](/sdks/ci).
+
+## Files the CLI writes
+
+| Path (in the docs app) | Written by | Commit it? |
+| --- | --- | --- |
+| `openapi/<id>.json`, `public/openapi/<id>.json` | `extract`, `dev`, `build` | No (in `.gitignore`) |
+| `.orbitdocs/access.json`, `ai.json`, `build.json`, `sdk-samples.json` | `extract`, `build`, `sdk` | No |
+| `.orbitdocs/theme.css` | the Next plugin, on every Next start or build | No |
+| `out/` | `build` (static) | No |
+| `.next/` | `build` (server), `dev` | No |
+| `sdks/…` | `sdk` | Usually yes, or publish them from CI |
+| `Dockerfile`, `nginx.conf` | `deploy --target docker` | Yes |

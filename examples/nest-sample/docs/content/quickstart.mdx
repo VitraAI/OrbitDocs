@@ -1,0 +1,73 @@
+---
+title: Quickstart
+description: Search a flight and book it, start to finish.
+---
+
+<Steps>
+<Step>
+
+### Get an API key
+
+Every request carries your key in the `x-api-key` header. The sample server
+accepts `otk_test_4f9a2c1b8e7d6a5f`.
+
+</Step>
+<Step>
+
+### Find a flight
+
+Call [Search flights](op:travel/search-flights) with the destination you want:
+
+```bash title="Terminal"
+curl "http://localhost:3010/v1/flights?destinationId=dst_proxima_b" \
+  -H "x-api-key: otk_test_4f9a2c1b8e7d6a5f"
+```
+
+</Step>
+<Step>
+
+### Book it
+
+Send the flight id, a cabin and the passengers to <Endpoint api="travel" op="create-a-booking" />:
+
+<Tabs items={['curl', 'Node.js']}>
+<Tab value="curl">
+
+```bash
+curl -X POST http://localhost:3010/v1/bookings \
+  -H "x-api-key: otk_test_4f9a2c1b8e7d6a5f" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: first-booking-1" \
+  -d '{"flightId":"flt_2031_proxima","cabin":"economy","passengers":[{"name":"Ada Lovelace","email":"ada@example.com"}]}'
+```
+
+</Tab>
+<Tab value="Node.js">
+
+```ts
+const res = await fetch('http://localhost:3010/v1/bookings', {
+  method: 'POST',
+  headers: {
+    'x-api-key': process.env.ORBIT_API_KEY!,
+    'Content-Type': 'application/json',
+    'Idempotency-Key': crypto.randomUUID(),
+  },
+  body: JSON.stringify({
+    flightId: 'flt_2031_proxima',
+    cabin: 'economy',
+    passengers: [{ name: 'Ada Lovelace', email: 'ada@example.com' }],
+  }),
+});
+const booking = await res.json();
+```
+
+</Tab>
+</Tabs>
+
+</Step>
+</Steps>
+
+<Callout title="Retries are safe">
+  Send an `Idempotency-Key` with every booking. If the network drops and you
+  retry with the same key, you get the first booking back instead of a second one.
+</Callout>

@@ -1,0 +1,189 @@
+---
+title: Navigation bar
+description: Add links, icon links, buttons and menus to the top bar, rename or hide the Guides link, and show an announcement banner.
+---
+
+The top bar is shared by guides, the API reference and the API client. OrbitDocs fills it with your logo and a few built-in links. You add your own items with `navigation.header`.
+
+## What the top bar shows
+
+From left to right:
+
+1. Your logo, or the site title when there is no logo. It links to `navigation.titleUrl` (default `/`). See [Branding](/customization/branding).
+2. **Guides**, linking to `/`. Rename it, point it elsewhere, or hide it with `navigation.guides`.
+3. **API Reference**. One API gets a link to `/reference/<id>`; several APIs get a menu with each API's title and the first line of its description. With [private docs](/private-docs), an API limited to some groups is listed only on pages its readers see: not on public pages, but on its own reference and on the guides served to its readers.
+4. **API Client**, when you have at least one API and `client.enabled` is on.
+5. Your `navigation.header` items, in order.
+6. **Ask AI**, when the config has an `ai` section. See [Ask AI](/ai).
+7. The signed-in reader's avatar and a sign-out button, when the config has an `access` section. See [Private docs](/private-docs).
+8. Search, the theme switch and the GitHub link (`site.github`).
+
+On small screens, items move into a menu.
+
+## Rename or hide the Guides link
+
+When the home page is a [landing page](/writing/landing-pages), point **Guides** at your first guide:
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme' },
+  navigation: {
+    guides: { text: 'Docs', url: '/quickstart' },
+  },
+});
+```
+
+`guides: false` removes the link.
+
+## Add header items
+
+```ts title="orbitdocs.config.ts"
+navigation: {
+  header: [
+    // A plain link
+    { text: 'Blog', url: 'https://acme.com/blog' },
+    // An icon-only link (the text becomes its label)
+    { type: 'icon', text: 'Discord', icon: 'SiDiscord', url: 'https://discord.gg/acme' },
+    // A button; secondary: true makes it less prominent
+    { type: 'button', text: 'Sign up', url: 'https://app.acme.com/signup' },
+    // A menu with sub-links
+    {
+      type: 'menu',
+      text: 'Resources',
+      items: [
+        { text: 'Status', url: 'https://status.acme.com', icon: 'Activity', description: 'Uptime and incidents' },
+        { text: 'Changelog', url: '/changelog', icon: 'ScrollText' },
+      ],
+    },
+  ],
+},
+```
+
+| `type` | Renders | Extra fields |
+| --- | --- | --- |
+| `main` (or no type) | A text link | `icon`, `description` |
+| `icon` | An icon button; `text` is its accessible label | `icon` (required) |
+| `button` | A button | `icon`, `secondary` |
+| `menu` | A dropdown with sub-links | `items` (links with `text`, `url`, `icon`, `description`, `external`) |
+
+Every item also takes:
+
+- `on`: `'nav'` shows it only in the desktop navbar, `'menu'` only in the mobile menu, `'all'` (default) in both.
+- `external`: open in a new tab. It defaults to `true` for `http(s)` URLs and `false` for paths.
+- `active` (links, icon links and buttons): when the item is highlighted. `'url'` (default) on its exact URL, `'nested-url'` also on every page under it (a section such as `/changelog`), `'none'` never.
+
+### Icons
+
+`icon` is a name, not a component:
+
+- A [Lucide](https://lucide.dev/icons) icon, in any case: `BookOpen`, `book-open` or `book_open`.
+- A brand icon from [Simple Icons](https://simpleicons.org), with the `Si` prefix: `SiGithub`, `SiDiscord`, `SiStripe`.
+
+An unknown name renders no icon and no error, so check the spelling if an icon is missing.
+
+## Link to your repository
+
+`site.github` adds a GitHub icon link to the top bar:
+
+```ts title="orbitdocs.config.ts"
+site: {
+  title: 'Acme',
+  github: 'https://github.com/acme/api',
+},
+```
+
+## Show an announcement banner
+
+A banner sits above the top bar on every page.
+
+```ts title="orbitdocs.config.ts"
+banner: {
+  content: 'v2 is live: see what changed',
+  url: '/changelog',
+  variant: 'rainbow',
+  id: 'v2-launch',
+  dismissible: true,
+},
+```
+
+- `content` is plain text. With `url`, the whole banner is a link.
+- `variant`: `normal` uses the theme colors, `rainbow` adds an animated gradient.
+- `dismissible` adds a close button. The choice is remembered per browser under `id`. Change `id` to show the banner again to readers who closed it.
+- `height` (default `3rem`) and `rainbowColors` (the gradient's CSS colors) change its look.
+- The banner stays at the top of the window as the page scrolls, with the navbar and sidebar below it on every page (guides, landing, API reference and API client), so it never covers them. `changeLayout: false` turns that off: the navbar stays at the top and the banner sits over it while it shows.
+
+## Options
+
+<TypeTable
+  type={{
+    'navigation.guides': { type: 'false | { text?: string; url?: string }', description: 'The Guides link in the top bar.', default: "{ text: 'Guides', url: '/' }" },
+    'navigation.header': { type: 'HeaderItem[]', description: 'Links, icon links, buttons and menus in the top bar.', default: '[]' },
+    'navigation.sidebar': { type: 'Link[]', description: 'Links at the bottom of the sidebar. See the Sidebar page.', default: '[]' },
+    'site.github': { type: 'string (URL)', description: 'Repository link shown as a GitHub icon.' },
+    'banner.content': { type: 'string', description: 'Banner text (required when banner is set).' },
+    'banner.url': { type: 'string', description: 'Link the whole banner points to.' },
+    'banner.variant': { type: "'normal' | 'rainbow'", description: 'Banner style.', default: "'normal'" },
+    'banner.dismissible': { type: 'boolean', description: 'Readers can close the banner.', default: 'true' },
+    'banner.id': { type: 'string', description: 'Storage key for the dismissed state. Bump it to show the banner again.', default: "'banner'" },
+    'banner.height': { type: 'string', description: 'Banner height, any CSS length.', default: "'3rem'" },
+    'banner.rainbowColors': { type: 'string[]', description: 'Gradient colors of the rainbow variant.' },
+    'banner.changeLayout': { type: 'boolean', description: 'Offset the sticky navbar and sidebar by the banner height.', default: 'true' },
+    'navigation.titleUrl': { type: 'string', description: 'Where the logo links to.', default: "'/'" },
+  }}
+/>
+
+## Footer
+
+`navigation.footer` fills the footer under [landing pages](/writing/landing-pages#footer): your logo and a tagline, columns of links, social icons and a bottom row. A plain list of links renders as one row:
+
+```ts title="orbitdocs.config.ts"
+navigation: {
+  footer: {
+    description: 'Payments for platforms.',
+    columns: [
+      { title: 'Product', links: [{ text: 'API reference', url: '/reference/payments' }, { text: 'Changelog', url: '/changelog' }] },
+      { title: 'Company', links: [{ text: 'Status', url: 'https://status.acme.com' }, { text: 'Contact', url: 'mailto:api@acme.com' }] },
+    ],
+    social: [{ text: 'X', url: 'https://x.com/acme', icon: 'SiX' }],
+    links: [{ text: 'Privacy', url: '/privacy' }, { text: 'Terms', url: '/terms' }],
+    copyright: '© 2026 Acme, Inc.',
+  },
+},
+```
+
+`site.github` is added to the social icons on its own. Guide pages keep Fumadocs' previous/next links instead of a site footer. For links at the bottom of the guides sidebar, use `navigation.sidebar`.
+
+## Go further in code
+
+Options that take React go in `lib/overrides.tsx` of the docs app, under `layout`. They apply to the top bar of guides, the API reference and the API client:
+
+```tsx title="lib/overrides.tsx"
+import type { OrbitOverrides } from '@orbitdocs/next';
+
+import { VersionPicker } from '@/components/version-picker';
+
+export const overrides: OrbitOverrides = {
+  layout: {
+    // Your own title next to (or instead of) the logo.
+    nav: { title: <span className="font-semibold">Acme Docs</span> },
+    // Items with any React content, after the config's.
+    links: [{ type: 'custom', children: <VersionPicker /> }],
+    // Replace the search button or theme switch with your own components.
+    // slots: { themeSwitch: MyThemeSwitch },
+  },
+  // React content for the banner (its other options still come from the config).
+  root: { banner: <span>v2 is live: <a href="/changelog">see what changed</a></span> },
+};
+```
+
+`links` can also be a function: it gets the items built from the config and returns the list to show. Components that run in the browser, such as a version picker with state or a slot, need `'use client'` at the top of their file.
+
+## Next steps
+
+<Cards>
+  <Card title="Branding" href="/customization/branding" description="Logo, favicon, fonts and metadata." />
+  <Card title="Search" href="/customization/search" description="Search hotkey and suggested links." />
+  <Card title="Sidebar" href="/customization/sidebar" description="Sidebar links, banner and tabs." />
+</Cards>

@@ -1,0 +1,124 @@
+---
+title: API reference
+description: What readers get on every API reference page, how it is laid out, and what it shows for each operation.
+---
+
+Each API in `orbitdocs.config.ts` gets a Scalar-style reference at `/reference/<api id>`. It is one scrolling page with a sidebar, and every operation also has its own URL. Open the [demo reference](/reference/demo) next to this page to follow along.
+
+## What's in this section
+
+<Cards>
+  <Card title="Multiple APIs" href="/api-reference/multiple-apis" description="Several APIs, spec files and URLs, ids and API cards." />
+  <Card title="Code samples" href="/api-reference/code-samples" description="Generated samples in 10 languages, custom samples and SDK samples." />
+  <Card title="Authentication" href="/api-reference/authentication" description="Security schemes, servers and the key readers enter once." />
+  <Card title="Completeness" href="/api-reference/completeness" description="Fail the build when operations lack descriptions or examples." />
+</Cards>
+
+## Add an API
+
+```ts title="docs/orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Orbit Travel' },
+  apis: [
+    {
+      id: 'travel',
+      title: 'Orbit Travel API',
+      source: { nest: { module: 'dist/app.module.js', build: 'nest build' } },
+    },
+  ],
+});
+```
+
+The reference appears at `/reference/travel`, and an **API Reference** link appears in the top bar.
+
+## One page, a URL per operation
+
+The whole API renders as one page, so readers can scroll and search it in the browser. Every section also has its own pre-rendered URL:
+
+| URL | Opens |
+| --- | --- |
+| `/reference/travel/` | The introduction |
+| `/reference/travel/create-a-booking/` | The page, scrolled to that operation |
+| `/reference/travel/models/` | The page, scrolled to the Models section |
+
+Each URL has its own title, such as `Create a booking · Orbit Travel API`, and its own meta description. As the reader scrolls, the address bar follows the section in view, so a copied URL always points at what they read. Search engines index every operation.
+
+Pages stay small however big the API is. Each URL ships its own operation fully rendered (about 200 KB of HTML for a 33-operation API), and the other sections load in the background from `reference/<api id>/sections/<group>.json`, closest to the reader first. Within a second or two the whole API is on the page, so scrolling, the sidebar and Ctrl+F work as on one long page. Without JavaScript, each placeholder links to that operation's own URL.
+
+## Layout
+
+### Sidebar
+
+The sidebar lists every group and its operations, with a method badge each. A filter box at the top narrows the list as you type. The group of the current operation opens by itself. On small screens the sidebar becomes a menu with the current section's name.
+
+### Introduction
+
+The first section shows:
+
+- The API version (from `version` or the spec) and the OpenAPI version, as badges.
+- The title and a **Download OpenAPI Document** link.
+- The description, in Markdown, followed by your [`reference/<api id>/index.mdx`](/writing/operation-content).
+- In the right column: the **Server** picker, the **Authentication** card and the **Client Libraries** language picker.
+
+### Groups
+
+Operations are grouped by tag. In a Nest app, that is the `group` of `@DocsOperation` or `@ApiTags`. Each group shows its heading, its description, your `_groups/<group>.mdx` file and a list of its operations.
+
+Order:
+
+- Operations without a group come first, without a heading.
+- Groups follow the spec's tag order, then the order they first appear.
+- Inside a group, operations follow their `order`, then their order in the spec.
+
+### Each operation
+
+The left column documents the operation. The right column shows samples and stays in view while you scroll.
+
+| Left column | Right column |
+| --- | --- |
+| Title, with **Deprecated** or a stability badge (`beta`, `alpha`, `experimental`) | Request sample: method, path, a language menu, **Copy** and **Test Request** |
+| **Auth Required** when the operation is secured, and **Copy as Markdown** | Response sample: a tab per status code, with **Show Schema** to switch from the example to the fields |
+| The description, with GitHub alerts rendered as callouts | Content you placed `aside` |
+| Path parameters, query parameters, headers and cookies | |
+| The body: media type, a **required** flag and every field | |
+| Responses: each status, expandable to its schema and headers | |
+
+**Test Request** opens the [API client](/api-client) on this operation, with the server and credentials already filled in.
+
+### Fields
+
+Every parameter and schema field shows its name, type (such as `string · email` or `Booking[]`), and flags: **required**, **read-only**, **write-only**, **deprecated**. Below that come the description, enum values, default, example, minimum, maximum and pattern. Required fields come first. Nested objects open with **Show child attributes**.
+
+Request bodies hide read-only fields, and responses hide write-only fields.
+
+### Models
+
+The last section lists every named object and enum schema, except the shared `ErrorResponse`. Each one expands to its fields.
+
+## More for each API
+
+- **Download.** The spec is published at `/openapi/<api id>.json`.
+- **Copy as Markdown.** Each operation copies as Markdown, for an issue or an LLM chat.
+- **Search.** ⌘K or Ctrl+K searches operations by title, method and path, description and parameter names, along with guides.
+- **llms.txt.** `/llms.txt` lists every operation, and `/llms-full.txt` includes the whole API as Markdown. See [llms.txt](/ai/llms-txt).
+- **Your content.** Add notes, tabs and warnings to the API, a group or an operation. See [Operation content](/writing/operation-content).
+
+## What the reader's browser remembers
+
+The reference stores three choices per API in the reader's browser, under `orbitdocs:<api id>` in `localStorage`:
+
+- the selected code sample language;
+- the selected server;
+- the credentials entered in the Authentication card.
+
+Nothing is sent anywhere except to your API when the reader sends a request.
+
+## Next steps
+
+<Cards>
+  <Card title="Authentication" href="/api-reference/authentication" description="Make Test Request and samples use the reader's key." />
+  <Card title="Code samples" href="/api-reference/code-samples" description="Languages, custom samples and SDK samples." />
+  <Card title="API client" href="/api-client" description="The full client behind Test Request." />
+</Cards>

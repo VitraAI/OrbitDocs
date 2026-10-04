@@ -1,0 +1,102 @@
+---
+title: Docker
+description: Package the static docs build as a small nginx image with one command.
+---
+
+`orbitdocs deploy --target docker` builds the site and writes a `Dockerfile` and an `nginx.conf` that serve it. You get an image that runs anywhere containers run: Kubernetes, ECS, Fly.io, Cloud Run or a single VM.
+
+## Build the image
+
+<Steps>
+<Step>
+
+**Generate the files** in the docs app folder:
+
+```bash
+npx orbitdocs deploy --target docker
+```
+
+This runs `orbitdocs build`, then writes `Dockerfile` and `nginx.conf` next to `orbitdocs.config.ts`.
+
+</Step>
+<Step>
+
+**Keep the build context small** (optional but faster):
+
+```text title="docs/.dockerignore"
+node_modules
+.next
+```
+
+</Step>
+<Step>
+
+**Build and run:**
+
+```bash
+docker build -t acme-docs docs
+docker run -p 8080:80 acme-docs
+```
+
+Open `http://localhost:8080/` (or `http://localhost:8080/docs/` with a base path).
+
+</Step>
+</Steps>
+
+## What gets written
+
+```dockerfile title="docs/Dockerfile"
+FROM nginx:1.29-alpine
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY out/ /usr/share/nginx/html/
+EXPOSE 80
+```
+
+```nginx title="docs/nginx.conf"
+server {
+  listen 80;
+  root /usr/share/nginx/html;
+  location / {
+    try_files $uri $uri/ $uri.html =404;
+  }
+  error_page 404 /404.html;
+}
+```
+
+With `output.basePath: '/docs'`, the `location` becomes `/docs` with an `alias` to the same folder, and the error page becomes `/docs/404.html`.
+
+<Callout type="info" title="Your edits are kept">
+  The files are written only when the docs app has no `Dockerfile` yet. Once it exists, the command just builds the site and prints the `docker build` line, so you can edit both files freely.
+  Changing `basePath` later? Update `nginx.conf` by hand, or delete both files and run the command again.
+</Callout>
+
+## Rebuild on every release
+
+The image copies `out/`, so rebuild the site before each image build:
+
+```bash
+cd docs
+npx orbitdocs deploy --target docker   # rebuilds out/
+docker build -t registry.acme.com/acme-docs:1.4.0 .
+docker push registry.acme.com/acme-docs:1.4.0
+```
+
+`--skip-build` reuses the current `out/` when you only changed the image.
+
+## Limits
+
+- **Static only.** The command needs `output.mode: 'static'`. For a container that runs private docs or Ask AI, see [Run it in a container](/deploy/server-mode) on the server mode page.
+- **No private docs, no Ask AI.** nginx serves every file to everyone. The build warns when the config has `access`.
+- **Redirects** without `*` work (they are HTML pages). nginx ignores `_redirects`, so add `rewrite` rules to `nginx.conf` for wildcard redirects.
+
+<Callout type="info">
+  Looking for the image of the self-hosted platform? That is a different image, built from `apps/platform/Dockerfile`. See [Install the platform](/platform/install).
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Server mode" href="/deploy/server-mode" description="A container that runs the Next server, for private docs and Ask AI." />
+  <Card title="Static hosts" href="/deploy/static-hosts" description="nginx, S3 + CloudFront and other hosts without containers." />
+  <Card title="Self-hosted platform" href="/platform" description="Host many docs sites with previews, a registry and custom domains." />
+</Cards>

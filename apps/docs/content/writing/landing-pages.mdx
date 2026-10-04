@@ -1,0 +1,527 @@
+---
+title: Landing pages
+description: Turn your home page into an animated, full-width landing page with ready-made sections, your own React components, or a page you build from scratch.
+---
+
+Your docs site can open with a landing page instead of the first guide: a hero, feature grids, a terminal that types, a tabbed product tour, a comparison table and a call to action. Every section animates in as the reader scrolls, works in light and dark mode, and needs no React.
+
+The home page of this site is built exactly this way. Its source is [`apps/docs/content/index.mdx`](https://github.com/VitraAI/OrbitDocs/blob/main/apps/docs/content/index.mdx).
+
+## Three ways to build one
+
+| Approach | You write | Use it when |
+| --- | --- | --- |
+| [Sections in MDX](#make-the-home-page-a-landing-page) | Markdown and section components | You want a polished page fast. Most sites stop here. |
+| [MDX plus your components](#add-your-own-react-components) | A React component, used next to the sections | One part needs something custom: a pricing table, a live demo. |
+| [A custom React page](#build-the-page-in-react) | `app/(home)/page.tsx` | You want full control and still the site's navbar, search and theme. |
+
+## Make the home page a landing page
+
+<Steps>
+<Step>
+
+### Set the layout
+
+Add `layout: landing` to the frontmatter of `content/index.mdx`. The page renders full width under the top navigation, with no sidebar, and it drops out of the sidebar.
+
+```mdx title="content/index.mdx"
+---
+title: Acme API
+description: Payments for platforms.
+layout: landing
+---
+```
+
+</Step>
+<Step>
+
+### Add sections
+
+Sections are MDX components: no import needed. Mix them with Markdown in any order.
+
+```mdx title="content/index.mdx"
+<Hero
+  title="Payments for platforms"
+  highlight="platforms"
+  description="Accept payments, pay out sellers and stay compliant with one API."
+  actions={[
+    { text: 'Get started', href: '/quickstart', icon: 'rocket' },
+    { text: 'API reference', href: '/reference/payments', icon: 'book-open' },
+  ]}
+/>
+
+<Features title="Everything in one API">
+  <Feature icon="zap" title="Fast" href="/performance">Under 100 ms at p95.</Feature>
+  <Feature icon="shield-check" title="Secure">SOC 2 Type II.</Feature>
+  <Feature icon="globe" title="Global">135 currencies.</Feature>
+</Features>
+
+<CallToAction title="Start building" actions={[{ text: 'Quickstart', href: '/quickstart' }]} />
+```
+
+</Step>
+<Step>
+
+### Point the Docs link at your first guide
+
+`/` is now the landing page, so send the navbar's guides link to the first guide:
+
+```ts title="orbitdocs.config.ts"
+export default defineConfig({
+  navigation: { guides: { text: 'Docs', url: '/quickstart' } },
+  // …
+});
+```
+
+</Step>
+</Steps>
+
+Without `layout: landing`, the home page is an ordinary guide page. The sections still work there, and on any other page.
+
+<Callout type="info" title="Animations respect your readers">
+  Sections fade and slide in once, as they scroll into view. Readers who turn on "reduce motion" in their operating system see everything in place, with no movement. Animations use [Motion](https://motion.dev), which `@orbitdocs/next` already includes.
+</Callout>
+
+## Sections
+
+### Hero
+
+The top of the page. Its text and buttons animate in on load, over a soft moving glow.
+
+````mdx
+<Hero
+  badge="New: webhooks v2"
+  badgeHref="/webhooks"
+  title="Payments for platforms"
+  highlight="platforms"
+  description="Accept payments, pay out sellers and stay compliant."
+  backdrop="glow-grid"
+  align="center"
+  actions={[
+    { text: 'Get started', href: '/quickstart', icon: 'rocket' },
+    { text: 'Live demo', href: '/reference/payments', icon: 'play' },
+  ]}
+>
+
+```ts title="checkout.ts"
+const payment = await acme.payments.create({ amount: 500, currency: 'usd' });
+```
+
+</Hero>
+````
+
+Anything inside `<Hero>` is its visual: a code block, an image, a `<Terminal>` or a `<BrowserFrame>`. With `align="left"` the visual sits beside the text; with `align="center"` it sits full width below it.
+
+<TypeTable
+  type={{
+    title: { type: 'string', description: 'The headline.', required: true },
+    highlight: { type: 'string', description: 'Part of the title shown in the brand gradient, with a slow shimmer.' },
+    description: { type: 'string', description: 'The sentence under the headline.' },
+    footnote: { type: 'ReactNode', description: 'A small line under the buttons, such as "No sign-up needed" or who builds the product. Links and small images inside it are styled for you.' },
+    logo: { type: 'ReactNode', description: 'Your brand above the badge and title, such as an image or an animated logo component registered in the home page. It keeps its own entrance animation.' },
+    badge: { type: 'string', description: 'Small pill above the title, with a pulsing dot.' },
+    badgeHref: { type: 'string', description: 'Makes the badge a link.' },
+    actions: { type: 'LandingAction[]', description: 'Buttons. The first is primary unless you set its variant.' },
+    align: { type: "'left' | 'center'", default: "'left'", description: 'Text alignment, and where the visual goes.' },
+    backdrop: { type: "'glow' | 'grid' | 'glow-grid' | 'none'", default: "'glow'", description: 'Moving colour glow, a fading grid, both, or nothing.' },
+  }}
+/>
+
+An action is `{ text, href, icon?, variant? }`. `variant` is `primary`, `secondary` or `ghost`. Icons are [Lucide](https://lucide.dev/icons) names in kebab case (`rocket`, `book-open`) or [Simple Icons](https://simpleicons.org) brands (`SiGithub`). Internal links get your site's base path.
+
+### Highlight
+
+Puts any words in the brand gradient. Use it inside titles where `highlight` doesn't fit:
+
+```mdx
+<Features title={<>Built for <Highlight>platform teams</Highlight></>}>…</Features>
+```
+
+### Section
+
+A titled band for your own content. `Features`, `Bento`, `Flow`, `Showcase`, `Comparison` and `ApiCards` take the same heading props.
+
+```mdx
+<Section eyebrow="Pricing" title="Pay for what you use" description="No minimums." align="center">
+
+Any Markdown or component here.
+
+</Section>
+```
+
+<TypeTable
+  type={{
+    eyebrow: { type: 'string', description: 'Small gradient label above the title.' },
+    title: { type: 'string', description: 'Section heading.' },
+    description: { type: 'string', description: 'Sentence under the heading.' },
+    align: { type: "'left' | 'center'", default: "'left'", description: 'Heading alignment.' },
+  }}
+/>
+
+### Features
+
+A grid of cards that appear one after another. Hovering a card makes a glow follow the pointer; a card with `href` lifts and shows an arrow.
+
+```mdx
+<Features eyebrow="Platform" title="Everything in one API" columns={3}>
+  <Feature icon="zap" title="Fast" href="/performance">Under 100 ms at p95.</Feature>
+  <Feature icon="shield-check" title="Secure">SOC 2 Type II.</Feature>
+  <Feature icon="SiGithub" title="Open source" href="https://github.com/acme/sdk">MIT licensed.</Feature>
+</Features>
+```
+
+<TypeTable
+  type={{
+    columns: { type: '2 | 3 | 4', default: '3', description: 'Cards per row on wide screens. Two on tablets, one on phones.' },
+    'Feature.icon': { type: 'string', description: 'Lucide or Simple Icons name.' },
+    'Feature.title': { type: 'string', description: 'Card title.', required: true },
+    'Feature.href': { type: 'string', description: 'Makes the whole card a link.' },
+  }}
+/>
+
+### Bento
+
+An asymmetric grid. Each item spans part of a six-column row and can hold a visual under its text: a code block, an image or a `<Terminal>`. Plan rows that add up to six: `lg` + `sm`, `md` + `md`, or three `sm`.
+
+````mdx
+<Bento eyebrow="Everything in the box" title="Every feature, free">
+  <BentoItem size="lg" icon="book-open" title="API reference" description="Try every endpoint." href="/reference/payments">
+
+```ts
+await acme.payments.create({ amount: 500 });
+```
+
+  </BentoItem>
+  <BentoItem size="sm" icon="pen-line" title="Guides" description="MDX next to your code." href="/guides" />
+  <BentoItem size="md" icon="package" title="SDKs" description="Six languages.">
+    <Terminal lines={['$ npx orbitdocs sdk', '✓ typescript']} />
+  </BentoItem>
+  <BentoItem size="md" icon="flask-conical" title="Mock server" description="Realistic responses." />
+</Bento>
+````
+
+<TypeTable
+  type={{
+    size: { type: "'sm' | 'md' | 'lg' | 'full'", default: "'md'", description: 'A third, half, two thirds or the whole row.' },
+    tall: { type: 'boolean', default: 'false', description: 'Twice as tall, for a bigger visual.' },
+    icon: { type: 'string', description: 'Lucide or Simple Icons name.' },
+    title: { type: 'string', description: 'Card title.', required: true },
+    description: { type: 'string', description: 'One or two sentences.' },
+    href: { type: 'string', description: 'Makes the card a link.' },
+  }}
+/>
+
+### Terminal
+
+A terminal that types its commands and prints their output when it scrolls into view. Readers can replay it and copy the commands. Lines starting with `$ ` are commands, `# ` comments, everything else output.
+
+```mdx
+<Terminal
+  title="my-api"
+  lines={[
+    '$ npx orbitdocs init',
+    '✓ Created docs/',
+    '$ cd docs && npx orbitdocs dev',
+    '▲ Ready on http://localhost:3000',
+  ]}
+/>
+```
+
+<TypeTable
+  type={{
+    lines: { type: 'string[]', description: 'The session, line by line.', required: true },
+    title: { type: 'string', default: "'Terminal'", description: 'Window title.' },
+    speed: { type: 'number', default: '32', description: 'Milliseconds per typed character.' },
+    loop: { type: 'boolean', default: 'false', description: 'Start again four seconds after the last line, while visible.' },
+  }}
+/>
+
+### CodeShowcase
+
+Text on one side, code on the other. Put fenced code blocks, `<Tabs>` or a `<Terminal>` inside. `reverse` swaps the sides.
+
+````mdx
+<CodeShowcase eyebrow="Webhooks" title="Events you can trust" description="Every event is signed." actions={[{ text: 'Webhook guide', href: '/webhooks' }]}>
+
+```json title="payment.succeeded"
+{ "type": "payment.succeeded", "data": { "id": "pay_123" } }
+```
+
+</CodeShowcase>
+````
+
+### Flow
+
+Numbered steps joined by a line that draws itself in. Three or four steps read best. On phones the steps stack and the line runs down the side.
+
+```mdx
+<Flow eyebrow="How it works" title="Three steps to your first payment" align="center">
+  <FlowStep icon="key" title="Get a key">Create a test key in the dashboard.</FlowStep>
+  <FlowStep icon="code" title="Make a request">Call `POST /v1/payments`.</FlowStep>
+  <FlowStep icon="rocket" title="Go live">Swap in your live key.</FlowStep>
+</Flow>
+```
+
+Leave out `icon` to show the step number instead.
+
+### Showcase
+
+A product tour: tabs on one side, a large visual on the other. It plays through the tabs on its own (a progress bar shows the time left) until the reader picks one. Pair it with `<BrowserFrame>` screenshots.
+
+```mdx
+<Showcase eyebrow="The product" title="One site for everything">
+  <ShowcaseItem title="API reference" icon="book-open" description="Every endpoint, with samples.">
+    <BrowserFrame url="docs.acme.com/reference" src="/screens/reference.png" srcDark="/screens/reference-dark.png" />
+  </ShowcaseItem>
+  <ShowcaseItem title="API client" icon="send" description="Send real requests.">
+    <BrowserFrame url="docs.acme.com/client" src="/screens/client.png" />
+  </ShowcaseItem>
+</Showcase>
+```
+
+<TypeTable
+  type={{
+    interval: { type: 'number', default: '6000', description: 'Milliseconds per tab while playing.' },
+    'ShowcaseItem.title': { type: 'string', description: 'Tab label.', required: true },
+    'ShowcaseItem.description': { type: 'string', description: 'Shown under the active tab.' },
+    'ShowcaseItem.icon': { type: 'string', description: 'Lucide or Simple Icons name.' },
+  }}
+/>
+
+### BrowserFrame
+
+A browser window around a screenshot or any content. It tilts back flat as it scrolls into view. Give a dark-mode screenshot in `srcDark` and each reader sees the one that matches their theme.
+
+```mdx
+<BrowserFrame url="docs.acme.com" src="/screens/home.png" srcDark="/screens/home-dark.png" alt="The Acme docs home page" />
+```
+
+<TypeTable
+  type={{
+    src: { type: 'string', description: 'Screenshot for light mode (or both modes). Paths from `public/` get your base path.' },
+    srcDark: { type: 'string', description: 'Screenshot for dark mode.' },
+    url: { type: 'string', description: 'Text in the address bar.' },
+    alt: { type: 'string', description: 'Describe the screenshot for screen readers.' },
+    tilt: { type: 'boolean', default: 'true', description: 'Tilt into place on scroll. Inside a Showcase, set false.' },
+  }}
+/>
+
+<Callout type="info" title="Taking good screenshots">
+  Capture at 1440 × 900 with a device pixel ratio of 2 and save as PNG or WebP in `public/screens/`. Take one in light and one in dark mode.
+</Callout>
+
+### Stats
+
+A row of big numbers. Numbers count up when they scroll into view, keeping any text around them: `"12"`, `"99.95%"`, `"< 120 ms"`, `"10k+"`.
+
+```mdx
+<Stats>
+  <Stat value="135" label="currencies" />
+  <Stat value="99.99%" label="uptime last year" />
+  <Stat value="< 80 ms" label="p95 latency" />
+</Stats>
+```
+
+### Comparison
+
+A feature table with a ✓ or – per column. `highlight` tints one column, by default the first.
+
+```mdx
+<Comparison
+  title="Acme vs. the rest"
+  columns={['Acme', 'Others']}
+  rows={[
+    { feature: 'Instant payouts', values: [true, false] },
+    { feature: 'Webhooks', note: 'signed, retried for 3 days', values: [true, true] },
+    { feature: 'Price', values: ['0.9%', '2.9%'] },
+  ]}
+/>
+```
+
+A value is `true` (✓), `false` (–) or a short text. On phones the table scrolls sideways.
+
+### ApiCards
+
+One card per API in `orbitdocs.config.ts`, with its version, endpoint count and groups. Pass `ids` to show some of them.
+
+```mdx
+<ApiCards eyebrow="APIs" title="Explore the APIs" ids={['payments', 'payouts']} />
+```
+
+### Logos
+
+A row of logos, brand icons or wordmarks. `marquee` scrolls them in an endless loop that pauses on hover.
+
+```mdx
+<Logos title="Trusted by teams at" marquee>
+  <Logo name="Northwind" src="/logos/northwind.svg" />
+  <Logo name="GitHub" icon="SiGithub" />
+  <Logo name="Contoso" />
+</Logos>
+```
+
+`<Logo>` shows `src` if given, otherwise the icon and the name. `href` makes it a link.
+
+### CallToAction
+
+The closing banner, framed by a slowly turning gradient.
+
+```mdx
+<CallToAction
+  title="Start building today"
+  description="Free test keys, no credit card."
+  actions={[{ text: 'Get your key', href: '/quickstart', icon: 'key' }]}
+/>
+```
+
+### LinkButton
+
+A single button anywhere in MDX:
+
+```mdx
+<LinkButton href="/quickstart" icon="rocket">Get started</LinkButton>
+<LinkButton href="https://github.com/acme/sdk" variant="secondary" icon="SiGithub">GitHub</LinkButton>
+```
+
+## Footer
+
+Every landing page ends with the site footer: your logo and a tagline, columns of links, social icons, and a bottom row with the copyright and small links. Fill it in `orbitdocs.config.ts`:
+
+```ts title="orbitdocs.config.ts"
+navigation: {
+  footer: {
+    description: 'Payments for platforms.', // defaults to site.description
+    columns: [
+      { title: 'Product', links: [{ text: 'API reference', url: '/reference/payments' }] },
+      { title: 'Resources', links: [{ text: 'Quickstart', url: '/quickstart' }, { text: 'Status', url: 'https://status.acme.com' }] },
+    ],
+    social: [{ text: 'X', url: 'https://x.com/acme', icon: 'SiX' }], // site.github is added on its own
+    links: [{ text: 'Privacy', url: '/privacy' }],
+    copyright: '© 2026 Acme, Inc.', // default: © <year> <site.title>; false hides it
+    poweredBy: true, // "Built with OrbitDocs"
+    // "Built by <logo>", linked: credit the team behind the site
+    builtBy: { name: 'Acme', url: 'https://acme.com', logo: { light: '/acme.png', dark: '/acme-white.png' } },
+  },
+},
+```
+
+`builtBy` shows `text` (default "Built by") and the logo, or the name when there's no logo. The name becomes the logo's alt text.
+
+With no `navigation.footer`, the footer still shows the logo, `site.description`, the GitHub icon and the copyright. A custom React page wrapped in `LandingLayout` gets the same footer; render `<SiteFooter config={orbit} />` yourself anywhere else.
+
+## Add your own React components
+
+Your docs app is a normal Next.js app, so a landing page can use any component you write. Create it, then add it to the components the home page passes to MDX.
+
+<Steps>
+<Step>
+
+### Write the component
+
+Animated components run in the browser, so start the file with `'use client'`. [Motion](https://motion.dev) is available; add it to your docs app with `npm install motion`.
+
+```tsx title="components/pricing.tsx"
+'use client';
+
+import { motion } from 'motion/react';
+
+export function Pricing() {
+  return (
+    <motion.div className="not-prose" initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+      {/* your pricing table */}
+    </motion.div>
+  );
+}
+```
+
+</Step>
+<Step>
+
+### Register it for the home page
+
+```tsx title="app/(home)/page.tsx"
+import { Pricing } from '@/components/pricing';
+
+// in Home():
+<HomePage
+  config={orbit}
+  tree={guidesTree(source.getPageTree())}
+  page={page}
+  components={{ ...orbitMdxComponents(orbit, { a: createRelativeLink(source, page) }), Pricing }}
+/>
+```
+
+</Step>
+<Step>
+
+### Use it in MDX
+
+```mdx title="content/index.mdx"
+<Section title="Pricing" align="center">
+  <Pricing />
+</Section>
+```
+
+</Step>
+</Steps>
+
+To reuse the built-in entrance animation, import `Reveal`, `RevealGroup` and `RevealItem` from `@orbitdocs/next`:
+
+```tsx
+import { Reveal } from '@orbitdocs/next';
+
+<Reveal delay={0.1}>
+  <YourCard />
+</Reveal>
+```
+
+The animated controller-to-reference demo at the top of this site's home page is a component like this. See [`components/extract-demo.tsx`](https://github.com/VitraAI/OrbitDocs/blob/main/apps/docs/components/extract-demo.tsx).
+
+## Build the page in React
+
+`app/(home)/page.tsx` is your file. Replace it with any React page and wrap it in `LandingLayout`, so the navbar, search, theme switch and Ask AI stay the same as on every other page. The section components work in TSX too.
+
+```tsx title="app/(home)/page.tsx"
+import { CallToAction, Features, Feature, Hero, LandingLayout } from '@orbitdocs/next';
+
+import { orbit } from '@/lib/orbit';
+
+export default function Home() {
+  return (
+    <LandingLayout config={orbit}>
+      <main className="od-landing">
+        <Hero title="Payments for platforms" actions={[{ text: 'Get started', href: '/quickstart' }]} />
+        <Features title="Why Acme">
+          <Feature icon="zap" title="Fast">Under 100 ms.</Feature>
+        </Features>
+        <CallToAction title="Start building" />
+      </main>
+    </LandingLayout>
+  );
+}
+```
+
+<Callout type="warn">
+  `<ApiCards>` reads your APIs from the config, so in TSX use it through the MDX components (`orbitMdxComponents(orbit).ApiCards`) rather than importing it directly.
+</Callout>
+
+## Styling
+
+Landing sections use the site theme: `--color-fd-primary` is the main brand colour. Override these in `app/global.css`:
+
+```css title="app/global.css"
+.od-landing {
+  --od-accent-2: #ec4899; /* second gradient colour (default violet #8b5cf6) */
+  --od-landing-max: 1200px; /* content width (default 1180px) */
+}
+```
+
+Every section has a stable class (`od-hero`, `od-bento`, `od-flow`, `od-terminal`, `od-cta`…) for further changes.
+
+## Next steps
+
+<Cards>
+  <Card title="Customize the theme" href="/customization" description="Presets, colours and fonts the landing page picks up." />
+  <Card title="All MDX components" href="/docs-reference/components" description="Every component you can use in guides and landing pages." />
+  <Card title="Navigation" href="/writing/navigation" description="The navbar links and sidebar around your pages." />
+</Cards>

@@ -1,0 +1,289 @@
+---
+title: Extraction
+description: How OrbitDocs builds the OpenAPI document from your Nest app, every source option, and how to fix common errors.
+---
+
+Extraction turns your compiled Nest app into `openapi/<api id>.json`, the file the reference renders. It boots your app in Nest's preview mode, so it never connects to a database, cache or queue. This page covers what happens, every option, and the errors you may meet.
+
+## What extraction does
+
+`orbitdocs extract` runs this for each API with a `source.nest`. `orbitdocs dev` and `orbitdocs build` run it for you.
+
+<Steps>
+<Step>
+
+**Build.** Runs your `build` command in the Nest root, for example `nest build`. Skipped with `--skip-build` or when `build` is not set.
+
+</Step>
+<Step>
+
+**Load.** Starts a child Node.js process in the Nest root. It sets the variables from `env`, loads `reflect-metadata`, `@nestjs/core`, `@nestjs/common` and `@nestjs/swagger` from your project, then loads your compiled `module`. CommonJS and ESM builds both work.
+
+</Step>
+<Step>
+
+**Boot in preview mode.** Calls `NestFactory.create(AppModule, { preview: true, abortOnError: false })`. Nest builds the module graph and scans controllers. It never instantiates providers, so their constructors and factories don't run.
+
+</Step>
+<Step>
+
+**Apply route settings.** Calls `app.setGlobalPrefix(globalPrefix)`, `app.enableVersioning(…)` and your `configure(app)` hook, so paths match what `main.ts` produces.
+
+</Step>
+<Step>
+
+**Build the document.** Calls `SwaggerModule.createDocument(app, …, { deepScanRoutes: true })` from your own `@nestjs/swagger`. The base document uses the API's `title` (default `API`), `version` (default `1.0.0`) and `description` from the config.
+
+</Step>
+<Step>
+
+**Filter.** Keeps routes according to `routes`, applies `@DocsOperation` markers, sets readable operation ids, merges duplicate header parameters, adds [standard errors](#standard-errors), applies `servers`, `securitySchemes` and `security`, and removes unused schemas.
+
+</Step>
+<Step>
+
+**Write.** Writes `openapi/<api id>.json` and a copy at `public/openapi/<api id>.json`. Then it prints the operation count and any [documentation gaps](/api-reference/completeness).
+
+</Step>
+</Steps>
+
+```txt title="Terminal"
+› travel: nest build
+› travel: extracting from dist/app.module.js (preview mode, no providers started)
+✓ travel: 12 operations → /work/orbit-travel/docs/openapi/travel.json
+```
+
+## Source options
+
+All options live under `apis[].source.nest` in `orbitdocs.config.ts`.
+
+<TypeTable
+  type={{
+    module: { type: 'string', required: true, description: 'Compiled module file, relative to `root`.' },
+    export: { type: 'string', default: '"AppModule"', description: 'Exported class name in `module`.' },
+    routes: { type: "'opt-in' | 'all'", default: '"opt-in"', description: 'Which routes reach the docs. See [NestJS](/nestjs#choose-which-routes-appear).' },
+    build: { type: 'string', description: 'Shell command run in `root` before loading. Binaries in `root/node_modules/.bin` come first, like npm scripts.' },
+    root: { type: 'string', default: '".."', description: 'Nest project root, relative to the docs app. It must contain a `package.json`.' },
+    globalPrefix: { type: 'string', description: 'Passed to `app.setGlobalPrefix()`.' },
+    versioning: { type: "{ type: 'uri'; prefix?: string; defaultVersion?: string }", description: 'Passed to `app.enableVersioning()` with `VersioningType.URI`. `prefix` defaults to `"v"`.' },
+    configure: { type: 'string', description: '`path#exportName` of a compiled hook, relative to `root`. The export defaults to `configure`.' },
+    env: { type: 'Record<string, string>', default: '{}', description: 'Environment variables set before the module loads. Variables already set win.' },
+  }}
+/>
+
+### module and export
+
+`module` is the **compiled** file, not your TypeScript source. Extraction reads compiled output so it sees the Swagger CLI plugin's metadata.
+
+```ts title="docs/orbitdocs.config.ts"
+source: { nest: { module: 'dist/app.module.js', export: 'AppModule' } },
+```
+
+<Callout type="warn" title="Check where nest build writes your module">
+  If your `tsconfig.json` compiles files outside `src/`, Nest writes `dist/src/app.module.js` instead of `dist/app.module.js`. Look in `dist/` after a build and set `module` to match.
+</Callout>
+
+### build and root
+
+`build` runs in `root` before every extraction. Leave it out when something else compiles the app, for example in CI after `npm run build`:
+
+```ts title="docs/orbitdocs.config.ts"
+source: { nest: { module: 'dist/app.module.js', build: 'nest build' } },
+```
+
+`root` defaults to `..`, the parent of the docs app. In a monorepo, point it at the app:
+
+```ts title="docs/orbitdocs.config.ts"
+// Nest monorepo: nest build api → dist/apps/api/main.js
+source: {
+  nest: {
+    root: '..',
+    module: 'dist/apps/api/app.module.js',
+    build: 'nest build api',
+  },
+},
+```
+
+`@orbitdocs/nestjs` must be installed in `root`, because the extractor runs from there.
+
+### globalPrefix and versioning
+
+These mirror the two calls in `main.ts` that change paths. `orbitdocs init` copies them for you.
+
+```ts title="src/main.ts"
+app.setGlobalPrefix('api');
+app.enableVersioning({ type: VersioningType.URI, prefix: 'v', defaultVersion: '1' });
+```
+
+```ts title="docs/orbitdocs.config.ts"
+source: {
+  nest: {
+    module: 'dist/app.module.js',
+    globalPrefix: 'api',
+    versioning: { type: 'uri', prefix: 'v', defaultVersion: '1' },
+  },
+},
+```
+
+Paths then read `/api/v1/bookings`. Only URI versioning is supported here; use `configure` for anything else.
+
+### configure
+
+For anything else in `main.ts` that changes routes, export a hook and point `configure` at its compiled file:
+
+```ts title="src/docs.configure.ts"
+import type { INestApplication } from '@nestjs/common';
+
+/** Called by OrbitDocs during extraction, before the document is built. */
+export function configure(app: INestApplication) {
+  app.setGlobalPrefix('api', { exclude: ['health'] });
+}
+```
+
+```ts title="docs/orbitdocs.config.ts"
+source: { nest: { module: 'dist/app.module.js', configure: 'dist/docs.configure.js#configure' } },
+```
+
+The hook runs after `globalPrefix` and `versioning`. Don't set the same thing in both places. You can call the hook from `main.ts` too, so both share one source of truth.
+
+### Environment variables during extraction
+
+Preview mode skips providers, but code that runs while your modules load still runs. For example, `ConfigModule.forRoot({ validationSchema })` validates the environment when `app.module.js` loads. Give it placeholder values:
+
+```ts title="docs/orbitdocs.config.ts"
+source: {
+  nest: {
+    module: 'dist/app.module.js',
+    env: {
+      DATABASE_URL: 'postgres://placeholder/db',
+      STRIPE_SECRET_KEY: 'sk_test_placeholder',
+    },
+  },
+},
+```
+
+Values only fill variables that are not set. A real value in the shell or CI always wins. Never put real secrets here; this file is committed.
+
+## API options used by extraction
+
+These live on the API itself, next to `source`:
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `title` | `API` | `info.title` of the document. |
+| `description` | none | `info.description`, shown at the top of the reference. Markdown. |
+| `version` | `1.0.0` | `info.version`, shown as a badge. |
+| `servers` | none | The servers readers can send requests to. |
+| `securitySchemes` | none | Added to `components.securitySchemes`. |
+| `security` | none | Scheme names required by every documented operation. Replaces each operation's own security. |
+| `standardErrors` | `true` | Add the [standard errors](#standard-errors). |
+| `completeness` | `warn` | Report documentation gaps. `error` fails the build. See [Completeness](/api-reference/completeness). |
+
+Extraction ignores the `DocumentBuilder` in your `main.ts`. Set the title, servers and security schemes here instead. See [Authentication](/api-reference/authentication).
+
+## Operation ids
+
+Each kept operation gets a readable id, made from its title: `Create a booking` becomes `create-a-booking`. The id is used in URLs, `op:` links and file names under `reference/`. Nest's own id, such as `BookingsController_create`, is kept as `x-orbitdocs-handler`.
+
+## Standard errors
+
+With `standardErrors: true` (the default), extraction adds the errors each operation returns by construction:
+
+- `400` when the operation takes parameters or a body.
+- `401` and `403` when the operation is secured.
+- `404` when the path has a parameter.
+- `500` always.
+
+Each 4xx and 5xx response without a body gets the shared `ErrorResponse` schema, Nest's default exception body:
+
+```json title="ErrorResponse example (404)"
+{ "statusCode": 404, "message": "Not Found" }
+```
+
+Your own descriptions from `@DocsErrors` or `@ApiResponse` win. Set `standardErrors: false` on the API to add nothing.
+
+## Run extraction yourself
+
+```bash
+npx orbitdocs extract               # every API
+npx orbitdocs extract --api travel  # one API
+npx orbitdocs extract --skip-build  # don't run the build command
+```
+
+Run these in the docs app. `orbitdocs extract` exits with code 1 when an API with `completeness: 'error'` has gaps.
+
+### In orbitdocs dev
+
+`orbitdocs dev` extracts once, then watches for changes:
+
+- With `build` set, it watches the Nest source folder and runs `build`, then extraction, after each change. The folder is `sourceRoot` from `nest-cli.json` in `root` (default `src`); without that folder it watches `root`, ignoring `node_modules`, the build output and the docs app.
+- Without `build`, it watches the folder of the compiled `module`. Run `nest start --watch` in another terminal.
+
+Changes are grouped for 600 ms. If extraction fails at startup, the docs still start; fix the API and save to retry.
+
+## Use the document in your own code
+
+`@orbitdocs/nestjs` also exports the filter as a function, for example to save the public spec from a script:
+
+```ts title="src/scripts/write-spec.ts"
+import { writeFileSync } from 'node:fs';
+
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder } from '@nestjs/swagger';
+import { createOrbitDocument } from '@orbitdocs/nestjs';
+
+import { AppModule } from '../app.module';
+
+async function main() {
+  const app = await NestFactory.create(AppModule, { preview: true, abortOnError: false });
+  const doc = createOrbitDocument(app, {
+    base: new DocumentBuilder().setTitle('Orbit Travel API').setVersion('1.0.0').build(),
+    mode: 'opt-in',
+    standardErrors: { extra: ['429'] },
+  });
+  writeFileSync('openapi.json', JSON.stringify(doc, null, 2));
+  await app.close();
+}
+
+void main();
+```
+
+<TypeTable
+  type={{
+    base: { type: "Omit<OpenAPIObject, 'paths'>", default: "{ title: 'API', version: '1.0.0' }", description: 'Base document: title, version, servers.' },
+    mode: { type: "'opt-in' | 'opt-out'", default: '"opt-in"', description: '`opt-out` keeps every operation not marked hidden. It is what `routes: \'all\'` uses.' },
+    info: { type: 'Partial<Info>', description: 'Merged over the base `info`.' },
+    servers: { type: 'Server[]', description: 'Replaces the servers.' },
+    securitySchemes: { type: 'Record<string, object>', description: 'Merged into `components.securitySchemes`.' },
+    security: { type: 'string[]', description: 'Scheme names required by every kept operation.' },
+    standardErrors: { type: 'boolean | { descriptions?: Record<string, string>; extra?: string[] }', default: 'true', description: 'The object form overrides descriptions per code and adds codes to every operation, such as `429`.' },
+    keepOperationIds: { type: 'boolean', default: 'false', description: 'Keep Nest\'s operation ids instead of readable slugs.' },
+  }}
+/>
+
+`createFullDocument(app, base?)` returns the unfiltered document Nest would serve.
+
+## Troubleshooting
+
+| Error | Cause and fix |
+| --- | --- |
+| `No package.json in the Nest project root …` | `root` points at the wrong folder. It is relative to the docs app. |
+| `Compiled module not found: …` | The app isn't built, or `module` is wrong. Set `build`, or check the path in `dist/`. |
+| `dist/app.module.js has no export named "AppModule" (found: …)` | Set `export` to one of the names listed. |
+| `travel: @orbitdocs/nestjs is not installed in …` | Install `@orbitdocs/nestjs` in the Nest project. |
+| `` travel: `nest build` failed (exit 1) `` | Your build fails. Run it on its own to see why. |
+| `Extraction failed:` followed by a stack trace | Your app threw while loading. Often a missing environment variable: add a placeholder in `env`. |
+| `Schemas are referenced but not defined: …` | A schema is only referenced, for example through `getSchemaPath()`. Add `@ApiExtraModels(TheDto)` to the controller, or type the property. |
+| `dist/docs.configure.js#configure: no function "configure"` | The hook file doesn't export that name. |
+| Paths lack `/api` or `/v1` | Set `globalPrefix` or `versioning`, or add a `configure` hook. |
+| The reference has no operations | With `routes: 'opt-in'`, mark routes with `@DocsOperation`, or switch to `routes: 'all'`. |
+| A route you hid still appears | `@DocsHidden()` sits above `@DocsOperation`. Move it closer to the method. |
+| A provider's constructor runs | Code outside a provider runs at load time, for example a top-level `new Client()`. Move it into a provider or a factory. |
+
+## Next steps
+
+<Cards>
+  <Card title="Completeness" href="/api-reference/completeness" description="Fail the build on missing descriptions and examples." />
+  <Card title="Authentication" href="/api-reference/authentication" description="Security schemes, servers and try-it auth." />
+  <Card title="CLI reference" href="/docs-reference/cli" description="Every command and flag." />
+</Cards>

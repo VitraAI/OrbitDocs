@@ -1,0 +1,91 @@
+---
+title: Audit log
+description: Record every sign-in, failed sign-in, sign-out and denied request of your private docs, to a JSON Lines file or a webhook.
+---
+
+The audit log records who signed in to your private docs, who was turned away, and which pages they were denied. Each event is one JSON object. The docs server can append it to a file, POST it to a webhook, or both.
+
+## Turn it on
+
+```ts title="orbitdocs.config.ts"
+access: {
+  // …groups, rules, providers
+  audit: {
+    file: 'docs-audit.jsonl',
+    webhookUrl: 'https://hooks.acme.com/docs-audit',
+  },
+},
+```
+
+Set either key or both. Without `audit`, nothing is recorded.
+
+## Events
+
+```json title="docs-audit.jsonl"
+{"at":"2026-10-03T18:00:45.893Z","type":"sign_in","email":"sam@acme.com","provider":"app:supabase","ip":"203.0.113.7"}
+{"at":"2026-10-03T18:00:53.244Z","type":"sign_out","email":"sam@acme.com","ip":"203.0.113.7"}
+{"at":"2026-10-03T18:00:53.496Z","type":"sign_in","email":"ada@acme.com","provider":"keycloak","ip":"203.0.113.9"}
+{"at":"2026-10-03T18:02:10.120Z","type":"denied","email":"pat@partner.io","path":"/internal/runbook/","ip":"198.51.100.4"}
+{"at":"2026-10-03T18:05:31.002Z","type":"sign_in_failed","email":"eve@gmail.com","provider":"google","reason":"not a acme.com account"}
+```
+
+| `type` | When |
+| --- | --- |
+| `sign_in` | A reader signed in with SSO, or a product session was verified and accepted. |
+| `sign_in_failed` | Sign-in was refused or failed: no email, not in any group (private mode), wrong Google Workspace domain, or an error from the provider. |
+| `sign_out` | A signed-in reader opened `/_auth/logout`. |
+| `denied` | A signed-in reader asked for a page their groups can't read. |
+
+| Field | Meaning |
+| --- | --- |
+| `at` | ISO 8601 timestamp. |
+| `type` | One of the types above. |
+| `email` | The reader's email, when known. |
+| `provider` | The SSO provider `id` (`google`, `okta`, …), or `app:<type>` for a product session (`app:supabase`). |
+| `path` | The requested path (`denied` only). |
+| `ip` | First address in `X-Forwarded-For`, when a proxy sets it. |
+| `reason` | Why sign-in failed (`sign_in_failed` only). |
+
+Signed-out readers who hit a restricted page are not logged; they are simply sent to the sign-in page.
+
+## Write to a file
+
+`file` is a path on the server that serves the docs. Each event is appended as one line. A relative path is resolved from the server's working directory:
+
+- With `mountOrbitDocs`, that's usually your Nest project root.
+- In Next server mode, it's where `next start` runs, usually the docs app.
+
+Serverless hosts such as Vercel have no lasting disk, so use `webhookUrl` there.
+
+## Send to a webhook
+
+Each event is POSTed to `webhookUrl` as JSON (`Content-Type: application/json`), one request per event. Point it at your log pipeline, a SIEM, or a small endpoint of your own.
+
+The webhook request is not signed. Use a URL that is hard to guess, or put a token in it, and accept requests only from your docs server.
+
+## Delivery
+
+- Logging never blocks or breaks a request. Errors writing the file or calling the webhook are ignored.
+- The webhook call times out after 3 seconds and is not retried.
+- Product-session sign-ins are logged each time the session is verified again, at most every 5 minutes per session (every minute for Appwrite). Expect several `sign_in` events for one long visit.
+
+## Options
+
+<TypeTable
+  type={{
+    'audit.file': { type: 'string', description: 'File to append JSON lines to, on the server that serves the docs.' },
+    'audit.webhookUrl': { type: 'string (URL)', description: 'URL that receives each event as a JSON POST.' },
+  }}
+/>
+
+<Callout type="info">
+This log covers readers of your docs. The self-hosted platform keeps a separate audit log of dashboard actions (publishes, member changes). See [Team](/platform/team).
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Access rules" href="/private-docs/access-rules" description="Groups, rules and personalization." />
+  <Card title="Private docs" href="/private-docs" description="How gating works in each output mode." />
+  <Card title="Environment variables" href="/docs-reference/environment-variables" description="Secrets the docs server reads." />
+</Cards>

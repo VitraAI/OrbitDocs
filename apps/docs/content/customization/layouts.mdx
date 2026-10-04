@@ -1,0 +1,218 @@
+---
+title: Layouts
+description: Choose the Fumadocs layout for your guides and control the navbar, breadcrumb, page footer, page width, dates, edit links and page actions.
+---
+
+Guides use one of five Fumadocs layouts. You pick it with `layout.type`, and every other `layout` option maps to the Fumadocs prop of the same meaning. The API reference and the API client keep their own layout; these options only change guide pages.
+
+The sidebar and the table of contents have their own pages: [Sidebar](/customization/sidebar) and [Table of contents](/customization/table-of-contents).
+
+## Choose a layout
+
+```ts title="orbitdocs.config.ts"
+import { defineConfig } from '@orbitdocs/next/config';
+
+export default defineConfig({
+  site: { title: 'Acme' },
+  layout: {
+    type: 'docs',
+  },
+});
+```
+
+| `type` | What it looks like | When to use it |
+| --- | --- | --- |
+| `notebook` (default) | The navbar spans the top of the page; the sidebar sits below it. | Most sites. Header links, Ask AI and the API links share one bar. |
+| `docs` | The classic Fumadocs layout: the sidebar holds the site title and the search box. | You want the sidebar to be the main navigation. |
+| `flux` | A minimal layout with a floating navigation panel at the bottom of the screen. | Short docs that need the most reading width. |
+| `glass` | A translucent header over the content. | A more visual site. Some options don't apply (see the table below). |
+| `home` | No sidebar. | Sites with a few guides linked from the header. |
+
+The home page can also be a full-width landing page with `layout: landing` in its frontmatter. See [Landing pages](/writing/landing-pages).
+
+## Configure the navbar
+
+```ts title="orbitdocs.config.ts"
+layout: {
+  type: 'notebook',
+  navMode: 'auto',
+  transparentNav: 'top',
+},
+```
+
+- `navMode` (notebook only): `top` puts the navbar above everything, sidebar included. `auto` puts it beside the sidebar.
+- `transparentNav`: `always` keeps the navbar transparent, `top` only while the page is scrolled to the top, `none` never.
+
+The links in the navbar come from `navigation`. See [Navigation bar](/customization/navigation-bar).
+
+## Breadcrumb and page footer
+
+```ts title="orbitdocs.config.ts"
+layout: {
+  breadcrumb: { enabled: true, includeRoot: true, includePage: false, includeSeparator: false },
+  footer: true,
+},
+```
+
+- The breadcrumb shows the folders above the current page. `includeRoot` adds the root folder; `includePage` adds the page itself; `includeSeparator` adds the sidebar separator the page sits under.
+- `footer` shows "Previous" and "Next" links at the bottom of each guide. Their order follows the sidebar. To pick other pages, set `footer.items` in `lib/overrides.tsx` (see [Override React-only options](#override-react-only-options)).
+
+## Page width
+
+`full: true` removes the table of contents column so content fills the page. Set it for the whole site, or per page in frontmatter:
+
+```mdx title="content/changelog.mdx"
+---
+title: Changelog
+full: true
+---
+```
+
+To change the width of the layout itself, use `theme.widths` (see [Themes and colors](/customization)).
+
+## "Last updated" and "Edit on GitHub"
+
+```ts title="orbitdocs.config.ts"
+layout: {
+  lastUpdated: true,
+  editOnGithub: { owner: 'acme', repo: 'api', branch: 'main', dir: 'docs/content' },
+},
+```
+
+- `lastUpdated` shows the date of the page's last commit, read from git at build time.
+- `editOnGithub` adds an "Edit on GitHub" link to `https://github.com/<owner>/<repo>/blob/<branch>/<dir>/<page file>`. `dir` is the path of `content/` from the repository root: `docs/content` when the docs app lives in `docs/`.
+
+<Callout type="warn" title="Dates in CI">
+"Last updated" comes from git history. A shallow clone (the default on many CI hosts) has only the last commit, so every page shows the same date. Fetch the full history before `orbitdocs build`, for example with `fetch-depth: 0` in `actions/checkout`.
+</Callout>
+
+## Page actions
+
+Every guide page shows three buttons under its title: **Copy page**, **Open in ChatGPT** and **Open in Claude**. Keep the ones you want, or pass an empty list to hide them all:
+
+```ts title="orbitdocs.config.ts"
+layout: {
+  pageActions: ['copy-markdown'],
+},
+```
+
+[llms.txt and page actions](/ai/llms-txt) explains what each button does.
+
+## What each layout supports
+
+Fumadocs layouts don't all accept the same props. OrbitDocs passes each one what it accepts; the rest is ignored.
+
+| Option | notebook | docs | flux | glass | home |
+| --- | --- | --- | --- | --- | --- |
+| `navMode` | yes | – | – | – | – |
+| `tabMode` | yes | yes | – | – | – |
+| `transparentNav` | yes | yes | yes | yes | yes |
+| `sidebar.enabled` | yes | yes | yes | yes | – |
+| `sidebar.collapsible` | yes | yes | – | yes | – |
+| `sidebar.defaultOpenLevel`, `prefetch`, `banner` | yes | yes | yes | – | – |
+| `navigation.sidebar` links | yes | yes | yes | – | – |
+| `toc.enabled` | yes | yes | yes | yes | yes |
+| `toc.style`, `toc.single` | yes | yes | yes | – | yes |
+| `breadcrumb`, `footer` | yes | yes | yes | – | yes |
+| `full`, `lastUpdated`, `editOnGithub`, `pageActions` | yes | yes | yes | yes | yes |
+
+<Callout type="info">
+`sidebar.enabled: false` works in every layout, including the default `notebook`: no sidebar on wide screens, the menu on small ones. With `docs`, `glass` and `flux` it also takes the navigation those layouts keep in the sidebar. See [Pages without a sidebar](/customization/sidebar#pages-without-a-sidebar).
+
+Glass draws its own table of contents, breadcrumb and footer, and Fumadocs gives them no options, so `toc.style`, `toc.single`, `breadcrumb` and `footer` can't apply there. `orbitdocs check` warns when you set them with `glass`.
+</Callout>
+
+## Layout options
+
+The options on this page. Sidebar and table of contents options are listed on their own pages.
+
+<TypeTable
+  type={{
+    type: { type: "'notebook' | 'docs' | 'flux' | 'glass' | 'home'", description: 'Fumadocs layout for guides.', default: "'notebook'" },
+    navMode: { type: "'top' | 'auto'", description: 'Notebook only: navbar above everything, or beside the sidebar.', default: "'top'" },
+    tabMode: { type: "'navbar' | 'sidebar' | 'top' | 'auto'", description: 'Where root folders appear as tabs. See the Sidebar page.', default: "'navbar'" },
+    transparentNav: { type: "'always' | 'top' | 'none'", description: 'Transparent navbar: always, only at the top of the page, or never.', default: "'none'" },
+    'breadcrumb.enabled': { type: 'boolean', description: 'Show the breadcrumb.', default: 'true' },
+    'breadcrumb.includeRoot': { type: 'boolean', description: 'Include the root folder.', default: 'false' },
+    'breadcrumb.includePage': { type: 'boolean', description: 'Include the current page.', default: 'false' },
+    'breadcrumb.includeSeparator': { type: 'boolean', description: 'Include the sidebar separator above the page.', default: 'false' },
+    footer: { type: 'boolean', description: 'Previous and next links at the bottom of guides.', default: 'true' },
+    full: { type: 'boolean', description: 'Full-width pages with no TOC column.', default: 'false' },
+    lastUpdated: { type: 'boolean', description: '"Last updated" date from git.', default: 'true' },
+    editOnGithub: { type: '{ owner: string; repo: string; branch?: string; dir?: string }', description: 'Adds an "Edit on GitHub" link. branch defaults to main, dir to docs/content.' },
+    pageActions: { type: "Array<'copy-markdown' | 'open-in-chatgpt' | 'open-in-claude'>", description: 'Buttons under the title of every guide.', default: 'all three' },
+  }}
+/>
+
+## Override React-only options
+
+Some Fumadocs options take React: components, elements or functions. They can't go in `orbitdocs.config.ts`, so the docs app has `lib/overrides.tsx`. `OrbitRoot`, every layout and every guide page in `app/` get its `overrides` object and merge it over what the config sets.
+
+```tsx title="lib/overrides.tsx"
+import type { OrbitOverrides } from '@orbitdocs/next';
+
+import { VersionPicker } from '@/components/version-picker';
+
+export const overrides: OrbitOverrides = {
+  layout: {
+    // A custom navbar title. The link target is navigation.titleUrl in the config.
+    nav: { title: <span className="font-semibold">Acme Docs</span> },
+    // Items after the config's header links. A function gets them all and returns the list.
+    links: [{ type: 'custom', children: <VersionPicker /> }],
+    containerProps: { className: 'acme-docs' },
+  },
+  page: (page) => ({
+    // Previous / next links from the page's frontmatter instead of the sidebar order.
+    footer: page.data.next ? { items: { next: { name: 'Next step', url: String(page.data.next) } } } : undefined,
+  }),
+};
+```
+
+| Part | What it sets | Fumadocs props |
+| --- | --- | --- |
+| `root` | Search dialog, theme, banner content | `RootProvider` `search`, `theme`, `components` |
+| `layout` | Navbar, links, slots, sidebar, tabs, container | `nav`, `links`, `slots`, `sidebar`, `tabs`, `containerProps`, `themeSwitch`, `searchToggle` |
+| `page` | Table of contents, previous / next, page slots | `tableOfContent`, `tableOfContentPopover`, `footer`, `slots` |
+
+`layout.slots` replaces parts of the layout (`navTitle`, `searchTrigger`, `themeSwitch`, `header`, `container`, …); which slots exist depends on `layout.type`, and the types are Fumadocs' own. `layout` also applies to the top bar of the API reference and the API client, except `sidebar`, `tabs` and `containerProps`. A component used in a slot, or anything else that runs in the browser, needs `'use client'` at the top of its file.
+
+## Use a Fumadocs layout directly
+
+`app/(guides)/layout.tsx` renders `GuidesLayout`, which picks the layout from your config. When overrides aren't enough (a different sidebar component, a layout of your own), render the Fumadocs layout yourself. `orbitLayoutOptions` keeps the OrbitDocs header: logo, Guides, API Reference, API Client, your header links, Ask AI and the user menu.
+
+```tsx title="app/(guides)/layout.tsx"
+import { orbitLayoutOptions } from '@orbitdocs/next';
+import { guidesTree } from '@orbitdocs/next/server';
+import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+import type { ReactNode } from 'react';
+
+import { orbit } from '@/lib/orbit';
+import { overrides } from '@/lib/overrides';
+import { source } from '@/lib/source';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <DocsLayout
+      {...orbitLayoutOptions(orbit, { overrides })}
+      // With private docs, only pages every reader may open (see Access rules).
+      tree={guidesTree(source.getPageTree())}
+      // Any DocsLayout prop, e.g. a custom sidebar footer:
+      sidebar={{ footer: <p className="text-xs">Need help? support@acme.com</p> }}
+    >
+      {children}
+    </DocsLayout>
+  );
+}
+```
+
+With private docs, make the same change in `app/~/[variant]/layout.tsx`, which renders the guides for readers who may open restricted pages; its tree is `guidesTree(source.getPageTree(), variant)`, and ``orbitLayoutOptions(orbit, { readerOf: `/~/${variant}`, overrides })`` lets its top bar list the APIs those readers may open.
+
+The `layout` options in `orbitdocs.config.ts` no longer apply to the sidebar when you do this. Page options (`toc`, `breadcrumb`, `pageActions`, …) still work because `GuidePage` renders them.
+
+## Next steps
+
+<Cards>
+  <Card title="Sidebar" href="/customization/sidebar" description="Folders, tabs, sidebar links and the sidebar banner." />
+  <Card title="Table of contents" href="/customization/table-of-contents" description="The three TOC styles and the mobile popover." />
+  <Card title="Navigation bar" href="/customization/navigation-bar" description="Add links, buttons and menus to the header." />
+</Cards>

@@ -1,0 +1,4 @@
+{
+  "title": "Customize",
+  "pages": ["index", "layouts", "sidebar", "table-of-contents", "navigation-bar", "search", "branding", "code-blocks", "mdx-components", "fumadocs-options"]
+}

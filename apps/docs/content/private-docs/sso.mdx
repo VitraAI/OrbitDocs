@@ -1,0 +1,370 @@
+---
+title: Company SSO
+description: Let readers sign in with Google, Microsoft Entra ID, Okta, Auth0, Clerk or Keycloak, with step-by-step setup for each provider.
+---
+
+Each SSO provider adds a "Continue with …" button to the sign-in page. All six presets use OpenID Connect with the authorization code flow and PKCE. You register the docs as an app with the provider, then copy its client ID into the config and its secret into an environment variable.
+
+## How every provider is set up
+
+<Steps>
+<Step>
+
+### Find your callback URL
+
+The provider sends readers back to:
+
+```txt
+https://<docs host><basePath>/_auth/callback/<id>
+```
+
+`<id>` is the provider's `id`, which defaults to its type. Examples:
+
+| Docs served at | Provider | Callback URL |
+| --- | --- | --- |
+| `https://docs.acme.com` | `google` | `https://docs.acme.com/_auth/callback/google` |
+| `https://api.acme.com/docs` (Nest, `basePath: '/docs'`) | `okta` | `https://api.acme.com/docs/_auth/callback/okta` |
+| `http://localhost:3010/docs` (local test) | `keycloak` | `http://localhost:3010/docs/_auth/callback/keycloak` |
+
+Register one callback URL per environment (production, staging, local).
+
+</Step>
+<Step>
+
+### Register the app with the provider
+
+Follow the section for your provider below. You come away with a client ID and a client secret.
+
+</Step>
+<Step>
+
+### Add the provider to the config
+
+```ts title="orbitdocs.config.ts"
+access: {
+  groups: { staff: { domains: ['acme.com'] } },
+  rules: [{ path: '/internal/*', groups: ['staff'] }],
+  providers: [
+    { type: 'google', clientId: '1234-abc.apps.googleusercontent.com', clientSecretEnv: 'GOOGLE_CLIENT_SECRET', hostedDomain: 'acme.com' },
+  ],
+},
+```
+
+The client ID is not a secret and lives in the config. The secret never does: `clientSecretEnv` names the environment variable that holds it.
+
+</Step>
+<Step>
+
+### Set the secrets on the server
+
+```bash title=".env"
+ORBITDOCS_AUTH_SECRET=<32+ random characters>
+GOOGLE_CLIENT_SECRET=<client secret from the provider>
+```
+
+The first sign-in fetches the provider's discovery document (`<issuer>/.well-known/openid-configuration`), so the server needs outbound HTTPS to the provider.
+
+</Step>
+</Steps>
+
+## Options every provider takes
+
+<TypeTable
+  type={{
+    type: { type: "'google' | 'microsoft' | 'okta' | 'auth0' | 'clerk' | 'keycloak'", description: 'The preset.' },
+    clientId: { type: 'string', description: 'Client (application) ID from the provider. Required.' },
+    clientSecretEnv: { type: 'string', description: 'Environment variable that holds the client secret. Required.' },
+    id: { type: 'string', description: 'URL-safe id used in the callback URL (lowercase letters, digits, dashes).', default: 'the type' },
+    name: { type: 'string', description: 'Button label: "Continue with <name>".', default: 'the brand name' },
+    scopes: { type: 'string[]', description: 'Scopes to request. Replaces the default list.', default: "['openid', 'email', 'profile']" },
+    groupsClaim: { type: 'string', description: 'ID token claim that lists the reader\'s groups, matched against idpGroups.', default: "'groups'" },
+    issuer: { type: 'string (URL)', description: 'Override the issuer the preset computes (custom domains, tests).' },
+  }}
+/>
+
+What the server reads from the provider:
+
+- **Email**: the `email` claim, else `preferred_username`. If neither looks like an email, it calls the provider's userinfo endpoint. A reader with no email can't sign in.
+- **Name**: the `name` claim.
+- **Groups**: the claim named by `groupsClaim` (default `groups`), as a list. It is matched against `idpGroups` in your [access groups](/private-docs/access-rules).
+
+<Callout type="warn" title="scopes replaces the defaults">
+`scopes: ['groups']` requests only `groups`, and sign-in then fails for lack of an email. Always include `openid`, `email` and `profile`: `scopes: ['openid', 'email', 'profile', 'groups']`.
+</Callout>
+
+To offer two apps of the same provider (say, two Okta orgs), give them different `id`s. Each gets its own callback URL.
+
+## Google
+
+Google accounts and Google Workspace.
+
+<Steps>
+<Step>
+
+### Create the OAuth client
+
+1. Open the [Google Cloud console](https://console.cloud.google.com) and pick or create a project.
+2. Set up the OAuth consent screen (Google Auth Platform). For Workspace-only docs, choose the **Internal** audience.
+3. Go to **Clients** (or **APIs & Services → Credentials**) and create an **OAuth client ID** of type **Web application**.
+4. Under **Authorized redirect URIs**, add `https://docs.acme.com/_auth/callback/google`.
+5. Copy the client ID and the client secret.
+
+</Step>
+<Step>
+
+### Configure
+
+```ts title="orbitdocs.config.ts"
+providers: [
+  {
+    type: 'google',
+    clientId: '1234-abc.apps.googleusercontent.com',
+    clientSecretEnv: 'GOOGLE_CLIENT_SECRET',
+    hostedDomain: 'acme.com',
+  },
+],
+```
+
+</Step>
+</Steps>
+
+- `hostedDomain` limits sign-in to one Workspace domain. The server asks Google to show only that domain's accounts, then checks the `hd` claim of the token. Other accounts see "Sign in with your acme.com account."
+- Issuer: `https://accounts.google.com`.
+- Google ID tokens carry no groups. Use `emails` and `domains` in your access groups, or add groups with [personalization](/private-docs/access-rules#personalization).
+
+<Callout type="error" title="Without hostedDomain, any Google account can sign in">
+Anyone with a Gmail address passes Google sign-in. Set `hostedDomain`, or restrict access with groups and `mode: 'private'`.
+</Callout>
+
+## Microsoft Entra ID
+
+Microsoft Entra ID (formerly Azure AD) work and school accounts.
+
+<Steps>
+<Step>
+
+### Register the app
+
+1. In the [Microsoft Entra admin center](https://entra.microsoft.com), go to **Identity → Applications → App registrations → New registration**.
+2. Name it, choose **Accounts in this organizational directory only**.
+3. Under **Redirect URI**, pick **Web** and enter `https://docs.acme.com/_auth/callback/microsoft`.
+4. On the **Overview** page, copy the **Application (client) ID** and the **Directory (tenant) ID**.
+5. Under **Certificates & secrets → Client secrets**, create a secret and copy its **Value** (not its ID). It is shown once.
+
+</Step>
+<Step>
+
+### Configure
+
+```ts title="orbitdocs.config.ts"
+providers: [
+  {
+    type: 'microsoft',
+    tenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47',
+    clientId: 'b3c1a2d4-0000-4000-8000-123456789abc',
+    clientSecretEnv: 'ENTRA_CLIENT_SECRET',
+  },
+],
+```
+
+</Step>
+</Steps>
+
+- `tenantId` is required. Use your tenant's ID, not `common` or `organizations`: the issuer must be a single tenant (`https://login.microsoftonline.com/<tenantId>/v2.0`).
+- Email: Entra often omits the `email` claim, so the server falls back to `preferred_username` (the user principal name, usually an email address).
+- Groups: under **Token configuration → Add groups claim**, choose **Security groups**. Entra then puts group **object IDs** (GUIDs) in `groups`, so list those IDs in `idpGroups`.
+- App roles instead of groups: define roles under **App roles**, assign users to them in **Enterprise applications**, and set `groupsClaim: 'roles'`. `idpGroups` then lists role values.
+
+<Callout type="warn" title="Large groups lists">
+When a user belongs to more than 200 groups, Entra leaves `groups` out of the token. Use app roles or filter the groups claim to the groups assigned to the app.
+</Callout>
+
+## Okta
+
+<Steps>
+<Step>
+
+### Create the app integration
+
+1. In the Okta Admin Console, go to **Applications → Applications → Create App Integration**.
+2. Choose **OIDC - OpenID Connect** and **Web Application**.
+3. Under **Sign-in redirect URIs**, add `https://docs.acme.com/_auth/callback/okta`.
+4. Under **Assignments**, choose who can use the app.
+5. Copy the **Client ID** and **Client secret** from the **General** tab.
+
+</Step>
+<Step>
+
+### Configure
+
+```ts title="orbitdocs.config.ts"
+providers: [
+  {
+    type: 'okta',
+    domain: 'acme.okta.com',
+    clientId: '0oa1b2c3d4e5f6g7h8i9',
+    clientSecretEnv: 'OKTA_CLIENT_SECRET',
+    scopes: ['openid', 'email', 'profile', 'groups'],
+  },
+],
+```
+
+</Step>
+</Steps>
+
+- `domain` is your Okta domain, with or without `https://`.
+- `authorizationServer`: leave it out to use the org authorization server (issuer `https://acme.okta.com`). Set it to a custom server id, such as `default`, to use that one (issuer `https://acme.okta.com/oauth2/default`).
+- Groups with the org authorization server: on the app's **Sign On** tab, edit **OpenID Connect ID Token**, set the **Groups claim type** to **Filter**, name it `groups`, and pick a filter (for example **Matches regex** `.*`). Request the `groups` scope as shown above.
+- Groups with a custom authorization server: under **Security → API → Authorization Servers → (server) → Claims**, add a `groups` claim of type **Groups**, included in the ID token.
+
+## Auth0
+
+<Steps>
+<Step>
+
+### Create the application
+
+1. In the Auth0 Dashboard, go to **Applications → Applications → Create Application**.
+2. Choose **Regular Web Applications**.
+3. On the **Settings** tab, add `https://docs.acme.com/_auth/callback/auth0` to **Allowed Callback URLs**, and save.
+4. Copy the **Domain**, **Client ID** and **Client Secret**.
+
+</Step>
+<Step>
+
+### Configure
+
+```ts title="orbitdocs.config.ts"
+providers: [
+  {
+    type: 'auth0',
+    domain: 'acme.us.auth0.com',
+    clientId: 'Xyz123AbC456dEf789',
+    clientSecretEnv: 'AUTH0_CLIENT_SECRET',
+    groupsClaim: 'https://docs.acme.com/groups',
+  },
+],
+```
+
+</Step>
+</Steps>
+
+- `domain`: your Auth0 domain, or your custom domain if you use one. The issuer is `https://<domain>/`.
+- Auth0 adds no groups claim by default. Add one with a post-login Action, then set `groupsClaim` to the same claim name:
+
+```js title="Auth0 Action (Login / Post Login)"
+exports.onExecutePostLogin = async (event, api) => {
+  // Roles assigned to the user in Auth0 become docs groups.
+  api.idToken.setCustomClaim('https://docs.acme.com/groups', event.authorization?.roles ?? []);
+};
+```
+
+## Clerk
+
+Use this preset for staff who sign in to a Clerk instance through Clerk's OAuth applications. To reuse the Clerk session your customers already have in your product, use an [app session](/private-docs/app-session) instead.
+
+<Steps>
+<Step>
+
+### Create the OAuth application
+
+1. In the Clerk Dashboard, go to **Configure → OAuth applications** and add one.
+2. Add `https://docs.acme.com/_auth/callback/clerk` as a redirect URI.
+3. Make sure the `openid`, `email` and `profile` scopes are enabled.
+4. Copy the client ID and client secret.
+
+</Step>
+<Step>
+
+### Configure
+
+```ts title="orbitdocs.config.ts"
+providers: [
+  {
+    type: 'clerk',
+    domain: 'clerk.acme.com',
+    clientId: 'abc123XYZ',
+    clientSecretEnv: 'CLERK_OAUTH_SECRET',
+  },
+],
+```
+
+</Step>
+</Steps>
+
+- `domain` is your Clerk Frontend API domain, such as `clerk.acme.com` or `example-name.clerk.accounts.dev`. The issuer is `https://<domain>`.
+- Clerk ID tokens carry no groups. Use `emails` and `domains`, or [personalization](/private-docs/access-rules#personalization).
+
+## Keycloak
+
+<Steps>
+<Step>
+
+### Create the client
+
+1. In the Keycloak admin console, pick your realm and go to **Clients → Create client**.
+2. Client type **OpenID Connect**, client ID such as `docs`.
+3. Turn **Client authentication** on (a confidential client) and keep **Standard flow** checked.
+4. Under **Valid redirect URIs**, add `https://docs.acme.com/_auth/callback/keycloak`.
+5. On the **Credentials** tab, copy the **Client secret**.
+
+</Step>
+<Step>
+
+### Configure
+
+```ts title="orbitdocs.config.ts"
+providers: [
+  {
+    type: 'keycloak',
+    name: 'Acme SSO',
+    url: 'https://auth.acme.com',
+    realm: 'acme',
+    clientId: 'docs',
+    clientSecretEnv: 'KEYCLOAK_CLIENT_SECRET',
+  },
+],
+```
+
+</Step>
+</Steps>
+
+- `url` is the Keycloak base URL; the issuer is `<url>/realms/<realm>`. Older Keycloak versions served under `/auth` need it in the URL: `https://auth.acme.com/auth`.
+- Groups: open the client's **Client scopes** tab, then its dedicated scope, and **Add mapper → By configuration → Group Membership**. Set **Token Claim Name** to `groups` and turn **Full group path** off, so groups arrive as `staff` rather than `/staff`.
+- For local testing over `http://`, the server allows an `http` issuer.
+
+## Combine providers
+
+You can list several providers, and add an `appSession` too. Each gets its own button. A common setup: staff use company SSO, customers use their product account.
+
+```ts title="orbitdocs.config.ts"
+access: {
+  groups: {
+    staff: { idpGroups: ['docs-staff'] },
+    partners: { idpGroups: ['partner'] },
+  },
+  providers: [
+    { type: 'okta', domain: 'acme.okta.com', clientId: '0oa1b2c3', clientSecretEnv: 'OKTA_CLIENT_SECRET', scopes: ['openid', 'email', 'profile', 'groups'] },
+  ],
+  appSession: { type: 'supabase', projectUrl: 'https://abcd1234.supabase.co', loginUrl: 'https://app.acme.com/login' },
+},
+```
+
+## Troubleshooting
+
+| Symptom | Cause |
+| --- | --- |
+| The provider shows a redirect URI mismatch error | The callback URL registered with the provider doesn't match exactly. Check scheme, host, base path and `id`. Behind a proxy, set `publicUrl` (see [Private docs](/private-docs#behind-a-proxy)). |
+| `<VAR> is not set (client secret for <name>)` | The `clientSecretEnv` variable is missing on the server. |
+| `Your sign-in expired. Please try again.` | More than 10 minutes passed, or the `od_flow` cookie was lost (for example, a different host or base path on the way back). |
+| `Sign-in failed: …` | Discovery or the token exchange failed. The message says why: a wrong `domain`, `tenantId` or `realm`, a wrong secret, or no network access to the provider. |
+| `Your account has no email address.` | Neither the token nor userinfo had an email. Request the `email` scope. |
+| `<email> doesn't have access to these docs.` | `private` mode with groups, and the reader is in none of them. |
+
+## Next steps
+
+<Cards>
+  <Card title="Access rules" href="/private-docs/access-rules" description="Map emails, domains and IdP groups to access groups." />
+  <Card title="Your product's session" href="/private-docs/app-session" description="Let customers reuse the account they have in your product." />
+  <Card title="Audit log" href="/private-docs/audit-log" description="Record every sign-in and denial." />
+</Cards>

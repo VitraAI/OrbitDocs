@@ -1,0 +1,174 @@
+---
+title: Requests
+description: Build a request in the API client, with params, headers, every body type and auth, then send it and read the response.
+---
+
+A request in the client is a method, a URL and the tabs below them: **Params**, **Headers**, **Body**, **Auth**, **Scripts** and **Code**. Requests generated from your spec arrive filled in with example values, so most of the time you only press **Send**.
+
+## Send a request
+
+<Steps>
+<Step>
+
+Open an operation from the collections panel, or press **Test Request** in the reference.
+
+</Step>
+<Step>
+
+Pick an environment in the top bar. It sets `{{baseUrl}}` and your credentials. See [Environments](/api-client/environments).
+
+</Step>
+<Step>
+
+Press **Send**, or ⌘ Enter.
+
+</Step>
+</Steps>
+
+## Method and URL
+
+The method menu offers `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD` and `OPTIONS`.
+
+The URL can contain variables. Generated requests start with `{{baseUrl}}`, followed by the path with example values:
+
+```txt
+{{baseUrl}}/v1/bookings/bk_7Hq2xP
+```
+
+A URL that doesn't start with `http://` or `https://` is joined to `{{baseUrl}}`. A path parameter without an example stays a variable, such as `{{id}}`.
+
+The **{ }** button next to the URL inserts a variable at the cursor. It lists your variables plus the dynamic ones.
+
+### Dynamic variables
+
+These get a new value every time you send:
+
+| Variable | Value |
+| --- | --- |
+| `{{$guid}}`, `{{$uuid}}` | A random UUID |
+| `{{$timestamp}}` | Unix time in seconds |
+| `{{$isoTimestamp}}` | The current time, ISO 8601 |
+| `{{$randomInt}}` | An integer from 0 to 999 |
+| `{{$randomEmail}}` | An address like `user123456@example.com` |
+| `{{$randomFirstName}}` | One of a few first names |
+
+### Variable chips
+
+Under the URL bar, a chip shows each variable the URL, headers or body use. Hover a chip to see its value.
+
+- Green: defined in the active environment or globals.
+- Red: not defined. The text `{{name}}` would be sent as is.
+- Accent: a dynamic variable.
+
+Values of variables whose names contain `key`, `token`, `secret` or `password` show as dots.
+
+## Params and headers
+
+**Params** are query parameters, appended to the URL. **Headers** are request headers. Both are rows of key and value:
+
+- The checkbox turns a row on or off without deleting it.
+- Typing into the empty last row adds a row.
+- The trash button removes a row.
+- An empty value shows the parameter's description from the spec as a hint.
+
+Generated requests list every query parameter and header from the spec. Required ones, and ones with an example, start switched on.
+
+Auth headers don't appear here; the **Auth** tab adds them when you send.
+
+## Body
+
+Pick the body type above the editor:
+
+| Type | Sends | Content-Type set for you |
+| --- | --- | --- |
+| None | No body | None |
+| JSON | The text as typed | `application/json` |
+| Raw | The text as typed | The spec's media type, or `text/plain` |
+| Form | URL-encoded key and value rows | `application/x-www-form-urlencoded` |
+| Multipart | Text and file rows | Set by the browser, with the boundary |
+
+A `Content-Type` header you add yourself wins. `GET` and `HEAD` requests never send a body.
+
+- **JSON** shows **Valid JSON** or **Invalid JSON** with the parser's message. **Prettify** reformats valid JSON. Variables are allowed in JSON, in strings or as values; **Prettify** is off while the body contains one.
+- **Multipart** rows have a **Type** of Text or File. A File row shows a file picker. Picked files are not saved: pick them again after a reload.
+
+Generated requests use the example body from the spec. Upload operations arrive as Multipart, with file fields already set to File.
+
+## Auth
+
+The **Auth** tab sets how the request authenticates:
+
+| Type | Sends |
+| --- | --- |
+| Inherit from collection | The collection's auth. This is the default for secured operations. |
+| No auth | Nothing |
+| API key | A header or query parameter. You set its name and value. |
+| Bearer token | `Authorization: Bearer <token>` |
+| Basic auth | `Authorization: Basic <base64 of username:password>` |
+| OAuth 2.0 · client credentials | `Authorization: Bearer <token>`, fetched from a token URL |
+
+A collection's auth is generated from your spec's security scheme. It uses variables: `{{apiKey}}`, `{{token}}`, `{{username}}` and `{{password}}`, or `{{clientId}}` and `{{clientSecret}}`. Set their values once in your environment.
+
+### OAuth 2.0 client credentials
+
+Fill in **Token URL**, **Client ID**, **Client secret** and **Scope**. On each send, the client posts a `client_credentials` grant to the token URL and uses the `access_token` it returns. To skip that call, paste a token in **Access token**.
+
+The token URL must allow the docs origin in CORS too.
+
+## Copy the request as code
+
+The **Code** tab shows the request as a snippet in cURL, JavaScript, Node.js, Python, Go, PHP, Ruby or C#. **Copy** puts it on the clipboard. The language you pick is remembered.
+
+Snippets get copied into issues, chats and commits, so they never contain a secret unless you ask:
+
+| In the request | In the snippet |
+| --- | --- |
+| Ordinary variables, such as `{{baseUrl}}` and `{{accountId}}` | Their values |
+| Secret variables, and variables whose names contain `key`, `token`, `secret`, `password`, `credential`, `cookie` or `session` | The reference, such as `{{apiKey}}` |
+| An **Auth** field set to a variable, such as `{{token}}` | The reference: `Authorization: Bearer {{token}}` |
+| An **Auth** field with a value typed in | A placeholder: `YOUR_API_KEY`, `YOUR_TOKEN`, `YOUR_ACCESS_TOKEN` |
+| Basic auth | `Authorization: Basic YOUR_BASE64_CREDENTIALS` |
+| OAuth 2.0 client credentials | `Authorization: Bearer YOUR_ACCESS_TOKEN`. No token is fetched to show code. |
+| A credential typed into **Headers** or **Params** (`Authorization`, `Cookie`, `X-API-Key`, `access_token`, …) | A placeholder, such as `Bearer YOUR_TOKEN` or `YOUR_COOKIE` |
+
+To get a snippet that runs as is, turn on **Include secret values** above the snippet. The switch is off every time you open the client, and the text under it warns while it is on.
+
+**Copy as cURL** in the **Send** menu and the command palette copies a cURL command with the same placeholders. **Copy as cURL with secret values**, next to it, copies one with the real values.
+
+<Callout type="warn" title="Real values on request only">
+  With **Include secret values** on, or with **Copy as cURL with secret values**, the snippet holds your real keys, tokens and passwords. Don't paste it anywhere public.
+</Callout>
+
+## Read the response
+
+The response panel shows:
+
+- the status, colored by class (2xx, 3xx, 4xx, 5xx);
+- the time in milliseconds and the body size;
+- test results, when the request has [tests](/api-client/scripts).
+
+| Tab | Shows |
+| --- | --- |
+| **Pretty** | JSON as a tree you can expand, with a filter that searches keys and values. Non-JSON bodies show as text, under **Body**. |
+| **Raw** | The body as received |
+| **Headers** | Every response header |
+| **Tests** | Each test, passed or failed, with the failure message |
+| **Console** | Output of `console.log` from scripts |
+
+**Copy body** and **Download** (as `response.json` or `response.txt`) are in the response's top bar. Turn **Wrap long lines** on or off in [settings](/api-client/customizing).
+
+### When a request fails
+
+A request that can't reach the API shows status `ERR` and `Network error`, with the browser's message. The usual causes:
+
+- The API doesn't allow the docs origin in CORS.
+- The API is down, or `{{baseUrl}}` points to the wrong server.
+- The page is served over HTTPS and the API over HTTP.
+
+## Next steps
+
+<Cards>
+  <Card title="Environments" href="/api-client/environments" description="Variables, secrets and production checks." />
+  <Card title="Scripts and tests" href="/api-client/scripts" description="Run code before and after a request." />
+  <Card title="Collections" href="/api-client/collections" description="Save, duplicate and import requests." />
+</Cards>

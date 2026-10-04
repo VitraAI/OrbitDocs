@@ -1,0 +1,72 @@
+---
+title: Custom domains
+description: Serve a project on your own domain, verified by DNS, with HTTPS certificates issued automatically.
+---
+
+Every project is always served at `<project>.<platform domain>`. You can add your own domains on top, such as `docs.payments.io`. The platform checks your DNS, then Caddy gets a certificate the first time the domain is visited.
+
+## Add a domain
+
+<Steps>
+<Step>
+
+**Add it.** Open the project, **Settings → Domains**, type the hostname (`docs.payments.io`) and select **Add**. You need the admin role.
+
+</Step>
+<Step>
+
+**Create one DNS record.** The page shows both options with your values:
+
+| Type | Name | Value | Use when |
+| --- | --- | --- | --- |
+| `CNAME` | `docs.payments.io` | the platform domain, such as `docs.acme.com` | The host is a subdomain. Routes traffic and proves ownership in one record. |
+| `TXT` | `_orbitdocs.docs.payments.io` | the token shown, such as `3f9c0e…` | You can't use a CNAME, for example on an apex domain. |
+
+</Step>
+<Step>
+
+**Verify.** Select **Refresh**. When the record is found, the domain shows **Valid Configuration** and starts serving the project.
+
+</Step>
+</Steps>
+
+If the record isn't visible yet, **Refresh** shows what to add, for example `DNS is not set yet: add a CNAME docs.payments.io → docs.acme.com, or a TXT record _orbitdocs.docs.payments.io = 3f9c0e…`. DNS changes can take a few minutes to spread.
+
+<Callout type="warn" title="TXT proves ownership, it doesn't route traffic">
+  With TXT verification you still need an `A` or `AAAA` record that points the domain at the platform server.
+  Without it the domain verifies but readers never reach the platform.
+</Callout>
+
+## HTTPS
+
+Caddy issues certificates on demand. Before it asks a certificate authority for a host, it calls the platform (`/api/domains/allowed`), which answers yes only for:
+
+- the platform domain and `www.` in front of it,
+- subdomains of existing projects (previews included),
+- verified custom domains.
+
+So nobody can make your server request certificates for hosts you don't serve. The first visit to a new domain takes a few seconds while the certificate is issued. Caddy renews certificates on its own and keeps them in the `caddy` volume.
+
+Ports `80` and `443` must reach Caddy for issuance to work.
+
+## Rules
+
+- The hostname must contain a dot. A port is allowed (`docs.acme.test:8443`) for testing.
+- The platform domain and its subdomains are refused: `Project subdomains are automatic`.
+- One hostname belongs to one project. Adding it twice fails with `… is already used`.
+- `*.localhost` hosts verify at once, for local testing.
+- Production is served on custom domains. Previews stay on `<project>--<label>.<platform domain>`.
+
+## Remove a domain
+
+Select **Remove** next to it and confirm. The domain stops serving the project at once; adding it back means verifying it again. Remove the DNS record when you no longer need it.
+
+Adding, verifying and removing domains are all written to the audit log.
+
+## Next steps
+
+<Cards>
+  <Card title="Install" href="/platform/install" description="DNS and ports for the platform itself." />
+  <Card title="Publishing" href="/platform/publishing" description="Publish the site the domain serves." />
+  <Card title="Analytics" href="/platform/analytics" description="See who visits, on every domain." />
+</Cards>
