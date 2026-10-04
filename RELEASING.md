@@ -28,6 +28,7 @@ Publishing is off until the npm side is ready: without it, step 3 only merges th
    - Secrets: `NPM_TOKEN` = the token.
    - Variables: `NPM_PUBLISH_ENABLED` = `true`.
 4. Re-run the latest `Release` workflow on `main`, or merge the next version pull request.
+5. Remove the "coming to npm soon" `banner` from `apps/docs/orbitdocs.config.ts`: the install commands in the docs work from now on.
 
 ### After the first publish: trusted publishing
 

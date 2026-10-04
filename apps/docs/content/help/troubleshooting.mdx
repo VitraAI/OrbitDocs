@@ -169,11 +169,32 @@ export ORBITDOCS_AUTH_SECRET=$(openssl rand -hex 32)
 
 The variable named by `clientSecretEnv` or `ai.apiKeyEnv` is missing on the serving process. See [Environment variables](/docs-reference/environment-variables).
 
+### Ask AI says "The AI provider couldn't answer (HTTP …)"
+
+The provider rejected or failed the request. The status tells you why:
+
+- `401` or `403`: the key in `ai.apiKeyEnv` is wrong, revoked, or has no access to `ai.model`.
+- `404`: the model name or `ai.baseUrl` is wrong.
+- `429`: you hit the provider's rate limit or spending cap.
+- `5xx`: the provider is down. Try again later.
+
+With no status, the server couldn't reach the provider at all: check `ai.baseUrl` and the server's outbound network.
+
 ### The SSO callback fails behind a proxy
 
 Callback URLs are built from the request's origin. When a proxy rewrites the `Host` header, pass the public origin: `mountOrbitDocs(app, { …, auth: { publicUrl: 'https://docs.acme.com' } })` or `orbitProxy({ publicUrl: 'https://docs.acme.com' })`.
 
 ## Platform
+
+### Sign-in or Ask AI fails with "Blocked a hosted site's request to …"
+
+The platform refuses requests from hosted sites to private, loopback and link-local addresses, such as an SSO server or AI endpoint on your internal network. Allow that host in the platform's `.env` and restart it:
+
+```bash title="apps/platform/.env"
+SITE_OUTBOUND_ALLOW=keycloak.internal,10.0.0.20
+```
+
+See [Outbound requests](/platform/publishing#outbound-requests).
 
 ### The browser warns about the certificate on localhost
 

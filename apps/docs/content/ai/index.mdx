@@ -141,6 +141,8 @@ Build your own chat UI on the same endpoints. Paths are under the base path.
 
 An error during the answer arrives as `{"type":"error","message":"…"}`. Errors before streaming return JSON with a status: `400` (bad messages), `404` (Ask AI off), `405` (not POST), `429` (rate limit).
 
+When the AI provider fails (a wrong key, an outage, a rate limit on its side), readers see "The AI provider couldn't answer (HTTP 401). Try again in a moment." with the provider's status code. The provider's own error text isn't shown, because it can echo parts of the request. Calls are retried twice before the error is sent.
+
 <Callout type="warn" title="Behind a reverse proxy">
 Answers stream word by word. The server sends `X-Accel-Buffering: no` so nginx doesn't buffer them. If your proxy buffers responses another way, turn buffering off for `/_ai/chat`.
 </Callout>

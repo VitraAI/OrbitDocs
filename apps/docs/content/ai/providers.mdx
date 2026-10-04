@@ -152,8 +152,11 @@ export const ai = createAi({
 | `env` | `process.env` | Where the API key is read. |
 | `rateLimit` | `30` | Questions per reader per 10 minutes. |
 | `onAsk` | none | `({ question, sources, request }) => void`. Errors in it are ignored. |
+| `fetch` | global `fetch` | Makes every outbound request: the AI provider and the API MCP's calls to your API. Pass one that limits where requests may go. |
 
 Without `access` and `auth`, every page is treated as public. Pass both when your docs are private.
+
+`createAuth` from `@orbitdocs/auth` takes the same `fetch` option, for its OpenID Connect, app-session, personalization and audit-webhook requests. The self-hosted platform passes both a `fetch` that refuses private addresses (see [Outbound requests](/platform/publishing#outbound-requests)).
 
 ## Next steps
 

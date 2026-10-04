@@ -55,7 +55,7 @@ Signed-out readers who hit a restricted page are not logged; they are simply sen
 - With `mountOrbitDocs`, that's usually your Nest project root.
 - In Next server mode, it's where `next start` runs, usually the docs app.
 
-Serverless hosts such as Vercel have no lasting disk, so use `webhookUrl` there.
+Serverless hosts such as Vercel have no lasting disk, so use `webhookUrl` there. The self-hosted platform ignores `file` for the sites it hosts (a site can't write files on the platform's server); use `webhookUrl` there too.
 
 ## Send to a webhook
 
