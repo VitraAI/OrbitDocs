@@ -44,4 +44,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: 'true'
+          # pnpm 11 publishes itself and reads only pnpm_config_* settings: it ignores
+          # NPM_CONFIG_PROVENANCE and publishConfig.provenance.
+          PNPM_CONFIG_PROVENANCE: 'true'
