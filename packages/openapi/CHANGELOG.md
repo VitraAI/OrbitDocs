@@ -1,5 +1,11 @@
 # @vitra-ai/orbitdocs-openapi
 
+## 0.2.0
+
+### Patch Changes
+
+- b9ca837: File fields in form bodies work again: the API client shows them as file fields (one per file for a list of files) instead of a text field holding `[null]`, code samples attach a file instead of sending `files=[null]`, and the reference shows their type as `string · binary` instead of `any`. Lists in form bodies are now sent as one field per item.
+
 ## 0.1.0
 
 ### Initial release

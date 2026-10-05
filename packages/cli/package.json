@@ -1,6 +1,6 @@
 {
   "name": "@vitra-ai/orbitdocs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OrbitDocs CLI: init, dev, extract, check, build and deploy API documentation sites.",
   "license": "MIT",
   "author": "Vitra.ai (https://vitra.ai)",
