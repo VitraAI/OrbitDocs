@@ -1,6 +1,6 @@
 {
   "name": "@vitra-ai/orbitdocs-ai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI for OrbitDocs: Ask-AI over your docs with your own LLM key, a docs MCP server and an MCP server generated from your OpenAPI spec.",
   "license": "MIT",
   "author": "Vitra.ai (https://vitra.ai)",

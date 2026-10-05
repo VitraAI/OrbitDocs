@@ -9,6 +9,19 @@ The npm packages (`@vitra-ai/orbitdocs` and `@vitra-ai/orbitdocs-*`) are release
 
 ## npm packages
 
+### 0.2.0
+
+#### Features
+
+- New `orbitdocs start` command: it serves the last build so you can check the production site before you deploy it, `out/` for a static build (under `output.basePath`, with `_redirects` and `404.html`) or `next start` for a server build. New docs apps get a matching `npm start` script. (`@vitra-ai/orbitdocs`)
+- The API client's collections panel can be resized: drag its edge (or focus it and press ← or →) between 200 and 560 px, and double-click to reset. The client remembers the width. Its empty response pane also looks cleaner, with a send icon and the keyboard shortcuts as keys. (`@vitra-ai/orbitdocs-ui`)
+
+#### Fixes
+
+- `orbitdocs init` now pins new docs apps to the CLI's own version (it always wrote `^0.1.0`), and `orbitdocs --version` prints the real version. (`@vitra-ai/orbitdocs`)
+- The landing page terminal no longer shows a scrollbar under long commands. They still scroll sideways, and keyboard users can focus the terminal to scroll it with the arrow keys. (`@vitra-ai/orbitdocs-next`, `@vitra-ai/orbitdocs-ui`)
+- File fields in form bodies work again: the API client shows them as file fields (one per file for a list of files) instead of a text field holding `[null]`, code samples attach a file instead of sending `files=[null]`, and the reference shows their type as `string · binary` instead of `any`. Lists in form bodies are now sent as one field per item. (`@vitra-ai/orbitdocs-openapi`, `@vitra-ai/orbitdocs-ui`)
+
 ### 0.1.0
 
 #### Initial release

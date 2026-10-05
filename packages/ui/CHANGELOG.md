@@ -1,5 +1,18 @@
 # @vitra-ai/orbitdocs-ui
 
+## 0.2.0
+
+### Minor Changes
+
+- b9ca837: The API client's collections panel can be resized: drag its edge (or focus it and press ← or →) between 200 and 560 px, and double-click to reset. The client remembers the width. Its empty response pane also looks cleaner, with a send icon and the keyboard shortcuts as keys.
+
+### Patch Changes
+
+- b9ca837: File fields in form bodies work again: the API client shows them as file fields (one per file for a list of files) instead of a text field holding `[null]`, code samples attach a file instead of sending `files=[null]`, and the reference shows their type as `string · binary` instead of `any`. Lists in form bodies are now sent as one field per item.
+- b9ca837: The landing page terminal no longer shows a scrollbar under long commands. They still scroll sideways, and keyboard users can focus the terminal to scroll it with the arrow keys.
+- Updated dependencies [b9ca837]
+  - @vitra-ai/orbitdocs-openapi@0.2.0
+
 ## 0.1.0
 
 ### Initial release

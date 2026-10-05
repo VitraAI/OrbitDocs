@@ -1,6 +1,6 @@
 {
   "name": "@vitra-ai/orbitdocs-next",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OrbitDocs for Next.js: config wrapper, Scalar-style reference pages, layouts, search, llms.txt.",
   "license": "MIT",
   "author": "Vitra.ai (https://vitra.ai)",

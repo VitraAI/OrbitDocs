@@ -1,5 +1,20 @@
 # @vitra-ai/orbitdocs
 
+## 0.2.0
+
+### Minor Changes
+
+- b9ca837: New `orbitdocs start` command: it serves the last build so you can check the production site before you deploy it, `out/` for a static build (under `output.basePath`, with `_redirects` and `404.html`) or `next start` for a server build. New docs apps get a matching `npm start` script.
+
+### Patch Changes
+
+- b9ca837: `orbitdocs init` now pins new docs apps to the CLI's own version (it always wrote `^0.1.0`), and `orbitdocs --version` prints the real version.
+- Updated dependencies [b9ca837]
+  - @vitra-ai/orbitdocs-openapi@0.2.0
+  - @vitra-ai/orbitdocs-ai@0.2.0
+  - @vitra-ai/orbitdocs-auth@0.2.0
+  - @vitra-ai/orbitdocs-core@0.2.0
+
 ## 0.1.0
 
 ### Initial release

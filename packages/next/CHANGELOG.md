@@ -1,5 +1,19 @@
 # @vitra-ai/orbitdocs-next
 
+## 0.2.0
+
+### Patch Changes
+
+- b9ca837: The landing page terminal no longer shows a scrollbar under long commands. They still scroll sideways, and keyboard users can focus the terminal to scroll it with the arrow keys.
+- Updated dependencies [b9ca837]
+- Updated dependencies [b9ca837]
+- Updated dependencies [b9ca837]
+  - @vitra-ai/orbitdocs-ui@0.2.0
+  - @vitra-ai/orbitdocs-openapi@0.2.0
+  - @vitra-ai/orbitdocs-ai@0.2.0
+  - @vitra-ai/orbitdocs-auth@0.2.0
+  - @vitra-ai/orbitdocs-core@0.2.0
+
 ## 0.1.0
 
 ### Initial release
