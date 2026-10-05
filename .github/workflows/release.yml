@@ -31,12 +31,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # With pending changesets: opens or updates the "Version Packages" pull request.
-      # When that pull request is merged: publishes to npm, but only once publishing is
-      # switched on (repository variable NPM_PUBLISH_ENABLED=true and the NPM_TOKEN secret).
+      # Without (e.g. once that pull request is merged): publishes every package version
+      # that is not on npm yet, with the NPM_TOKEN secret. Nothing new means nothing to do.
       - uses: changesets/action@v1
         with:
           version: pnpm version-packages
-          publish: ${{ vars.NPM_PUBLISH_ENABLED == 'true' && 'pnpm release' || '' }}
+          publish: pnpm release
           commit: 'chore: version packages'
           title: 'chore: version packages'
           createGithubReleases: true

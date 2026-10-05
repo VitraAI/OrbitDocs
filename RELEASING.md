@@ -16,21 +16,19 @@ The eight npm packages (`@vitra-ai/orbitdocs` and `@vitra-ai/orbitdocs-*`) are r
 Pull requests opened by the workflow don't trigger the `CI` workflow (a GitHub rule for
 `GITHUB_TOKEN`). Close and reopen the version pull request to run CI on it.
 
-### Turning publishing on
+### The npm token
 
-Publishing is off until the npm side is ready: without it, step 3 only merges the version bump.
+Publishing is always on: every run on `main` publishes the package versions that aren't on npm
+yet, and does nothing when there are none. It needs one secret:
 
 1. On npmjs.com, make sure the publishing account is a member of the `vitra-ai` organization with
    publish rights on the `@vitra-ai` scope.
 2. Create a **granular access token** with read and write access to the `@vitra-ai` scope (it covers
    `@vitra-ai/orbitdocs` and the `@vitra-ai/orbitdocs-*` packages, including ones not published yet).
-3. In GitHub, **Settings → Secrets and variables → Actions**:
-   - Secrets: `NPM_TOKEN` = the token.
-   - Variables: `NPM_PUBLISH_ENABLED` = `true`.
-4. Re-run the latest `Release` workflow on `main`, or merge the next version pull request. The first
-   release publishes `0.1.0` straight away: its changelogs are already written, so there is no version
-   pull request for it.
-5. Remove the "coming to npm soon" `banner` from `apps/docs/orbitdocs.config.ts`: the install commands in the docs work from now on.
+   Allow it to bypass two-factor authentication: the workflow can't enter a one-time code.
+3. In GitHub, **Settings → Secrets and variables → Actions → Secrets**: `NPM_TOKEN` = the token.
+
+Without the secret, the publish step fails on every push to `main` that has no pending changesets.
 
 ### After the first publish: trusted publishing
 
