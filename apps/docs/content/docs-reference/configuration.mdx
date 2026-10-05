@@ -6,7 +6,7 @@ description: Every key in orbitdocs.config.ts, with its type, default and what i
 `orbitdocs.config.ts` sits in the docs app folder. The CLI and the Next plugin both load it and validate it with one schema. This page lists every key.
 
 ```ts title="orbitdocs.config.ts"
-import { defineConfig } from '@orbitdocs/next/config';
+import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
   site: { title: 'Acme API' },
@@ -17,7 +17,7 @@ export default defineConfig({
 ## Loading and validation
 
 - **File names**, checked in this order in the current folder: `orbitdocs.config.ts`, `orbitdocs.config.mts`, `orbitdocs.config.js`, `orbitdocs.config.mjs`. Run the CLI in the docs app folder.
-- **`defineConfig`** from `@orbitdocs/next/config` (or `@orbitdocs/core`) only adds types. It returns the object unchanged.
+- **`defineConfig`** from `@vitra-ai/orbitdocs-next/config` (or `@vitra-ai/orbitdocs-core`) only adds types. It returns the object unchanged.
 - **Validation** runs on every CLI command and every Next build. All problems are listed at once, each with its path:
 
 ```text

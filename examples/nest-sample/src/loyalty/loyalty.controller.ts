@@ -1,5 +1,5 @@
 import { Body, ConflictException, Controller, Get, NotFoundException, Post, Query, UnprocessableEntityException } from '@nestjs/common';
-import { DocsErrors, DocsOperation } from '@orbitdocs/nestjs';
+import { DocsErrors, DocsOperation } from '@vitra-ai/orbitdocs-nestjs';
 
 import { BOOKINGS } from '../bookings/bookings.store';
 import { Authenticated } from '../common/auth';

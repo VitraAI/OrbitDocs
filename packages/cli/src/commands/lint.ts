@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { specFile } from '@orbitdocs/core';
-import type { LoadedConfig } from '@orbitdocs/core/loader';
+import { specFile } from '@vitra-ai/orbitdocs-core';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
 import pc from 'picocolors';
 
 import { fail, log } from '../util';

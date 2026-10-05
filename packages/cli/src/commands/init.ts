@@ -115,7 +115,7 @@ export function init(root: string, options: InitOptions = {}) {
   log.ok(`Created ${relative(process.cwd(), target) || target}`);
   console.log(`
 Next steps:
-  1. In your Nest app:   npm install @orbitdocs/nestjs
+  1. In your Nest app:   npm install @vitra-ai/orbitdocs-nestjs
   2. ${
     options.routes === 'all'
       ? 'Every route @nestjs/swagger sees is documented. Hide one with @ApiExcludeEndpoint().'

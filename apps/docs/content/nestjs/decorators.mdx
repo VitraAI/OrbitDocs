@@ -3,12 +3,12 @@ title: Decorators
 description: Every @Docs* decorator, what it writes to the spec, and how it combines with @nestjs/swagger.
 ---
 
-The `@Docs*` decorators from `@orbitdocs/nestjs` are thin wrappers around Swagger's `ApiExtension` and `ApiResponse`. They only add documentation metadata. They never change routing, guards or behavior.
+The `@Docs*` decorators from `@vitra-ai/orbitdocs-nestjs` are thin wrappers around Swagger's `ApiExtension` and `ApiResponse`. They only add documentation metadata. They never change routing, guards or behavior.
 
 You need them in one case: with `routes: 'opt-in'` (the default), `@DocsOperation` is what puts a route in the docs. With `routes: 'all'`, every decorator here is optional.
 
 ```ts title="src/bookings/bookings.controller.ts"
-import { DocsContent, DocsErrors, DocsOperation, DocsSamples } from '@orbitdocs/nestjs';
+import { DocsContent, DocsErrors, DocsOperation, DocsSamples } from '@vitra-ai/orbitdocs-nestjs';
 ```
 
 | Decorator | Writes | Use it to |

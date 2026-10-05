@@ -1,7 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import type { AccessManifest } from '@orbitdocs/auth';
-import { buildReferenceModel, loadDocument } from '@orbitdocs/openapi';
+import type { AccessManifest } from '@vitra-ai/orbitdocs-auth';
+import { buildReferenceModel, loadDocument } from '@vitra-ai/orbitdocs-openapi';
 import { APICallError } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { describe, expect, it } from 'vitest';

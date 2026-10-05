@@ -6,8 +6,8 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { type AiManifest, createAi } from '@orbitdocs/ai';
-import { type AccessManifest, createAuth } from '@orbitdocs/auth';
+import { type AiManifest, createAi } from '@vitra-ai/orbitdocs-ai';
+import { type AccessManifest, createAuth } from '@vitra-ai/orbitdocs-auth';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { decrypt, encrypt, hashPassword, verifyPassword } from './crypto';

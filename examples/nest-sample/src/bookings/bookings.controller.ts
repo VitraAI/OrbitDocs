@@ -17,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiExtraModels, ApiHeader, ApiParam, ApiResponse, getSchemaPath } from '@nestjs/swagger';
-import { DocsContent, DocsErrors, DocsOperation, DocsSamples } from '@orbitdocs/nestjs';
+import { DocsContent, DocsErrors, DocsOperation, DocsSamples } from '@vitra-ai/orbitdocs-nestjs';
 
 import { Authenticated } from '../common/auth';
 import { newId } from '../common/id';

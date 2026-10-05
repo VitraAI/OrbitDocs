@@ -1,6 +1,6 @@
 import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
 import { ApiExtraModels, ApiParam } from '@nestjs/swagger';
-import { DocsErrors, DocsOperation } from '@orbitdocs/nestjs';
+import { DocsErrors, DocsOperation } from '@vitra-ai/orbitdocs-nestjs';
 
 import { BookingDto } from '../bookings/booking.dto';
 import { Authenticated } from '../common/auth';

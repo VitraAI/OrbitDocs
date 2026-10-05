@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { webMiddleware } from '@orbitdocs/auth/express';
+import { webMiddleware } from '@vitra-ai/orbitdocs-auth/express';
 import express from 'express';
 
 import { AppModule } from './app.module';
@@ -61,7 +61,7 @@ async function bootstrap() {
   if (existsSync(web)) {
     app.use(express.static(web, { extensions: ['html'], index: ['index.html'] }));
   } else {
-    log.warn(`No dashboard build at ${web} (pnpm --filter @orbitdocs/platform-web build)`);
+    log.warn(`No dashboard build at ${web} (pnpm --filter @vitra-ai/orbitdocs-platform-web build)`);
   }
 
   // Lets the build queue stop its workers on SIGTERM.

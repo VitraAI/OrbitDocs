@@ -1,11 +1,11 @@
-import type { OrbitDocsConfig } from '@orbitdocs/core';
+import type { OrbitDocsConfig } from '@vitra-ai/orbitdocs-core';
 import type { BaseLayoutProps, LinkItemType } from 'fumadocs-ui/layouts/shared';
 import * as Lu from 'react-icons/lu';
 import * as Si from 'react-icons/si';
 import { createElement, type ReactNode } from 'react';
 import type { IconType } from 'react-icons';
 
-import { AskAi } from '@orbitdocs/ui/ask-ai';
+import { AskAi } from '@vitra-ai/orbitdocs-ui/ask-ai';
 
 import type { OrbitOverrides } from './overrides';
 import { UserMenu } from './user-menu';

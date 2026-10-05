@@ -1,4 +1,4 @@
-import { defineConfig } from '@orbitdocs/next/config';
+import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
   // Until the packages are on npm, the install commands in these docs don't work yet.

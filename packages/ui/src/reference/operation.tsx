@@ -1,4 +1,4 @@
-import type { OperationModel, ReferenceModel } from '@orbitdocs/openapi';
+import type { OperationModel, ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
 
 import { OperationSlot } from './client/index';
 import type { ExtraContent } from './sections';

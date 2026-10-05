@@ -1,8 +1,9 @@
-# orbitdocs
+# @vitra-ai/orbitdocs
 
 The OrbitDocs CLI: `init`, `dev`, `build`, `extract`, `check`, `publish`, `sdk`, `mock` and `lint`.
 
-`npx orbitdocs init` in your NestJS project.
+`npx @vitra-ai/orbitdocs init` in your NestJS project. It adds this package to the docs app, so
+from then on the command is `orbitdocs` (for example `npx orbitdocs build` in the docs app).
 
 Part of [OrbitDocs](https://github.com/VitraAI/OrbitDocs): open-source API documentation for NestJS,
 with a Scalar-style reference, MDX guides, an API client, private docs, Ask AI and SDKs. The npm

@@ -1,4 +1,4 @@
-# @orbitdocs/platform
+# @vitra-ai/orbitdocs-platform
 
 ## 0.1.0
 

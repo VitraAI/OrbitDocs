@@ -1,4 +1,4 @@
-import { referenceSections, referenceSectionsParams } from '@orbitdocs/next';
+import { referenceSections, referenceSectionsParams } from '@vitra-ai/orbitdocs-next';
 
 import { orbit } from '@/lib/orbit';
 

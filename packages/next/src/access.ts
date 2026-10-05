@@ -1,5 +1,5 @@
-import { buildManifest, implies, type ManifestInput, type Requirement, requiredGroups, requirement, sitePath } from '@orbitdocs/auth/edge';
-import type { OrbitDocsConfig } from '@orbitdocs/core';
+import { buildManifest, implies, type ManifestInput, type Requirement, requiredGroups, requirement, sitePath } from '@vitra-ai/orbitdocs-auth/edge';
+import type { OrbitDocsConfig } from '@vitra-ai/orbitdocs-core';
 
 type AccessSettings = Pick<OrbitDocsConfig, 'access' | 'apis'>;
 

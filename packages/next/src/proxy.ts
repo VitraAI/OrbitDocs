@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { type AiHandler, type AiManifest, createAi } from '@orbitdocs/ai';
-import { type AccessManifest, type AuthHandler, createAuth } from '@orbitdocs/auth';
+import { type AiHandler, type AiManifest, createAi } from '@vitra-ai/orbitdocs-ai';
+import { type AccessManifest, type AuthHandler, createAuth } from '@vitra-ai/orbitdocs-auth';
 import { NextResponse } from 'next/server';
 
 export interface OrbitProxyOptions {
@@ -26,7 +26,7 @@ function absolute(response: Response, request: Request): Response {
  * Docker): serves `/_auth/*` and gates every page before it renders.
  *
  *   // proxy.ts
- *   import { orbitProxy } from '@orbitdocs/next/proxy';
+ *   import { orbitProxy } from '@vitra-ai/orbitdocs-next/proxy';
  *   export default orbitProxy();
  *
  * Also serves Ask AI and the MCP servers when the config has `ai`. Without

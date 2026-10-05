@@ -2,9 +2,9 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 
-import { type SdksConfig, specFile } from '@orbitdocs/core';
-import type { LoadedConfig } from '@orbitdocs/core/loader';
-import { buildReferenceModel, exampleFor, loadDocument, type OperationModel, type ReferenceModel } from '@orbitdocs/openapi';
+import { type SdksConfig, specFile } from '@vitra-ai/orbitdocs-core';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
+import { buildReferenceModel, exampleFor, loadDocument, type OperationModel, type ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
 
 import { fail, log, run } from '../util';
 import { sdkFunctions } from './sdk-test';

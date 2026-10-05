@@ -1,4 +1,4 @@
-import { orbitLayoutOptions, ReferencePage, referenceMetadata, referenceStaticParams } from '@orbitdocs/next';
+import { orbitLayoutOptions, ReferencePage, referenceMetadata, referenceStaticParams } from '@vitra-ai/orbitdocs-next';
 import { HomeLayout } from 'fumadocs-ui/layouts/home';
 
 import { orbit } from '@/lib/orbit';

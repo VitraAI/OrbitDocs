@@ -1,4 +1,4 @@
-import type { OrbitDocsConfig } from '@orbitdocs/core';
+import type { OrbitDocsConfig } from '@vitra-ai/orbitdocs-core';
 import { HomeLayout } from 'fumadocs-ui/layouts/home';
 import Link from 'next/link';
 import { Children, type ComponentType, isValidElement, type ReactElement, type ReactNode } from 'react';

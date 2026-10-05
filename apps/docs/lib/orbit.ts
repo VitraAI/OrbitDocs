@@ -1,4 +1,4 @@
-import { resolveConfig } from '@orbitdocs/next';
+import { resolveConfig } from '@vitra-ai/orbitdocs-next';
 
 import input from '../orbitdocs.config';
 

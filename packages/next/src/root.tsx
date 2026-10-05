@@ -1,4 +1,4 @@
-import type { OrbitDocsConfig } from '@orbitdocs/core';
+import type { OrbitDocsConfig } from '@vitra-ai/orbitdocs-core';
 import { Banner } from 'fumadocs-ui/components/banner';
 import type { ReactNode } from 'react';
 

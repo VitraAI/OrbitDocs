@@ -4,9 +4,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { specFile } from '@orbitdocs/core';
-import type { LoadedConfig } from '@orbitdocs/core/loader';
-import { buildReferenceModel, exampleFor, loadDocument, type OperationModel, type ReferenceModel } from '@orbitdocs/openapi';
+import { specFile } from '@vitra-ai/orbitdocs-core';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
+import { buildReferenceModel, exampleFor, loadDocument, type OperationModel, type ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
 import pc from 'picocolors';
 
 import { fail, log } from '../util';

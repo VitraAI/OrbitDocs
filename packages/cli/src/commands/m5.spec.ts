@@ -2,8 +2,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { resolveConfig } from '@orbitdocs/core';
-import { buildReferenceModel, loadDocument } from '@orbitdocs/openapi';
+import { resolveConfig } from '@vitra-ai/orbitdocs-core';
+import { buildReferenceModel, loadDocument } from '@vitra-ai/orbitdocs-openapi';
 import { describe, expect, it } from 'vitest';
 
 import { withHandlers } from './mock';

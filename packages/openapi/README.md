@@ -1,4 +1,4 @@
-# @orbitdocs/openapi
+# @vitra-ai/orbitdocs-openapi
 
 Loads, upgrades and bundles OpenAPI documents into the model the OrbitDocs reference renders, and turns operations into Markdown.
 

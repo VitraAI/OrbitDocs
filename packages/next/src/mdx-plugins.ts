@@ -1,4 +1,4 @@
-import type { OrbitDocsConfig } from '@orbitdocs/core';
+import type { OrbitDocsConfig } from '@vitra-ai/orbitdocs-core';
 import type { applyMdxPreset, DefaultMDXOptions } from 'fumadocs-mdx/config';
 
 /** What a collection's `mdxOptions` takes: a function of the build environment. */
@@ -106,7 +106,7 @@ let codeBlocks: Promise<Record<string, unknown>> | undefined;
 /** `codeBlocks` from the docs app's orbitdocs.config.ts (the build's working directory), as Shiki options. */
 function codeBlockOptions(): Promise<Record<string, unknown>> {
   codeBlocks ??= (async () => {
-    const { findConfigFile, loadConfig } = await import('@orbitdocs/core/loader');
+    const { findConfigFile, loadConfig } = await import('@vitra-ai/orbitdocs-core/loader');
     if (!findConfigFile(process.cwd())) return {};
     const { themes, defaultLanguage }: OrbitDocsConfig['codeBlocks'] = (await loadConfig()).config.codeBlocks;
     return { ...(themes ? { themes } : {}), ...(defaultLanguage ? { defaultLanguage } : {}) };

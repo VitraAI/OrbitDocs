@@ -1,4 +1,4 @@
-import { implies, type Requirement } from '@orbitdocs/auth/edge';
+import { implies, type Requirement } from '@vitra-ai/orbitdocs-auth/edge';
 import type * as PageTree from 'fumadocs-core/page-tree';
 
 import { accessAt, accessManifest, siteDefault, variantOptions } from './variants';

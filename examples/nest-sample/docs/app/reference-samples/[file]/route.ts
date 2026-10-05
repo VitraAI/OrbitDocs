@@ -1,4 +1,4 @@
-import { referenceSamples, referenceSamplesParams } from '@orbitdocs/next';
+import { referenceSamples, referenceSamplesParams } from '@vitra-ai/orbitdocs-next';
 
 import { orbit } from '@/lib/orbit';
 

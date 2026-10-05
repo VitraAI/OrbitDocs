@@ -1,4 +1,4 @@
-import type { OrbitDocsConfig } from '@orbitdocs/core';
+import type { OrbitDocsConfig } from '@vitra-ai/orbitdocs-core';
 import type { StructuredData } from 'fumadocs-core/mdx-plugins';
 import { type AdvancedIndex, createSearchAPI, type SearchAPI } from 'fumadocs-core/search/server';
 

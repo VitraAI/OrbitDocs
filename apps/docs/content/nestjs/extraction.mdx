@@ -123,7 +123,7 @@ source: {
 },
 ```
 
-`@orbitdocs/nestjs` must be installed in `root`, because the extractor runs from there.
+`@vitra-ai/orbitdocs-nestjs` must be installed in `root`, because the extractor runs from there.
 
 ### globalPrefix and versioning
 
@@ -253,14 +253,14 @@ Changes are grouped for 600 ms. If extraction fails at startup, the docs still s
 
 ## Use the document in your own code
 
-`@orbitdocs/nestjs` also exports the filter as a function, for example to save the public spec from a script:
+`@vitra-ai/orbitdocs-nestjs` also exports the filter as a function, for example to save the public spec from a script:
 
 ```ts title="src/scripts/write-spec.ts"
 import { writeFileSync } from 'node:fs';
 
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder } from '@nestjs/swagger';
-import { createOrbitDocument } from '@orbitdocs/nestjs';
+import { createOrbitDocument } from '@vitra-ai/orbitdocs-nestjs';
 
 import { AppModule } from '../app.module';
 
@@ -300,7 +300,7 @@ void main();
 | `No package.json in the Nest project root …` | `root` points at the wrong folder. It is relative to the docs app. |
 | `Compiled module not found: …` | The app isn't built, or `module` is wrong. Set `build`, or check the path in `dist/`. |
 | `dist/app.module.js has no export named "AppModule" (found: …)` | Set `export` to one of the names listed. |
-| `travel: @orbitdocs/nestjs is not installed in …` | Install `@orbitdocs/nestjs` in the Nest project. |
+| `travel: @vitra-ai/orbitdocs-nestjs is not installed in …` | Install `@vitra-ai/orbitdocs-nestjs` in the Nest project. |
 | `` travel: `nest build` failed (exit 1) `` | Your build fails. Run it on its own to see why. |
 | `Extraction failed:` followed by a stack trace | Your app threw while loading. Often a missing environment variable: add a placeholder in `env`. |
 | `Schemas are referenced but not defined: …` | A schema is only referenced, for example through `getSchemaPath()`. Add `@ApiExtraModels(TheDto)` to the controller, or type the property. |

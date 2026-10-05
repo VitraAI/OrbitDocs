@@ -163,8 +163,8 @@ The copies are built for at most 16 combinations of groups per sidebar, API or c
 Two routes in the docs app render the copies. `orbitdocs init` creates them; an app made before this needs them added (the build prints a warning and shows only what every reader may see until then):
 
 ```tsx title="app/~/[variant]/layout.tsx"
-import { GuidesLayout } from '@orbitdocs/next';
-import { guidesTree } from '@orbitdocs/next/server';
+import { GuidesLayout } from '@vitra-ai/orbitdocs-next';
+import { guidesTree } from '@vitra-ai/orbitdocs-next/server';
 import type { ReactNode } from 'react';
 
 import { orbit } from '@/lib/orbit';

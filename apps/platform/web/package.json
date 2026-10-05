@@ -1,5 +1,5 @@
 {
-  "name": "@orbitdocs/platform-web",
+  "name": "@vitra-ai/orbitdocs-platform-web",
   "version": "0.1.0",
   "private": true,
   "scripts": {

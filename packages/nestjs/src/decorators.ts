@@ -1,6 +1,6 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiExtension, ApiResponse } from '@nestjs/swagger';
-import { CONTENT_EXTENSION, type ContentPosition, ORBIT_EXTENSION, type OrbitMarker, type OperationContent } from '@orbitdocs/openapi';
+import { CONTENT_EXTENSION, type ContentPosition, ORBIT_EXTENSION, type OrbitMarker, type OperationContent } from '@vitra-ai/orbitdocs-openapi';
 
 export type DocsOperationOptions = Omit<OrbitMarker, 'hidden'>;
 

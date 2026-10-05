@@ -3,7 +3,7 @@ title: CLI
 description: Every orbitdocs command and flag, with defaults, what each one writes and when it fails.
 ---
 
-The `orbitdocs` CLI creates, builds and ships the docs app. `orbitdocs init` adds it to the docs app's `devDependencies`, so run it with `npx orbitdocs` or through the app's npm scripts.
+The `orbitdocs` CLI, published as `@vitra-ai/orbitdocs`, creates, builds and ships the docs app. `orbitdocs init` adds it to the docs app's `devDependencies`, so inside the app, run it with `npx orbitdocs` or through the app's npm scripts. Outside a project, run it with `npx @vitra-ai/orbitdocs`.
 
 ```bash
 npx orbitdocs --help
@@ -34,7 +34,7 @@ All commands exit with code `1` on failure and print the reason after `✗`.
 Creates the docs app (a Next.js app) inside a Nest project. Run it in the Nest project root.
 
 ```bash
-npx orbitdocs init [options]
+npx @vitra-ai/orbitdocs init [options]
 ```
 
 | Flag | Default | What it does |
@@ -105,7 +105,7 @@ It writes:
 | `.orbitdocs/access.json` | The access manifest (or `null`). |
 | `.orbitdocs/ai.json` | The Ask AI index (or `null`). |
 
-Prints the operation count per API and any documentation gaps (up to 50). Fails when `completeness: 'error'` finds gaps, when a `build` command fails, or when `@orbitdocs/nestjs` isn't installed in the Nest root.
+Prints the operation count per API and any documentation gaps (up to 50). Fails when `completeness: 'error'` finds gaps, when a `build` command fails, or when `@vitra-ai/orbitdocs-nestjs` isn't installed in the Nest root.
 
 ## check
 

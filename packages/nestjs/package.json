@@ -1,5 +1,5 @@
 {
-  "name": "@orbitdocs/nestjs",
+  "name": "@vitra-ai/orbitdocs-nestjs",
   "version": "0.1.0",
   "description": "OrbitDocs for NestJS: @Docs* decorators, preview-mode spec extraction, and serving the built docs from your app.",
   "license": "MIT",
@@ -36,9 +36,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@orbitdocs/openapi": "workspace:*",
-    "@orbitdocs/auth": "workspace:*",
-    "@orbitdocs/ai": "workspace:*"
+    "@vitra-ai/orbitdocs-openapi": "workspace:*",
+    "@vitra-ai/orbitdocs-auth": "workspace:*",
+    "@vitra-ai/orbitdocs-ai": "workspace:*"
   },
   "peerDependencies": {
     "@nestjs/common": ">=10",

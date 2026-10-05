@@ -1,4 +1,4 @@
-import type { OperationModel, ReferenceModel } from '@orbitdocs/openapi';
+import type { OperationModel, ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
 import { snippetz } from '@scalar/snippetz';
 
 import { highlight } from './highlight';

@@ -25,7 +25,7 @@ On small screens, items move into a menu.
 When the home page is a [landing page](/writing/landing-pages), point **Guides** at your first guide:
 
 ```ts title="orbitdocs.config.ts"
-import { defineConfig } from '@orbitdocs/next/config';
+import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
   site: { title: 'Acme' },
@@ -176,7 +176,7 @@ navigation: {
 Options that take React go in `lib/overrides.tsx` of the docs app, under `layout`. They apply to the top bar of guides, the API reference and the API client:
 
 ```tsx title="lib/overrides.tsx"
-import type { OrbitOverrides } from '@orbitdocs/next';
+import type { OrbitOverrides } from '@vitra-ai/orbitdocs-next';
 
 import { VersionPicker } from '@/components/version-picker';
 

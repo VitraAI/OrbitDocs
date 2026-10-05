@@ -15,14 +15,14 @@ Every change users of OrbitDocs will notice needs a changeset in `.changeset/` (
 
 ```md
 ---
-'@orbitdocs/next': minor
-'@orbitdocs/platform': patch
+'@vitra-ai/orbitdocs-next': minor
+'@vitra-ai/orbitdocs-platform': patch
 ---
 
 One or two plain sentences on what changed for the user, and what to do if they must act.
 ```
 
-- List every package the change touches. The npm packages are released together, so the highest bump among them wins; `@orbitdocs/platform` is versioned on its own.
+- List every package the change touches. The npm packages are released together, so the highest bump among them wins; `@vitra-ai/orbitdocs-platform` is versioned on its own.
 - `minor` for new features and changed defaults, `patch` for fixes, `major` for breaking changes (after 1.0).
 - Skip changesets for internal-only work: tests, refactors, CI, the docs site (`apps/docs`) and the examples.
 - Never edit a `CHANGELOG.md` or `apps/docs/content/help/changelog.mdx` by hand: `pnpm version-packages` writes them.

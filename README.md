@@ -26,8 +26,8 @@ MIT licensed. No accounts, no pricing tiers.
 Documentation: **[orbitdocs.vitra.ai](https://orbitdocs.vitra.ai)**
 
 ```bash
-npm install @orbitdocs/nestjs
-npx orbitdocs init      # creates docs/ (a Next.js app) in your Nest project
+npm install @vitra-ai/orbitdocs-nestjs
+npx @vitra-ai/orbitdocs init      # creates docs/ (a Next.js app) in your Nest project
 cd docs && npm install
 npm run dev             # http://localhost:3000
 npm run build           # static site in docs/out
@@ -37,12 +37,12 @@ npm run build           # static site in docs/out
 
 | Package | |
 | --- | --- |
-| [`@orbitdocs/nestjs`](packages/nestjs) | `@DocsOperation` and friends, preview-mode spec extraction, `mountOrbitDocs` |
-| [`@orbitdocs/openapi`](packages/openapi) | Filter, standard errors, completeness checks, reference model, examples |
-| [`@orbitdocs/ui`](packages/ui) | Scalar-style API reference (React + HeroUI) and theme |
-| [`@orbitdocs/next`](packages/next) | Next.js/Fumadocs integration: config plugin, pages, search, llms.txt |
-| [`@orbitdocs/core`](packages/core) | Config schema and loader |
-| [`orbitdocs`](packages/cli) | `init`, `dev`, `extract`, `check`, `build`, `deploy` |
+| [`@vitra-ai/orbitdocs-nestjs`](packages/nestjs) | `@DocsOperation` and friends, preview-mode spec extraction, `mountOrbitDocs` |
+| [`@vitra-ai/orbitdocs-openapi`](packages/openapi) | Filter, standard errors, completeness checks, reference model, examples |
+| [`@vitra-ai/orbitdocs-ui`](packages/ui) | Scalar-style API reference (React + HeroUI) and theme |
+| [`@vitra-ai/orbitdocs-next`](packages/next) | Next.js/Fumadocs integration: config plugin, pages, search, llms.txt |
+| [`@vitra-ai/orbitdocs-core`](packages/core) | Config schema and loader |
+| [`@vitra-ai/orbitdocs`](packages/cli) | `init`, `dev`, `extract`, `check`, `build`, `deploy` |
 
 ## Repository
 

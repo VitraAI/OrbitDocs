@@ -1,5 +1,5 @@
-import { type OrbitDocsConfig, sendDisabledReason } from '@orbitdocs/core';
-import { allCodeSamples, ApiReference, type ExtraContent, plainText, type ReferenceContent, referenceSection, sectionFiles } from '@orbitdocs/ui';
+import { type OrbitDocsConfig, sendDisabledReason } from '@vitra-ai/orbitdocs-core';
+import { allCodeSamples, ApiReference, type ExtraContent, plainText, type ReferenceContent, referenceSection, sectionFiles } from '@vitra-ai/orbitdocs-ui';
 import type { ComponentType } from 'react';
 
 import { readableApis } from './layout';

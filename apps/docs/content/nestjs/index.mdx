@@ -3,7 +3,7 @@ title: NestJS
 description: Install the Nest integration, point the docs at your app and choose which routes appear.
 ---
 
-`@orbitdocs/nestjs` connects your Nest app to the docs. It builds on `@nestjs/swagger`: extraction calls your app's own `SwaggerModule.createDocument`. Everything you already describe with Swagger shows up in the docs. The `@Docs*` decorators are optional extras on top.
+`@vitra-ai/orbitdocs-nestjs` connects your Nest app to the docs. It builds on `@nestjs/swagger`: extraction calls your app's own `SwaggerModule.createDocument`. Everything you already describe with Swagger shows up in the docs. The `@Docs*` decorators are optional extras on top.
 
 There is no Nest module to import and nothing changes at runtime. The package gives you decorators, the extractor the CLI runs, and `mountOrbitDocs` to serve the built site.
 
@@ -23,10 +23,10 @@ There is no Nest module to import and nothing changes at runtime. The package gi
 ### Add the packages to your Nest project
 
 ```npm
-npm install @orbitdocs/nestjs @nestjs/swagger
+npm install @vitra-ai/orbitdocs-nestjs @nestjs/swagger
 ```
 
-`@orbitdocs/nestjs` needs `@nestjs/common` and `@nestjs/core` 10 or later, `@nestjs/swagger` 7 or later, and `reflect-metadata`. Install it in the Nest project, not in the docs app: the extractor is loaded from there so it shares your copy of Nest.
+`@vitra-ai/orbitdocs-nestjs` needs `@nestjs/common` and `@nestjs/core` 10 or later, `@nestjs/swagger` 7 or later, and `reflect-metadata`. Install it in the Nest project, not in the docs app: the extractor is loaded from there so it shares your copy of Nest.
 
 </Step>
 <Step>
@@ -65,7 +65,7 @@ export class PassengerDto {
 ### Create the docs app
 
 ```npm
-npx orbitdocs init
+npx @vitra-ai/orbitdocs init
 ```
 
 This writes `docs/` with a config that points at your compiled module. See [Quickstart](/get-started/quickstart) for the full walkthrough.
@@ -78,7 +78,7 @@ This writes `docs/` with a config that points at your compiled module. See [Quic
 Each API in `orbitdocs.config.ts` has a `source`. For a Nest app it is `source.nest`:
 
 ```ts title="docs/orbitdocs.config.ts"
-import { defineConfig } from '@orbitdocs/next/config';
+import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
   site: { title: 'Orbit Travel' },

@@ -1,4 +1,4 @@
-import { deref, operationMarkdown, type OperationModel, type ReferenceModel, type Schema } from '@orbitdocs/openapi';
+import { deref, operationMarkdown, type OperationModel, type ReferenceModel, type Schema } from '@vitra-ai/orbitdocs-openapi';
 
 import type { AiApi, AiManifest, AiOperation, AiPage, AiSettings } from './manifest';
 

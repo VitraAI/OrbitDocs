@@ -20,16 +20,16 @@ Private docs and Ask AI run on whatever serves the docs. That process needs the 
 
 ## Private docs and Ask AI
 
-Read by `@orbitdocs/auth` and `@orbitdocs/ai` on the serving process.
+Read by `@vitra-ai/orbitdocs-auth` and `@vitra-ai/orbitdocs-ai` on the serving process.
 
 | Variable | Required | Default | What it does | Read in |
 | --- | --- | --- | --- | --- |
-| `ORBITDOCS_AUTH_SECRET` (name set by `access.session.secretEnv`) | Yes, with `access` | none | Signs reader sessions (HS256). At least 32 characters; generate with `openssl rand -hex 32`. Every instance must share it. | `@orbitdocs/auth` request handler, on every sign-in and gated request |
-| `<access.providers[].clientSecretEnv>` | Yes, per SSO provider | none | The OAuth client secret of that provider. | `@orbitdocs/auth`, when sign-in starts and on the callback |
-| `<access.appSession.jwtSecretEnv>` | No (Supabase only) | none | Shared JWT secret of a legacy Supabase project. Without it, the project's public keys (JWKS) verify the session. | `@orbitdocs/auth` app-session check |
-| `<access.appSession.secretKeyEnv>` | No (Clerk only) | none | Clerk secret key, to look up the reader's email when the session token has none. | `@orbitdocs/auth` app-session check |
-| `<access.personalization.secretEnv>` | Yes, for personalization to run | none | HMAC-SHA256 key that signs the call to `personalization.url` (`x-orbitdocs-signature: sha256=…`). When unset, the hook is skipped and sign-in goes on. | `@orbitdocs/auth`, after each sign-in |
-| `<ai.apiKeyEnv>` | Yes, with `ai` | none | API key for the LLM provider. Required for `openai-compatible` too; use any value if your endpoint ignores keys. | `@orbitdocs/ai`, on each Ask AI question |
+| `ORBITDOCS_AUTH_SECRET` (name set by `access.session.secretEnv`) | Yes, with `access` | none | Signs reader sessions (HS256). At least 32 characters; generate with `openssl rand -hex 32`. Every instance must share it. | `@vitra-ai/orbitdocs-auth` request handler, on every sign-in and gated request |
+| `<access.providers[].clientSecretEnv>` | Yes, per SSO provider | none | The OAuth client secret of that provider. | `@vitra-ai/orbitdocs-auth`, when sign-in starts and on the callback |
+| `<access.appSession.jwtSecretEnv>` | No (Supabase only) | none | Shared JWT secret of a legacy Supabase project. Without it, the project's public keys (JWKS) verify the session. | `@vitra-ai/orbitdocs-auth` app-session check |
+| `<access.appSession.secretKeyEnv>` | No (Clerk only) | none | Clerk secret key, to look up the reader's email when the session token has none. | `@vitra-ai/orbitdocs-auth` app-session check |
+| `<access.personalization.secretEnv>` | Yes, for personalization to run | none | HMAC-SHA256 key that signs the call to `personalization.url` (`x-orbitdocs-signature: sha256=…`). When unset, the hook is skipped and sign-in goes on. | `@vitra-ai/orbitdocs-auth`, after each sign-in |
+| `<ai.apiKeyEnv>` | Yes, with `ai` | none | API key for the LLM provider. Required for `openai-compatible` too; use any value if your endpoint ignores keys. | `@vitra-ai/orbitdocs-ai`, on each Ask AI question |
 
 Errors when one is missing:
 
@@ -47,7 +47,7 @@ Read when `orbitdocs extract`, `dev` or `build` loads your Nest module in previe
 
 | Variable | Required | Default | What it does | Read in |
 | --- | --- | --- | --- | --- |
-| `<apis[].source.nest.env>` keys | No | `{}` | Placeholders set before the module loads, for config your app reads at import time (`DATABASE_URL`, `JWT_SECRET`, …). A variable already in the environment wins. | `@orbitdocs/nestjs` extractor, before `require` of the module |
+| `<apis[].source.nest.env>` keys | No | `{}` | Placeholders set before the module loads, for config your app reads at import time (`DATABASE_URL`, `JWT_SECRET`, …). A variable already in the environment wins. | `@vitra-ai/orbitdocs-nestjs` extractor, before `require` of the module |
 | Your app's own variables | Depends on your app | none | Preview mode starts no providers, but code that runs on import (module-level `process.env` reads, `ConfigModule` validation) still runs. Set them, or add placeholders in `env`. | Your code |
 | `PATH` | No | inherited | The `build` command runs with `<root>/node_modules/.bin` first, so the project's own `nest` wins over a global one. | CLI, `build` command |
 
@@ -63,12 +63,12 @@ source: {
 
 ## Docs app build and runtime
 
-Read by `@orbitdocs/next` in the docs app.
+Read by `@vitra-ai/orbitdocs-next` in the docs app.
 
 | Variable | Required | Default | What it does | Read in |
 | --- | --- | --- | --- | --- |
-| `NODE_ENV` | No (set by Next) | `development` in `next dev`, `production` in builds | In `development`, specs are re-read on every request (the reference updates without a restart), and a **Mock server** environment at `http://localhost:<mock.port>` is added when `mock` is configured. | `@orbitdocs/next` spec loader |
-| `ORBITDOCS_BASE_PATH` | Never set it | `output.basePath` | Written into Next's `env` by `withOrbitDocs` so pages know the base path. Change `output.basePath` instead. | `@orbitdocs/next` plugin, at build |
+| `NODE_ENV` | No (set by Next) | `development` in `next dev`, `production` in builds | In `development`, specs are re-read on every request (the reference updates without a restart), and a **Mock server** environment at `http://localhost:<mock.port>` is added when `mock` is configured. | `@vitra-ai/orbitdocs-next` spec loader |
+| `ORBITDOCS_BASE_PATH` | Never set it | `output.basePath` | Written into Next's `env` by `withOrbitDocs` so pages know the base path. Change `output.basePath` instead. | `@vitra-ai/orbitdocs-next` plugin, at build |
 
 The config file is TypeScript, so it can read your own variables. The sample app switches modes this way:
 
@@ -104,7 +104,7 @@ Read by the self-hosted platform (`apps/platform`). With Docker Compose, put the
 | `ADMIN_EMAIL` | No | none | Email of the first admin. Created at start when no user has it; made an admin when one does. Needs `ADMIN_PASSWORD`. | `src/config.ts`, `src/auth/auth.service.ts` |
 | `ADMIN_PASSWORD` | No | none | Password for a newly created first admin. Never changes an existing account. | same |
 | `PLATFORM_SSO` | No | none (password sign-in only) | JSON array of dashboard SSO presets, the same shape as `access.providers` entries. Invalid JSON stops the start. | `src/config.ts` |
-| `<PLATFORM_SSO[].clientSecretEnv>` | Yes, per preset | none | The client secret of that SSO preset. | `@orbitdocs/auth`, on dashboard SSO |
+| `<PLATFORM_SSO[].clientSecretEnv>` | Yes, per preset | none | The client secret of that SSO preset. | `@vitra-ai/orbitdocs-auth`, on dashboard SSO |
 | `SCIM_TOKEN` | No | none (SCIM off) | Turns on SCIM 2.0 at `/scim/v2`; clients send `Authorization: Bearer <token>`. | `src/config.ts`, `src/scim/scim.controller.ts` |
 | `SITE_OUTBOUND_ALLOW` | No | none | Private hosts and addresses hosted sites may still reach, such as an internal Keycloak: hostnames, `*.suffix`, IPs or CIDRs, comma-separated. Everything private is refused otherwise. See [Outbound requests](/platform/publishing#outbound-requests). | `src/config.ts`, `src/hosting/outbound.ts` |
 | `BUILD_CONCURRENCY` | No | `1` | Git sync builds this instance runs at once. | `src/git/git.service.ts` |

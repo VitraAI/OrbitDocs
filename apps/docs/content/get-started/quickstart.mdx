@@ -21,7 +21,7 @@ You need:
 In your Nest project:
 
 ```npm
-npm install @orbitdocs/nestjs @nestjs/swagger
+npm install @vitra-ai/orbitdocs-nestjs @nestjs/swagger
 ```
 
 Turn on the `@nestjs/swagger` CLI plugin in `nest-cli.json`. It turns DTO types into schemas and your JSDoc comments into descriptions and examples:
@@ -47,7 +47,7 @@ The plugin is optional, but without it you must describe every property with `@A
 ### Create the docs app
 
 ```npm
-npx orbitdocs init
+npx @vitra-ai/orbitdocs init
 ```
 
 `init` reads your project and writes a Next.js app in `docs/`. It takes the global prefix and URI versioning from `main.ts`, so the paths in the reference match your real routes.
@@ -110,7 +110,7 @@ source: {
 ```
 
 <Callout type="warn" title="Check for routes you don't want public">
-  Admin, health and internal routes appear too unless you hide them. Use `@ApiExcludeEndpoint()` from `@nestjs/swagger` or `@DocsHidden()` from `@orbitdocs/nestjs`.
+  Admin, health and internal routes appear too unless you hide them. Use `@ApiExcludeEndpoint()` from `@nestjs/swagger` or `@DocsHidden()` from `@vitra-ai/orbitdocs-nestjs`.
 </Callout>
 
 </Tab>
@@ -120,7 +120,7 @@ Only routes marked with `@DocsOperation` appear. Anything you don't mark, such a
 
 ```ts title="src/bookings/bookings.controller.ts"
 import { Body, Controller, Post } from '@nestjs/common';
-import { DocsErrors, DocsOperation } from '@orbitdocs/nestjs';
+import { DocsErrors, DocsOperation } from '@vitra-ai/orbitdocs-nestjs';
 
 @Controller({ path: 'bookings', version: '1' })
 export class BookingsController {
@@ -210,7 +210,7 @@ npm run build
 | Message | Fix |
 | --- | --- |
 | `Compiled module not found: …/dist/app.module.js` | Your build writes the module somewhere else, such as `dist/src/app.module.js`. Set `module` to the real path. |
-| `@orbitdocs/nestjs is not installed in …` | Run `npm install @orbitdocs/nestjs` in the Nest project, not in `docs/`. |
+| `@vitra-ai/orbitdocs-nestjs is not installed in …` | Run `npm install @vitra-ai/orbitdocs-nestjs` in the Nest project, not in `docs/`. |
 | The reference is empty | You chose `opt-in` and marked no route. Add `@DocsOperation()` or switch to `routes: 'all'`. |
 | `Schemas are referenced but not defined: …` | A property's type isn't visible to Swagger. Register it with `@ApiExtraModels()` or type the property. |
 | Your app throws on startup during extraction | Module-level code reads config that isn't set. Give placeholder values with `env` in the config. |

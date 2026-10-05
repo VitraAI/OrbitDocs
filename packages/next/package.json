@@ -1,5 +1,5 @@
 {
-  "name": "@orbitdocs/next",
+  "name": "@vitra-ai/orbitdocs-next",
   "version": "0.1.0",
   "description": "OrbitDocs for Next.js: config wrapper, Scalar-style reference pages, layouts, search, llms.txt.",
   "license": "MIT",
@@ -58,11 +58,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@orbitdocs/ai": "workspace:*",
-    "@orbitdocs/auth": "workspace:*",
-    "@orbitdocs/core": "workspace:*",
-    "@orbitdocs/openapi": "workspace:*",
-    "@orbitdocs/ui": "workspace:*",
+    "@vitra-ai/orbitdocs-ai": "workspace:*",
+    "@vitra-ai/orbitdocs-auth": "workspace:*",
+    "@vitra-ai/orbitdocs-core": "workspace:*",
+    "@vitra-ai/orbitdocs-openapi": "workspace:*",
+    "@vitra-ai/orbitdocs-ui": "workspace:*",
     "@types/mdx": "^2.0.14",
     "motion": "^13.5.1",
     "react-icons": "^5.7.0"

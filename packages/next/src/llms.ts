@@ -1,5 +1,5 @@
-import type { OrbitDocsConfig } from '@orbitdocs/core';
-import { referenceMarkdown } from '@orbitdocs/ui';
+import type { OrbitDocsConfig } from '@vitra-ai/orbitdocs-core';
+import { referenceMarkdown } from '@vitra-ai/orbitdocs-ui';
 
 import { isPublicOperation, isPublicPage } from './access';
 import { type LoadedApi, loadApis } from './apis';

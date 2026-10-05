@@ -1,7 +1,7 @@
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { LandingLayout, Section } from '@orbitdocs/next';
+import { LandingLayout, Section } from '@vitra-ai/orbitdocs-next';
 import { ServerCodeBlock } from 'fumadocs-ui/components/codeblock.rsc';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';

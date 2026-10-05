@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, NotFoundException, OnApplicationBootstrap, UnauthorizedException } from '@nestjs/common';
-import { type AccessManifest, type AuthHandler, createAuth } from '@orbitdocs/auth';
+import { type AccessManifest, type AuthHandler, createAuth } from '@vitra-ai/orbitdocs-auth';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import { jwtVerify, SignJWT } from 'jose';
 

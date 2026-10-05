@@ -8,7 +8,7 @@ The sidebar lists every guide in `content/`, in the order your `meta.json` files
 ## Configure the sidebar
 
 ```ts title="orbitdocs.config.ts"
-import { defineConfig } from '@orbitdocs/next/config';
+import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
   site: { title: 'Acme' },
@@ -122,7 +122,7 @@ A tab is active on its URL and every page under it. With [private docs](/private
 Some sidebar options take React: a banner or footer with links and components, your own page tree items, tabs with custom icons. Set them in `lib/overrides.tsx` of the docs app. They are merged over the config, so everything else stays as configured.
 
 ```tsx title="lib/overrides.tsx"
-import type { OrbitOverrides } from '@orbitdocs/next';
+import type { OrbitOverrides } from '@vitra-ai/orbitdocs-next';
 
 export const overrides: OrbitOverrides = {
   layout: {

@@ -120,14 +120,14 @@ Limits are kept in memory per server process. Several instances each keep their 
 
 ## Track questions with onAsk
 
-`createAi` from `@orbitdocs/ai` takes an `onAsk` callback, called for every question with the number of passages found. Zero passages means your docs don't cover the question, which tells you what to write next. The self-hosted platform uses it for its built-in analytics (see [Analytics](/platform/analytics)).
+`createAi` from `@vitra-ai/orbitdocs-ai` takes an `onAsk` callback, called for every question with the number of passages found. Zero passages means your docs don't cover the question, which tells you what to write next. The self-hosted platform uses it for its built-in analytics (see [Analytics](/platform/analytics)).
 
 `mountOrbitDocs` and `orbitProxy` don't expose `onAsk`. To use it, serve the AI routes with your own handler:
 
 ```ts title="src/docs-ai.ts"
 import { readFileSync } from 'node:fs';
 
-import { type AiManifest, createAi } from '@orbitdocs/ai';
+import { type AiManifest, createAi } from '@vitra-ai/orbitdocs-ai';
 
 const manifest = JSON.parse(readFileSync('docs/out/orbitdocs-ai.json', 'utf8')) as AiManifest;
 
@@ -148,7 +148,7 @@ export const ai = createAi({
 | --- | --- | --- |
 | `manifest` | (required) | The AI index from the build (`orbitdocs-ai.json`). |
 | `access` | none | The access manifest (`orbitdocs-access.json`), so answers respect private docs. |
-| `auth` | none | The handler from `createAuth` in `@orbitdocs/auth`, to identify readers. |
+| `auth` | none | The handler from `createAuth` in `@vitra-ai/orbitdocs-auth`, to identify readers. |
 | `env` | `process.env` | Where the API key is read. |
 | `rateLimit` | `30` | Questions per reader per 10 minutes. |
 | `onAsk` | none | `({ question, sources, request }) => void`. Errors in it are ignored. |
@@ -156,7 +156,7 @@ export const ai = createAi({
 
 Without `access` and `auth`, every page is treated as public. Pass both when your docs are private.
 
-`createAuth` from `@orbitdocs/auth` takes the same `fetch` option, for its OpenID Connect, app-session, personalization and audit-webhook requests. The self-hosted platform passes both a `fetch` that refuses private addresses (see [Outbound requests](/platform/publishing#outbound-requests)).
+`createAuth` from `@vitra-ai/orbitdocs-auth` takes the same `fetch` option, for its OpenID Connect, app-session, personalization and audit-webhook requests. The self-hosted platform passes both a `fetch` that refuses private addresses (see [Outbound requests](/platform/publishing#outbound-requests)).
 
 ## Next steps
 

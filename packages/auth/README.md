@@ -1,4 +1,4 @@
-# @orbitdocs/auth
+# @vitra-ai/orbitdocs-auth
 
 Private docs for OrbitDocs: single sign-on (Google, Microsoft Entra ID, Okta, Auth0, Clerk, Keycloak), reuse of your product's session, access rules and the request handlers for Nest, Next and edge runtimes.
 

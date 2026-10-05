@@ -5,7 +5,7 @@ import {
   type OperationModel,
   type ReferenceModel,
   schemaRef,
-} from '@orbitdocs/openapi';
+} from '@vitra-ai/orbitdocs-openapi';
 
 import type {
   GroupSectionsFile,

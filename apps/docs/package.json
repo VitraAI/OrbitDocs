@@ -1,5 +1,5 @@
 {
-  "name": "@orbitdocs/docs",
+  "name": "@vitra-ai/orbitdocs-docs",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -14,8 +14,8 @@
   "dependencies": {
     "@heroui/react": "^3.2.6",
     "@heroui/styles": "^3.2.6",
-    "@orbitdocs/next": "workspace:*",
-    "@orbitdocs/ui": "workspace:*",
+    "@vitra-ai/orbitdocs-next": "workspace:*",
+    "@vitra-ai/orbitdocs-ui": "workspace:*",
     "fumadocs-core": "16.15.18",
     "fumadocs-mdx": "15.4.6",
     "fumadocs-ui": "npm:@fumadocs/base-ui@16.15.18",
@@ -32,7 +32,7 @@
     "@types/node": "^22.19.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "orbitdocs": "workspace:*",
+    "@vitra-ai/orbitdocs": "workspace:*",
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3"

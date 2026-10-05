@@ -4,13 +4,13 @@ FROM node:22-bookworm-slim AS build
 RUN corepack enable && corepack prepare pnpm@11.5.1 --activate
 WORKDIR /repo
 COPY . .
-RUN pnpm install --frozen-lockfile --filter "@orbitdocs/platform..." --filter "@orbitdocs/platform-web..."
+RUN pnpm install --frozen-lockfile --filter "@vitra-ai/orbitdocs-platform..." --filter "@vitra-ai/orbitdocs-platform-web..."
 # The platform's own packages, then the server and the dashboard.
-RUN pnpm --filter "@orbitdocs/platform^..." run build \
- && pnpm --filter @orbitdocs/platform-web run build \
+RUN pnpm --filter "@vitra-ai/orbitdocs-platform^..." run build \
+ && pnpm --filter @vitra-ai/orbitdocs-platform-web run build \
  && cd apps/platform && npx nest build
 # Production dependencies only, with the workspace packages copied in.
-RUN pnpm --filter @orbitdocs/platform deploy --prod --legacy /deploy
+RUN pnpm --filter @vitra-ai/orbitdocs-platform deploy --prod --legacy /deploy
 
 FROM node:22-bookworm-slim
 # git clones repositories for Git sync builds; pnpm runs their install commands.

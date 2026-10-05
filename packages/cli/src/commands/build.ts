@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { LoadedConfig } from '@orbitdocs/core/loader';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
 
 import { fail, log, resolveFrom, run } from '../util';
 import { writeAccessManifest, writeAccessVariants } from './access';

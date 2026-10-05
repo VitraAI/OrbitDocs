@@ -1,9 +1,9 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-import { specFile } from '@orbitdocs/core';
-import type { LoadedConfig } from '@orbitdocs/core/loader';
-import { buildReferenceModel, loadDocument } from '@orbitdocs/openapi';
+import { specFile } from '@vitra-ai/orbitdocs-core';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
+import { buildReferenceModel, loadDocument } from '@vitra-ai/orbitdocs-openapi';
 
 /** Every .md/.mdx file under `dir`. */
 function contentFiles(dir: string): string[] {

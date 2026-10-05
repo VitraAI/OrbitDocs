@@ -3,7 +3,7 @@ title: MDX components
 description: Every component you can use in guide pages without an import, with its props.
 ---
 
-Guide pages (`content/**/*.mdx`) get these components without an import. They come from Fumadocs and from `@orbitdocs/next/mdx` (`orbitMdxComponents`). For how to use them in writing, see [Components](/writing/components).
+Guide pages (`content/**/*.mdx`) get these components without an import. They come from Fumadocs and from `@vitra-ai/orbitdocs-next/mdx` (`orbitMdxComponents`). For how to use them in writing, see [Components](/writing/components).
 
 | Component | From | Use it for |
 | --- | --- | --- |
@@ -71,8 +71,8 @@ No props. Each `Step` gets the next number. Leave a blank line inside a `Step` w
 
 ```mdx
 <Tabs items={['npm', 'pnpm']}>
-  <Tab value="npm">`npm install @orbitdocs/nestjs`</Tab>
-  <Tab value="pnpm">`pnpm add @orbitdocs/nestjs`</Tab>
+  <Tab value="npm">`npm install @vitra-ai/orbitdocs-nestjs`</Tab>
+  <Tab value="pnpm">`pnpm add @vitra-ai/orbitdocs-nestjs`</Tab>
 </Tabs>
 ```
 
@@ -187,7 +187,7 @@ GitHub alerts (`> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!C
 The guides route passes its components to the page. Add yours next to the OrbitDocs ones:
 
 ```tsx title="app/(guides)/[...slug]/page.tsx"
-import { orbitMdxComponents } from '@orbitdocs/next/mdx';
+import { orbitMdxComponents } from '@vitra-ai/orbitdocs-next/mdx';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
 
 import { Diagram } from '@/components/diagram';
@@ -223,4 +223,4 @@ Section components for landing pages; they also work on any guide page. Each ani
 | `CallToAction` | `title`, `description?`, `actions?` | Closing banner with a turning gradient border. |
 | `LinkButton` | `href`, `variant?`, `icon?`, children | A single button. |
 
-For your own animated components, `@orbitdocs/next` also exports `Reveal`, `RevealGroup` and `RevealItem` (scroll-in animations) and `CountUp`.
+For your own animated components, `@vitra-ai/orbitdocs-next` also exports `Reveal`, `RevealGroup` and `RevealItem` (scroll-in animations) and `CountUp`.

@@ -1,4 +1,4 @@
-import { deref, type Schema, schemaExample } from '@orbitdocs/openapi';
+import { deref, type Schema, schemaExample } from '@vitra-ai/orbitdocs-openapi';
 
 import { markdown } from './markdown';
 import { childSchema, enumValues, typeLabel } from './schema';

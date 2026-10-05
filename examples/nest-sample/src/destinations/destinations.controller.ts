@@ -1,6 +1,6 @@
 import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
 import { ApiParam } from '@nestjs/swagger';
-import { DocsErrors, DocsOperation } from '@orbitdocs/nestjs';
+import { DocsErrors, DocsOperation } from '@vitra-ai/orbitdocs-nestjs';
 
 import { Authenticated } from '../common/auth';
 import { paginate } from '../common/pagination.dto';

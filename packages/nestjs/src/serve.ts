@@ -4,9 +4,9 @@ import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
 
 import type { INestApplication } from '@nestjs/common';
-import { type AiManifest, createAi } from '@orbitdocs/ai';
-import { type AccessManifest, createAuth } from '@orbitdocs/auth';
-import { sendWebResponse, toWebRequest } from '@orbitdocs/auth/express';
+import { type AiManifest, createAi } from '@vitra-ai/orbitdocs-ai';
+import { type AccessManifest, createAuth } from '@vitra-ai/orbitdocs-auth';
+import { sendWebResponse, toWebRequest } from '@vitra-ai/orbitdocs-auth/express';
 
 export interface MountOrbitDocsOptions {
   /** Folder with the built site (`orbitdocs build` output). */

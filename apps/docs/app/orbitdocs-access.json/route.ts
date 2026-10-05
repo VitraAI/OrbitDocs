@@ -1,4 +1,4 @@
-import { readAccessManifest } from '@orbitdocs/next/server';
+import { readAccessManifest } from '@vitra-ai/orbitdocs-next/server';
 
 export const revalidate = false;
 

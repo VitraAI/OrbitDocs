@@ -1,4 +1,4 @@
-import type { ContentPosition, HttpMethod, Stability } from '@orbitdocs/openapi';
+import type { ContentPosition, HttpMethod, Stability } from '@vitra-ai/orbitdocs-openapi';
 import type { ReactNode } from 'react';
 
 /**

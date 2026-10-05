@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, statSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { LoadedConfig } from '@orbitdocs/core/loader';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
 
 import { fail, log } from '../util';
 import { build, outDir } from './build';

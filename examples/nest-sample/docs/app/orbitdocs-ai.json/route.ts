@@ -1,4 +1,4 @@
-import { readAiManifest } from '@orbitdocs/next/server';
+import { readAiManifest } from '@vitra-ai/orbitdocs-next/server';
 
 export const revalidate = false;
 

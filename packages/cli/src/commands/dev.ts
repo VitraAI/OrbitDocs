@@ -2,8 +2,8 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { relative, resolve, sep } from 'node:path';
 
-import type { NestSourceConfig } from '@orbitdocs/core';
-import type { LoadedConfig } from '@orbitdocs/core/loader';
+import type { NestSourceConfig } from '@vitra-ai/orbitdocs-core';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
 import { watch } from 'chokidar';
 
 import { log, resolveFrom, runShell } from '../util';

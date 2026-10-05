@@ -36,7 +36,7 @@ When Next loads `next.config.ts`, `withOrbitDocs` reads the `theme` and `layout`
 @import '@heroui/styles';
 /* Preset, layout CSS and palette, generated from `theme` and `layout` in orbitdocs.config.ts. */
 @import '../.orbitdocs/theme.css';
-@import '@orbitdocs/ui/styles.css';
+@import '@vitra-ai/orbitdocs-ui/styles.css';
 
 /* Your styles: override any HeroUI/OrbitDocs variable here, e.g. --accent. */
 ```
@@ -44,7 +44,7 @@ When Next loads `next.config.ts`, `withOrbitDocs` reads the `theme` and `layout`
 ## Pick a preset
 
 ```ts title="orbitdocs.config.ts"
-import { defineConfig } from '@orbitdocs/next/config';
+import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
   site: { title: 'Acme' },

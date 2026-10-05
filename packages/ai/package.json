@@ -1,5 +1,5 @@
 {
-  "name": "@orbitdocs/ai",
+  "name": "@vitra-ai/orbitdocs-ai",
   "version": "0.1.0",
   "description": "AI for OrbitDocs: Ask-AI over your docs with your own LLM key, a docs MCP server and an MCP server generated from your OpenAPI spec.",
   "license": "MIT",
@@ -39,10 +39,10 @@
     "@ai-sdk/openai": "^4.0.83",
     "@ai-sdk/openai-compatible": "^3.0.62",
     "@modelcontextprotocol/sdk": "^1.32.0",
-    "@orbitdocs/auth": "workspace:*",
+    "@vitra-ai/orbitdocs-auth": "workspace:*",
     "ai": "^7.0.127",
     "zod": "^4.6.5",
-    "@orbitdocs/openapi": "workspace:*"
+    "@vitra-ai/orbitdocs-openapi": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.5.1",

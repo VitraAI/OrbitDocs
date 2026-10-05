@@ -8,7 +8,7 @@ Branding lives in two places. The `site` section of `orbitdocs.config.ts` sets t
 ## Site title, description and URL
 
 ```ts title="orbitdocs.config.ts"
-import { defineConfig } from '@orbitdocs/next/config';
+import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
   site: {
@@ -84,7 +84,7 @@ Sites created before this change have `app/icon.png/route.tsx`, which draws an o
 
 ## Change the fonts
 
-The docs use Inter for text and JetBrains Mono for code. `app/layout.tsx` loads both from Google Fonts, and `@orbitdocs/ui/styles.css` sets them as Tailwind's `--font-sans` and `--font-mono`.
+The docs use Inter for text and JetBrains Mono for code. `app/layout.tsx` loads both from Google Fonts, and `@vitra-ai/orbitdocs-ui/styles.css` sets them as Tailwind's `--font-sans` and `--font-mono`.
 
 To use other fonts, change both places.
 

@@ -1,4 +1,4 @@
-# @orbitdocs/ai
+# @vitra-ai/orbitdocs-ai
 
 Ask AI and MCP servers for OrbitDocs sites: cited answers from your docs, a docs MCP server and one MCP server per API.
 

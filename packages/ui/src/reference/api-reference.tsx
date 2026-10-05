@@ -1,4 +1,4 @@
-import { refName, type ReferenceModel } from '@orbitdocs/openapi';
+import { refName, type ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
 import { LuDownload as Download } from 'react-icons/lu';
 import type { ReactNode } from 'react';
 

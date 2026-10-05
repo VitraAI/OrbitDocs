@@ -2,8 +2,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { type AccessManifest, buildManifest, planVariants, requiredGroups } from '@orbitdocs/auth';
-import { DEFAULT_SEND_DISABLED_MESSAGE, resolveConfig } from '@orbitdocs/core';
+import { type AccessManifest, buildManifest, planVariants, requiredGroups } from '@vitra-ai/orbitdocs-auth';
+import { DEFAULT_SEND_DISABLED_MESSAGE, resolveConfig } from '@vitra-ai/orbitdocs-core';
 import type { ReactElement } from 'react';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 

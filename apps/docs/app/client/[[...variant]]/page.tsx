@@ -1,5 +1,5 @@
-import { ClientPage, orbitLayoutOptions } from '@orbitdocs/next';
-import { clientStaticParams } from '@orbitdocs/next/server';
+import { ClientPage, orbitLayoutOptions } from '@vitra-ai/orbitdocs-next';
+import { clientStaticParams } from '@vitra-ai/orbitdocs-next/server';
 import { HomeLayout } from 'fumadocs-ui/layouts/home';
 
 import { orbit } from '@/lib/orbit';

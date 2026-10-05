@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { type ApiConfig, type OrbitDocsConfig, referenceRoute, specFile } from '@orbitdocs/core';
-import { buildReferenceModel, type Document, loadDocument, type ReferenceModel } from '@orbitdocs/openapi';
+import { type ApiConfig, type OrbitDocsConfig, referenceRoute, specFile } from '@vitra-ai/orbitdocs-core';
+import { buildReferenceModel, type Document, loadDocument, type ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
 
 export interface LoadedApi {
   id: string;

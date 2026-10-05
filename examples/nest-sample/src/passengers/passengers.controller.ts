@@ -1,6 +1,6 @@
 import { Body, ConflictException, Controller, Delete, Get, HttpCode, NotFoundException, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiParam } from '@nestjs/swagger';
-import { DocsErrors, DocsOperation } from '@orbitdocs/nestjs';
+import { DocsErrors, DocsOperation } from '@vitra-ai/orbitdocs-nestjs';
 
 import { Authenticated } from '../common/auth';
 import { newId } from '../common/id';

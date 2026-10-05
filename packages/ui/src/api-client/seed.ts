@@ -1,4 +1,4 @@
-import type { OperationModel, ReferenceModel } from '@orbitdocs/openapi';
+import type { OperationModel, ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
 
 import type { AuthDraft, Collection, Environment, KV, RequestDraft, Workspace } from './types';
 

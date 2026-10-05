@@ -1,4 +1,4 @@
-import { resolveConfig } from '@orbitdocs/core';
+import { resolveConfig } from '@vitra-ai/orbitdocs-core';
 import * as DocsUI from 'fumadocs-ui/layouts/docs';
 import * as GlassUI from 'fumadocs-ui/layouts/glass';
 import * as NotebookUI from 'fumadocs-ui/layouts/notebook';

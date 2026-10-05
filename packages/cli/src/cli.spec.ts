@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFil
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { resolveConfig } from '@orbitdocs/core';
+import { resolveConfig } from '@vitra-ai/orbitdocs-core';
 import { describe, expect, it } from 'vitest';
 
 import { guideFiles, writeAccessManifest, writeAccessVariants } from './commands/access';

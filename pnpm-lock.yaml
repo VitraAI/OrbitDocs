@@ -38,10 +38,10 @@ importers:
       '@heroui/styles':
         specifier: ^3.2.6
         version: 3.2.6(tailwindcss@4.3.3)
-      '@orbitdocs/next':
+      '@vitra-ai/orbitdocs-next':
         specifier: workspace:*
         version: link:../../packages/next
-      '@orbitdocs/ui':
+      '@vitra-ai/orbitdocs-ui':
         specifier: workspace:*
         version: link:../../packages/ui
       fumadocs-core:
@@ -87,7 +87,7 @@ importers:
       '@types/react-dom':
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.0)
-      orbitdocs:
+      '@vitra-ai/orbitdocs':
         specifier: workspace:*
         version: link:../../packages/cli
       postcss:
@@ -111,15 +111,6 @@ importers:
       '@nestjs/platform-express':
         specifier: ^12.1.2
         version: 12.1.2(@nestjs/common@12.1.2(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.1.2)
-      '@orbitdocs/ai':
-        specifier: workspace:*
-        version: link:../../packages/ai
-      '@orbitdocs/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@orbitdocs/openapi':
-        specifier: workspace:*
-        version: link:../../packages/openapi
       '@stoplight/spectral-core':
         specifier: ^1.24.0
         version: 1.24.0
@@ -129,6 +120,15 @@ importers:
       '@stoplight/spectral-rulesets':
         specifier: ^1.23.0
         version: 1.23.0
+      '@vitra-ai/orbitdocs-ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
+      '@vitra-ai/orbitdocs-auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@vitra-ai/orbitdocs-openapi':
+        specifier: workspace:*
+        version: link:../../packages/openapi
       drizzle-orm:
         specifier: ^0.45.3
         version: 0.45.3(@opentelemetry/api@1.9.1)(pg@8.23.1)(postgres@3.4.9)
@@ -230,7 +230,7 @@ importers:
       '@nestjs/swagger':
         specifier: ^12.0.2
         version: 12.0.2(@nestjs/common@12.1.2(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.1.2)(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(typescript@6.0.3)
-      '@orbitdocs/nestjs':
+      '@vitra-ai/orbitdocs-nestjs':
         specifier: workspace:*
         version: link:../../packages/nestjs
       class-transformer:
@@ -273,10 +273,10 @@ importers:
       '@heroui/styles':
         specifier: ^3.2.6
         version: 3.2.6(tailwindcss@4.3.3)
-      '@orbitdocs/next':
+      '@vitra-ai/orbitdocs-next':
         specifier: workspace:*
         version: link:../../../packages/next
-      '@orbitdocs/ui':
+      '@vitra-ai/orbitdocs-ui':
         specifier: workspace:*
         version: link:../../../packages/ui
       fumadocs-core:
@@ -319,7 +319,7 @@ importers:
       '@types/react-dom':
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.0)
-      orbitdocs:
+      '@vitra-ai/orbitdocs':
         specifier: workspace:*
         version: link:../../../packages/cli
       postcss:
@@ -349,10 +349,10 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.32.0
         version: 1.32.0(zod@4.6.5)
-      '@orbitdocs/auth':
+      '@vitra-ai/orbitdocs-auth':
         specifier: workspace:*
         version: link:../auth
-      '@orbitdocs/openapi':
+      '@vitra-ai/orbitdocs-openapi':
         specifier: workspace:*
         version: link:../openapi
       ai:
@@ -367,7 +367,7 @@ importers:
         version: 8.5.1(@swc/core@1.16.13(@swc/helpers@0.5.23))(jiti@2.7.0)(postcss@8.5.28)(tsx@4.23.15)(typescript@6.0.3)(yaml@2.9.1)
       vitest:
         specifier: ^4.0.0
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(vite@8.3.2(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(vite@8.3.2(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/auth:
     dependencies:
@@ -405,18 +405,6 @@ importers:
       '@openapitools/openapi-generator-cli':
         specifier: ^2.41.0
         version: 2.41.0(class-transformer@0.5.1)(class-validator@0.15.1)
-      '@orbitdocs/ai':
-        specifier: workspace:*
-        version: link:../ai
-      '@orbitdocs/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@orbitdocs/core':
-        specifier: workspace:*
-        version: link:../core
-      '@orbitdocs/openapi':
-        specifier: workspace:*
-        version: link:../openapi
       '@scalar/mock-server':
         specifier: ^0.17.3
         version: 0.17.3(typescript@6.0.3)
@@ -432,6 +420,18 @@ importers:
       '@stoplight/spectral-rulesets':
         specifier: ^1.23.0
         version: 1.23.0
+      '@vitra-ai/orbitdocs-ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@vitra-ai/orbitdocs-auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@vitra-ai/orbitdocs-core':
+        specifier: workspace:*
+        version: link:../core
+      '@vitra-ai/orbitdocs-openapi':
+        specifier: workspace:*
+        version: link:../openapi
       chokidar:
         specifier: ^5.0.0
         version: 5.0.0
@@ -473,13 +473,13 @@ importers:
 
   packages/nestjs:
     dependencies:
-      '@orbitdocs/ai':
+      '@vitra-ai/orbitdocs-ai':
         specifier: workspace:*
         version: link:../ai
-      '@orbitdocs/auth':
+      '@vitra-ai/orbitdocs-auth':
         specifier: workspace:*
         version: link:../auth
-      '@orbitdocs/openapi':
+      '@vitra-ai/orbitdocs-openapi':
         specifier: workspace:*
         version: link:../openapi
     devDependencies:
@@ -522,24 +522,24 @@ importers:
 
   packages/next:
     dependencies:
-      '@orbitdocs/ai':
-        specifier: workspace:*
-        version: link:../ai
-      '@orbitdocs/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@orbitdocs/core':
-        specifier: workspace:*
-        version: link:../core
-      '@orbitdocs/openapi':
-        specifier: workspace:*
-        version: link:../openapi
-      '@orbitdocs/ui':
-        specifier: workspace:*
-        version: link:../ui
       '@types/mdx':
         specifier: ^2.0.14
         version: 2.0.14
+      '@vitra-ai/orbitdocs-ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@vitra-ai/orbitdocs-auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@vitra-ai/orbitdocs-core':
+        specifier: workspace:*
+        version: link:../core
+      '@vitra-ai/orbitdocs-openapi':
+        specifier: workspace:*
+        version: link:../openapi
+      '@vitra-ai/orbitdocs-ui':
+        specifier: workspace:*
+        version: link:../ui
       motion:
         specifier: ^13.5.1
         version: 13.5.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -596,12 +596,12 @@ importers:
 
   packages/ui:
     dependencies:
-      '@orbitdocs/openapi':
-        specifier: workspace:*
-        version: link:../openapi
       '@scalar/snippetz':
         specifier: ^0.10.5
         version: 0.10.5
+      '@vitra-ai/orbitdocs-openapi':
+        specifier: workspace:*
+        version: link:../openapi
       marked:
         specifier: ^18.0.14
         version: 18.0.14
@@ -9339,6 +9339,14 @@ snapshots:
       chai: 6.3.0
       tinyrainbow: 3.2.0
 
+  '@vitest/mocker@4.1.11(vite@8.3.2(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))':
+    dependencies:
+      '@vitest/spy': 4.1.11
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 8.3.2(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
+
   '@vitest/mocker@4.1.11(vite@8.3.2(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))':
     dependencies:
       '@vitest/spy': 4.1.11
@@ -13220,6 +13228,21 @@ snapshots:
       d3-time: 3.1.0
       d3-timer: 3.0.1
 
+  vite@8.3.2(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1):
+    dependencies:
+      lightningcss: 1.33.0
+      picomatch: 4.0.7
+      postcss: 8.5.28
+      rolldown: 1.2.12
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 22.20.5
+      esbuild: 0.27.7
+      fsevents: 2.3.3
+      jiti: 2.7.0
+      tsx: 4.23.15
+      yaml: 2.9.1
+
   vite@8.3.2(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
@@ -13234,6 +13257,34 @@ snapshots:
       jiti: 2.7.0
       tsx: 4.23.15
       yaml: 2.9.1
+
+  vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(vite@8.3.2(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)):
+    dependencies:
+      '@vitest/expect': 4.1.11
+      '@vitest/mocker': 4.1.11(vite@8.3.2(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+      '@vitest/pretty-format': 4.1.11
+      '@vitest/runner': 4.1.11
+      '@vitest/snapshot': 4.1.11
+      '@vitest/spy': 4.1.11
+      '@vitest/utils': 4.1.11
+      es-module-lexer: 2.3.2
+      expect-type: 1.4.0
+      magic-string: 0.30.21
+      obug: 2.2.1
+      pathe: 2.0.3
+      picomatch: 4.0.7
+      std-env: 4.3.0
+      tinybench: 2.9.0
+      tinyexec: 1.3.1
+      tinyglobby: 0.2.17
+      tinyrainbow: 3.2.0
+      vite: 8.3.2(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.1
+      '@types/node': 22.20.5
+    transitivePeerDependencies:
+      - msw
 
   vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(vite@8.3.2(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)):
     dependencies:

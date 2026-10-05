@@ -3,9 +3,9 @@ import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize, sep } from 'node:path';
 
 import { Inject, Injectable } from '@nestjs/common';
-import { type AiHandler, createAi } from '@orbitdocs/ai';
-import { type AuthHandler, createAuth } from '@orbitdocs/auth';
-import { sendWebResponse, toWebRequest } from '@orbitdocs/auth/express';
+import { type AiHandler, createAi } from '@vitra-ai/orbitdocs-ai';
+import { type AuthHandler, createAuth } from '@vitra-ai/orbitdocs-auth';
+import { sendWebResponse, toWebRequest } from '@vitra-ai/orbitdocs-auth/express';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { NextFunction, Request, Response } from 'express';
 

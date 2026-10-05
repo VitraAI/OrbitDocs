@@ -1,5 +1,5 @@
-import { layoutWarnings } from '@orbitdocs/core';
-import { loadConfig } from '@orbitdocs/core/loader';
+import { layoutWarnings } from '@vitra-ai/orbitdocs-core';
+import { loadConfig } from '@vitra-ai/orbitdocs-core/loader';
 import { createInterface } from 'node:readline/promises';
 
 import { Command } from 'commander';

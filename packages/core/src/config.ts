@@ -123,7 +123,7 @@ const api = z.object({
    */
   completeness: z.enum(['error', 'warn', 'off']).default('warn'),
   /**
-   * Error codes added to every operation (see @orbitdocs/openapi `standardResponses`):
+   * Error codes added to every operation (see @vitra-ai/orbitdocs-openapi `standardResponses`):
    * 400 with input, 401/403 when secured, 404 with a path parameter, 500. The object form
    * adds codes every operation can return (`extra: ['429']` behind a rate limiter) and
    * rewords the defaults (`descriptions: { '429': '…' }`).

@@ -180,7 +180,7 @@ For working on the platform itself:
 ```bash
 pnpm install && pnpm build                           # from the repository root, Node 22
 cd apps/platform && docker compose up -d postgres && cd ../..   # Postgres on localhost:5433
-pnpm --filter @orbitdocs/platform-web build          # the dashboard (static export)
+pnpm --filter @vitra-ai/orbitdocs-platform-web build          # the dashboard (static export)
 cd apps/platform
 PLATFORM_SECRET=$(openssl rand -hex 32) ADMIN_EMAIL=you@acme.com ADMIN_PASSWORD=dev-password-123 pnpm dev
 ```

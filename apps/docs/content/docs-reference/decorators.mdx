@@ -1,12 +1,12 @@
 ---
 title: NestJS decorators and functions
-description: Signatures of every @Docs* decorator and every function exported by @orbitdocs/nestjs.
+description: Signatures of every @Docs* decorator and every function exported by @vitra-ai/orbitdocs-nestjs.
 ---
 
-`@orbitdocs/nestjs` adds a few optional decorators on top of `@nestjs/swagger`, plus functions to build the document and serve the docs. The decorators only write OpenAPI extensions or Swagger responses. They never change routing, guards or behavior.
+`@vitra-ai/orbitdocs-nestjs` adds a few optional decorators on top of `@nestjs/swagger`, plus functions to build the document and serve the docs. The decorators only write OpenAPI extensions or Swagger responses. They never change routing, guards or behavior.
 
 ```ts
-import { DocsContent, DocsErrors, DocsExtension, DocsHidden, DocsOperation, DocsSamples, mountOrbitDocs } from '@orbitdocs/nestjs';
+import { DocsContent, DocsErrors, DocsExtension, DocsHidden, DocsOperation, DocsSamples, mountOrbitDocs } from '@vitra-ai/orbitdocs-nestjs';
 ```
 
 Every Swagger decorator (`@ApiOperation`, `@ApiTags`, `@ApiResponse`, `@ApiProperty`, `@ApiBearerAuth`, `@ApiExcludeEndpoint`, …) and the Swagger CLI plugin drive the docs as usual. With `routes: 'all'` you need none of the decorators below.
@@ -165,7 +165,7 @@ A schema that is referenced but never defined throws `DanglingReferenceError`. I
 function extract(request: ExtractRequest): Promise<ExtractResult>
 ```
 
-The function behind `orbitdocs extract`. It boots a compiled module in preview mode and writes the filtered document. The CLI calls it through `@orbitdocs/nestjs/extract-cli`; you rarely need it directly. See [Extraction](/nestjs/extraction).
+The function behind `orbitdocs extract`. It boots a compiled module in preview mode and writes the filtered document. The CLI calls it through `@vitra-ai/orbitdocs-nestjs/extract-cli`; you rarely need it directly. See [Extraction](/nestjs/extraction).
 
 ## extractMany
 
@@ -177,4 +177,4 @@ Boots the module once and writes one document per entry in `targets`. `ExtractMa
 
 ## Exported types
 
-`DocsOperationOptions`, `CodeSample`, `MountOrbitDocsOptions`, `OrbitDocumentOptions`, `ExtractRequest`, `ExtractManyRequest`, `ExtractTarget`, `ExtractResult`, and from `@orbitdocs/openapi`: `ORBIT_EXTENSION` (`'x-orbitdocs'`), `OrbitMarker`, `Stability`.
+`DocsOperationOptions`, `CodeSample`, `MountOrbitDocsOptions`, `OrbitDocumentOptions`, `ExtractRequest`, `ExtractManyRequest`, `ExtractTarget`, `ExtractResult`, and from `@vitra-ai/orbitdocs-openapi`: `ORBIT_EXTENSION` (`'x-orbitdocs'`), `OrbitMarker`, `Stability`.

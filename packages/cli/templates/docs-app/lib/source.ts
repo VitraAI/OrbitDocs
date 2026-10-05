@@ -1,5 +1,5 @@
-import { orbitMdxOptions } from '@orbitdocs/next/mdx-plugins';
-import { orbitSourcePlugin } from '@orbitdocs/next/source';
+import { orbitMdxOptions } from '@vitra-ai/orbitdocs-next/mdx-plugins';
+import { orbitSourcePlugin } from '@vitra-ai/orbitdocs-next/source';
 import { loader } from 'fumadocs-core/source';
 import { metaSchema, pageSchema } from 'fumadocs-core/source/schema';
 import { defineDocs } from 'fumadocs-mdx/macro';

@@ -1,6 +1,6 @@
 import type { INestApplicationContext } from '@nestjs/common';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
-import { type Document, filterDocument, type FilterOptions } from '@orbitdocs/openapi';
+import { type Document, filterDocument, type FilterOptions } from '@vitra-ai/orbitdocs-openapi';
 
 export interface OrbitDocumentOptions extends FilterOptions {
   /** Base document (title, version, servers). Defaults to `{ title: 'API', version: '1.0.0' }`. */

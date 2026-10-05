@@ -7,17 +7,17 @@
   "updateInternalDependencies": "patch",
   "fixed": [
     [
-      "orbitdocs",
-      "@orbitdocs/core",
-      "@orbitdocs/openapi",
-      "@orbitdocs/nestjs",
-      "@orbitdocs/next",
-      "@orbitdocs/ui",
-      "@orbitdocs/auth",
-      "@orbitdocs/ai"
+      "@vitra-ai/orbitdocs",
+      "@vitra-ai/orbitdocs-core",
+      "@vitra-ai/orbitdocs-openapi",
+      "@vitra-ai/orbitdocs-nestjs",
+      "@vitra-ai/orbitdocs-next",
+      "@vitra-ai/orbitdocs-ui",
+      "@vitra-ai/orbitdocs-auth",
+      "@vitra-ai/orbitdocs-ai"
     ]
   ],
   "linked": [],
   "privatePackages": { "version": true, "tag": false },
-  "ignore": ["@orbitdocs/docs", "orbit-travel-api", "orbit-travel-docs"]
+  "ignore": ["@vitra-ai/orbitdocs-docs", "orbit-travel-api", "orbit-travel-docs"]
 }

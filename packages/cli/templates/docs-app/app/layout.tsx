@@ -1,4 +1,4 @@
-import { OrbitRoot, siteIcons } from '@orbitdocs/next';
+import { OrbitRoot, siteIcons } from '@vitra-ai/orbitdocs-next';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 

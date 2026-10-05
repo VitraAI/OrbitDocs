@@ -79,7 +79,7 @@ export default defineConfig({
 Without `layout: landing`, the home page is an ordinary guide page. The sections still work there, and on any other page.
 
 <Callout type="info" title="Animations respect your readers">
-  Sections fade and slide in once, as they scroll into view. Readers who turn on "reduce motion" in their operating system see everything in place, with no movement. Animations use [Motion](https://motion.dev), which `@orbitdocs/next` already includes.
+  Sections fade and slide in once, as they scroll into view. Readers who turn on "reduce motion" in their operating system see everything in place, with no movement. Animations use [Motion](https://motion.dev), which `@vitra-ai/orbitdocs-next` already includes.
 </Callout>
 
 ## Sections
@@ -219,7 +219,7 @@ A terminal that types its commands and prints their output when it scrolls into 
 <Terminal
   title="my-api"
   lines={[
-    '$ npx orbitdocs init',
+    '$ npx @vitra-ai/orbitdocs init',
     '✓ Created docs/',
     '$ cd docs && npx orbitdocs dev',
     '▲ Ready on http://localhost:3000',
@@ -465,10 +465,10 @@ import { Pricing } from '@/components/pricing';
 </Step>
 </Steps>
 
-To reuse the built-in entrance animation, import `Reveal`, `RevealGroup` and `RevealItem` from `@orbitdocs/next`:
+To reuse the built-in entrance animation, import `Reveal`, `RevealGroup` and `RevealItem` from `@vitra-ai/orbitdocs-next`:
 
 ```tsx
-import { Reveal } from '@orbitdocs/next';
+import { Reveal } from '@vitra-ai/orbitdocs-next';
 
 <Reveal delay={0.1}>
   <YourCard />
@@ -482,7 +482,7 @@ The animated controller-to-reference demo at the top of this site's home page is
 `app/(home)/page.tsx` is your file. Replace it with any React page and wrap it in `LandingLayout`, so the navbar, search, theme switch and Ask AI stay the same as on every other page. The section components work in TSX too.
 
 ```tsx title="app/(home)/page.tsx"
-import { CallToAction, Features, Feature, Hero, LandingLayout } from '@orbitdocs/next';
+import { CallToAction, Features, Feature, Hero, LandingLayout } from '@vitra-ai/orbitdocs-next';
 
 import { orbit } from '@/lib/orbit';
 

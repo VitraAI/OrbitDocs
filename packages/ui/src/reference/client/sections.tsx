@@ -16,7 +16,7 @@ import {
   useState,
 } from 'react';
 
-import type { ContentPosition } from '@orbitdocs/openapi';
+import type { ContentPosition } from '@vitra-ai/orbitdocs-openapi';
 import type {
   ExtraContent,
   GroupSectionsFile,

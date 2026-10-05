@@ -1,6 +1,6 @@
-import { type OrbitDocsConfig, sendDisabledReason } from '@orbitdocs/core';
-import { ApiClient } from '@orbitdocs/ui/api-client';
-import { clientSeed } from '@orbitdocs/ui/api-client/server';
+import { type OrbitDocsConfig, sendDisabledReason } from '@vitra-ai/orbitdocs-core';
+import { ApiClient } from '@vitra-ai/orbitdocs-ui/api-client';
+import { clientSeed } from '@vitra-ai/orbitdocs-ui/api-client/server';
 import { notFound } from 'next/navigation';
 
 import { loadApis } from './apis';

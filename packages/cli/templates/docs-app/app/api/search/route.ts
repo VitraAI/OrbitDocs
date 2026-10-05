@@ -1,4 +1,4 @@
-import { createOrbitSearch } from '@orbitdocs/next/server';
+import { createOrbitSearch } from '@vitra-ai/orbitdocs-next/server';
 
 import { orbit } from '@/lib/orbit';
 import { source } from '@/lib/source';

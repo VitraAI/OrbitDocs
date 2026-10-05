@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 
-import type { PublicProvider } from '@orbitdocs/auth';
-import { resolveProvider } from '@orbitdocs/auth';
+import type { PublicProvider } from '@vitra-ai/orbitdocs-auth';
+import { resolveProvider } from '@vitra-ai/orbitdocs-auth';
 
 import { type OutboundAllow, parseOutboundAllow } from './hosting/outbound';
 

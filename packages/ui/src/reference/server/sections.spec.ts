@@ -1,4 +1,4 @@
-import { buildReferenceModel } from '@orbitdocs/openapi';
+import { buildReferenceModel } from '@vitra-ai/orbitdocs-openapi';
 import { describe, expect, it } from 'vitest';
 
 import { highlight, shikiCss } from './highlight';

@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 
-import { type FilterOptions, filterDocument, findDocumentationGaps, stableStringify } from '@orbitdocs/openapi';
+import { type FilterOptions, filterDocument, findDocumentationGaps, stableStringify } from '@vitra-ai/orbitdocs-openapi';
 
 /** What the CLI asks the extractor to do (passed as a JSON file). */
 export interface ExtractRequest {

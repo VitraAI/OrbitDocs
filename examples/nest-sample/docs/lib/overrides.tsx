@@ -1,4 +1,4 @@
-import type { OrbitOverrides } from '@orbitdocs/next';
+import type { OrbitOverrides } from '@vitra-ai/orbitdocs-next';
 
 /**
  * Fumadocs options that take React, merged over orbitdocs.config.ts (plain

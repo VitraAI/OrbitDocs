@@ -1,5 +1,5 @@
 {
-  "name": "@orbitdocs/core",
+  "name": "@vitra-ai/orbitdocs-core",
   "version": "0.1.0",
   "description": "OrbitDocs config schema, loader and shared types.",
   "license": "MIT",

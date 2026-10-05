@@ -1,4 +1,4 @@
-import { withOrbitDocs } from '@orbitdocs/next/plugin';
+import { withOrbitDocs } from '@vitra-ai/orbitdocs-next/plugin';
 
 import orbit from './orbitdocs.config';
 

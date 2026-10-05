@@ -8,7 +8,7 @@ Every OrbitDocs site has full-text search over guides and API operations. It nee
 ## Configure search
 
 ```ts title="orbitdocs.config.ts"
-import { defineConfig } from '@orbitdocs/next/config';
+import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
   site: { title: 'Acme' },
@@ -55,10 +55,10 @@ Pages and operations restricted by `access` frontmatter, by an `access.rules` en
 
 ## How it works
 
-`app/api/search/route.ts` builds the index with `createOrbitSearch` from `@orbitdocs/next/server`:
+`app/api/search/route.ts` builds the index with `createOrbitSearch` from `@vitra-ai/orbitdocs-next/server`:
 
 ```ts title="app/api/search/route.ts"
-import { createOrbitSearch } from '@orbitdocs/next/server';
+import { createOrbitSearch } from '@vitra-ai/orbitdocs-next/server';
 
 import { orbit } from '@/lib/orbit';
 import { source } from '@/lib/source';
@@ -92,7 +92,7 @@ Search is separate from [Ask AI](/ai). Search matches words in titles and text. 
 Options that take React go in `lib/overrides.tsx`, under `root.search`. They are merged over the config, so everything above still applies:
 
 ```tsx title="lib/overrides.tsx"
-import type { OrbitOverrides } from '@orbitdocs/next';
+import type { OrbitOverrides } from '@vitra-ai/orbitdocs-next';
 
 export const overrides: OrbitOverrides = {
   root: {

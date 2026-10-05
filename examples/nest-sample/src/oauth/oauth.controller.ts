@@ -14,7 +14,7 @@ import {
   UseFilters,
 } from '@nestjs/common';
 import { ApiBody, ApiConsumes, ApiResponse } from '@nestjs/swagger';
-import { DocsOperation } from '@orbitdocs/nestjs';
+import { DocsOperation } from '@vitra-ai/orbitdocs-nestjs';
 import type { Response } from 'express';
 
 import { ACCESS_TOKENS, OAUTH_CLIENTS, OAUTH_SCOPES } from '../common/auth';

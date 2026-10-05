@@ -1,4 +1,4 @@
-import { createLlms } from '@orbitdocs/next/server';
+import { createLlms } from '@vitra-ai/orbitdocs-next/server';
 
 import { orbit } from '@/lib/orbit';
 import { source } from '@/lib/source';

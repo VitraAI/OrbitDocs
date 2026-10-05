@@ -1,4 +1,4 @@
-import { type AccessManifest, type AuthHandler, isAllowed, requiredGroups, type DocsUser, sitePath } from '@orbitdocs/auth';
+import { type AccessManifest, type AuthHandler, isAllowed, requiredGroups, type DocsUser, sitePath } from '@vitra-ai/orbitdocs-auth';
 import type { LanguageModel } from 'ai';
 
 import { answer, type ChatMessage } from './chat';
@@ -10,7 +10,7 @@ export interface AiOptions {
   manifest: AiManifest;
   /** The private-docs manifest, so answers only use pages the reader can see. */
   access?: AccessManifest | null;
-  /** Resolves the signed-in reader (from @orbitdocs/auth). */
+  /** Resolves the signed-in reader (from @vitra-ai/orbitdocs-auth). */
   auth?: Pick<AuthHandler, 'user'>;
   env?: Record<string, string | undefined>;
   /** Questions per reader (IP) per 10 minutes. */

@@ -3,9 +3,9 @@ import { createReadStream, existsSync, mkdirSync, readdirSync, readFileSync, rmS
 import { join } from 'node:path';
 
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
-import type { AiManifest } from '@orbitdocs/ai';
-import type { AccessManifest } from '@orbitdocs/auth';
-import { stableStringify } from '@orbitdocs/openapi';
+import type { AiManifest } from '@vitra-ai/orbitdocs-ai';
+import type { AccessManifest } from '@vitra-ai/orbitdocs-auth';
+import { stableStringify } from '@vitra-ai/orbitdocs-openapi';
 import { and, desc, eq, isNull, ne } from 'drizzle-orm';
 import * as tar from 'tar';
 

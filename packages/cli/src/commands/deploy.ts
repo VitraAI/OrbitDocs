@@ -1,7 +1,7 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-import type { LoadedConfig } from '@orbitdocs/core/loader';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
 
 import { fail, log, run } from '../util';
 import { build } from './build';
@@ -41,7 +41,7 @@ export async function deploy(loaded: LoadedConfig, target: DeployTarget, options
     case 'nest':
       log.ok('Serve it from your Nest app (main.ts, before app.listen()):');
       console.log(`
-  import { mountOrbitDocs } from '@orbitdocs/nestjs';
+  import { mountOrbitDocs } from '@vitra-ai/orbitdocs-nestjs';
   mountOrbitDocs(app, { root: join(__dirname, '${relative(join(dir, '..', 'dist'), out)}'), path: '${base || '/docs'}' });
 `);
       if (!base) log.warn("Set output.basePath (e.g. '/docs') so the site's links match the path Nest serves it on.");

@@ -10,7 +10,7 @@ The sidebar and the table of contents have their own pages: [Sidebar](/customiza
 ## Choose a layout
 
 ```ts title="orbitdocs.config.ts"
-import { defineConfig } from '@orbitdocs/next/config';
+import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
   site: { title: 'Acme' },
@@ -149,7 +149,7 @@ The options on this page. Sidebar and table of contents options are listed on th
 Some Fumadocs options take React: components, elements or functions. They can't go in `orbitdocs.config.ts`, so the docs app has `lib/overrides.tsx`. `OrbitRoot`, every layout and every guide page in `app/` get its `overrides` object and merge it over what the config sets.
 
 ```tsx title="lib/overrides.tsx"
-import type { OrbitOverrides } from '@orbitdocs/next';
+import type { OrbitOverrides } from '@vitra-ai/orbitdocs-next';
 
 import { VersionPicker } from '@/components/version-picker';
 
@@ -181,8 +181,8 @@ export const overrides: OrbitOverrides = {
 `app/(guides)/layout.tsx` renders `GuidesLayout`, which picks the layout from your config. When overrides aren't enough (a different sidebar component, a layout of your own), render the Fumadocs layout yourself. `orbitLayoutOptions` keeps the OrbitDocs header: logo, Guides, API Reference, API Client, your header links, Ask AI and the user menu.
 
 ```tsx title="app/(guides)/layout.tsx"
-import { orbitLayoutOptions } from '@orbitdocs/next';
-import { guidesTree } from '@orbitdocs/next/server';
+import { orbitLayoutOptions } from '@vitra-ai/orbitdocs-next';
+import { guidesTree } from '@vitra-ai/orbitdocs-next/server';
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import type { ReactNode } from 'react';
 

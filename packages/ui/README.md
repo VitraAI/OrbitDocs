@@ -1,8 +1,8 @@
-# @orbitdocs/ui
+# @vitra-ai/orbitdocs-ui
 
 The OrbitDocs API reference, API client and Ask AI panel (React and HeroUI), with the theme stylesheet.
 
-Used by `@orbitdocs/next`.
+Used by `@vitra-ai/orbitdocs-next`.
 
 Part of [OrbitDocs](https://github.com/VitraAI/OrbitDocs): open-source API documentation for NestJS,
 with a Scalar-style reference, MDX guides, an API client, private docs, Ask AI and SDKs. The npm

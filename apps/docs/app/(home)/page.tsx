@@ -1,6 +1,6 @@
-import { HomePage } from '@orbitdocs/next';
-import { orbitMdxComponents } from '@orbitdocs/next/mdx';
-import { guidesTree } from '@orbitdocs/next/server';
+import { HomePage } from '@vitra-ai/orbitdocs-next';
+import { orbitMdxComponents } from '@vitra-ai/orbitdocs-next/mdx';
+import { guidesTree } from '@vitra-ai/orbitdocs-next/server';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';

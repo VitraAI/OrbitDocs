@@ -1,4 +1,4 @@
-import { orbitProxy } from '@orbitdocs/next/proxy';
+import { orbitProxy } from '@vitra-ai/orbitdocs-next/proxy';
 
 /**
  * Private docs when this app runs as a server (`output.mode: 'server'`, e.g.

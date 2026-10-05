@@ -2,9 +2,9 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { buildManifest } from '@orbitdocs/auth';
-import { requiredGroups } from '@orbitdocs/auth/edge';
-import { resolveConfig } from '@orbitdocs/core';
+import { buildManifest } from '@vitra-ai/orbitdocs-auth';
+import { requiredGroups } from '@vitra-ai/orbitdocs-auth/edge';
+import { resolveConfig } from '@vitra-ai/orbitdocs-core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { isPublicOperation, isPublicPage, pageAccess } from './access';

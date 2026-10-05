@@ -39,7 +39,7 @@ A block with the language `npm` becomes tabs for npm, pnpm, yarn and bun, with t
 
 ````mdx
 ```npm
-npm install @orbitdocs/nestjs
+npm install @vitra-ai/orbitdocs-nestjs
 ```
 ````
 
@@ -101,7 +101,7 @@ Any [Shiki theme](https://shiki.style/themes) name works. `codeBlocks` applies t
 The other Shiki options (`langs`, `langAlias`, `inline`, `transformers`, …) go in `lib/source.ts`, as `rehypeCodeOptions` of `orbitMdxOptions()`. They are merged over `codeBlocks`:
 
 ```ts title="lib/source.ts"
-import { orbitMdxOptions } from '@orbitdocs/next/mdx-plugins';
+import { orbitMdxOptions } from '@vitra-ai/orbitdocs-next/mdx-plugins';
 import { defineDocs } from 'fumadocs-mdx/macro';
 
 const docs = defineDocs({

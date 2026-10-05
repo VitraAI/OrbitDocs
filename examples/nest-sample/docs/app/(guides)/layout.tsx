@@ -1,5 +1,5 @@
-import { GuidesLayout } from '@orbitdocs/next';
-import { guidesTree } from '@orbitdocs/next/server';
+import { GuidesLayout } from '@vitra-ai/orbitdocs-next';
+import { guidesTree } from '@vitra-ai/orbitdocs-next/server';
 import type { ReactNode } from 'react';
 
 import { orbit } from '@/lib/orbit';

@@ -1,9 +1,9 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { type AccessManifest, implies, type Requirement, requiredGroups, requirementKey } from '@orbitdocs/auth/edge';
-import type { OrbitDocsConfig } from '@orbitdocs/core';
-import { pruneModel, type ReferenceModel } from '@orbitdocs/openapi';
+import { type AccessManifest, implies, type Requirement, requiredGroups, requirementKey } from '@vitra-ai/orbitdocs-auth/edge';
+import type { OrbitDocsConfig } from '@vitra-ai/orbitdocs-core';
+import { pruneModel, type ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
 
 /**
  * Reader-dependent files: the access manifest (`.orbitdocs/access.json`,

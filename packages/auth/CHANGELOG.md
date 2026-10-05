@@ -1,4 +1,4 @@
-# @orbitdocs/auth
+# @vitra-ai/orbitdocs-auth
 
 ## 0.1.0
 

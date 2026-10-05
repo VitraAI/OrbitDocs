@@ -1,4 +1,4 @@
-import { layoutWarnings, type OrbitDocsConfig } from '@orbitdocs/core';
+import { layoutWarnings, type OrbitDocsConfig } from '@vitra-ai/orbitdocs-core';
 import * as DocsUI from 'fumadocs-ui/layouts/docs';
 import * as DocsPageUI from 'fumadocs-ui/layouts/docs/page';
 import * as FluxUI from 'fumadocs-ui/layouts/flux';

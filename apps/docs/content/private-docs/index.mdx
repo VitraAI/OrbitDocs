@@ -30,7 +30,7 @@ If you deploy a static build with `access` to a plain static host, every page is
 For Next server mode, `proxy.ts` looks like this:
 
 ```ts title="proxy.ts"
-import { orbitProxy } from '@orbitdocs/next/proxy';
+import { orbitProxy } from '@vitra-ai/orbitdocs-next/proxy';
 
 export default orbitProxy();
 
@@ -51,7 +51,7 @@ Without `access` (and without `ai`) in the config, the proxy lets every request 
 This example keeps most docs public, restricts `/internal` to staff, and offers both kinds of sign-in:
 
 ```ts title="orbitdocs.config.ts"
-import { defineConfig } from '@orbitdocs/next/config';
+import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
   site: { title: 'Acme' },

@@ -8,7 +8,7 @@ The table of contents ("On this page") lists the headings of the current guide. 
 ## Choose a style
 
 ```ts title="orbitdocs.config.ts"
-import { defineConfig } from '@orbitdocs/next/config';
+import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
   site: { title: 'Acme' },
@@ -71,7 +71,7 @@ With the `glass` layout only `toc.enabled` applies: Fumadocs' glass page draws i
 The TOC can show content before (`header`) and after (`footer`) the headings, for a feedback link or an ad for your newsletter. It takes React, so it goes in `lib/overrides.tsx` of the docs app, not the config:
 
 ```tsx title="lib/overrides.tsx"
-import type { OrbitOverrides } from '@orbitdocs/next';
+import type { OrbitOverrides } from '@vitra-ai/orbitdocs-next';
 
 export const overrides: OrbitOverrides = {
   page: {

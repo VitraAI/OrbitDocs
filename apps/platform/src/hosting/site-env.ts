@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import type { AiManifest } from '@orbitdocs/ai';
-import type { AccessManifest } from '@orbitdocs/auth';
+import type { AiManifest } from '@vitra-ai/orbitdocs-ai';
+import type { AccessManifest } from '@vitra-ai/orbitdocs-auth';
 
 /** One stored variable: build variables and site variables alike. */
 export interface StoredEnvVar {

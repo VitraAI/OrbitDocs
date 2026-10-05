@@ -12,7 +12,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { ApiBody, ApiExtraModels, ApiHeader, ApiParam } from '@nestjs/swagger';
-import { DocsErrors, DocsOperation } from '@orbitdocs/nestjs';
+import { DocsErrors, DocsOperation } from '@vitra-ai/orbitdocs-nestjs';
 import type { Response } from 'express';
 
 import { BookingStatus } from '../bookings/booking.dto';

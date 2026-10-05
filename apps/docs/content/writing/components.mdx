@@ -47,7 +47,7 @@ GitHub's alert syntax works too, in guides, in `reference/<api>/*.mdx` and in de
 | `[!WARNING]` | `warning` | Warning |
 | `[!CAUTION]` | `error` | Caution |
 
-The `[!KIND]` marker must open the blockquote, on its own line or followed by the text. Other blockquotes stay blockquotes. `llms.txt`, the `/md/` pages and **Copy Markdown** keep the `> [!TIP]` form. Apps made before this need `mdxOptions: orbitMdxOptions()` (from `@orbitdocs/next/mdx-plugins`) on both collections in `lib/source.ts`, as `orbitdocs init` now writes it.
+The `[!KIND]` marker must open the blockquote, on its own line or followed by the text. Other blockquotes stay blockquotes. `llms.txt`, the `/md/` pages and **Copy Markdown** keep the `> [!TIP]` form. Apps made before this need `mdxOptions: orbitMdxOptions()` (from `@vitra-ai/orbitdocs-next/mdx-plugins`) on both collections in `lib/source.ts`, as `orbitdocs init` now writes it.
 
 ## Steps
 
@@ -59,7 +59,7 @@ Numbered steps for a procedure. Put a heading and content inside each `Step`, wi
 
 ### Install
 
-Run `npm install @orbitdocs/nestjs`.
+Run `npm install @vitra-ai/orbitdocs-nestjs`.
 
 </Step>
 <Step>
@@ -77,7 +77,7 @@ Add `@DocsOperation()` to a controller method.
 
 ### Install
 
-Run `npm install @orbitdocs/nestjs`.
+Run `npm install @vitra-ai/orbitdocs-nestjs`.
 
 </Step>
 <Step>
@@ -95,14 +95,14 @@ Alternatives the reader picks from, such as languages or package managers:
 
 ```mdx
 <Tabs items={['npm', 'pnpm']} groupId="package-manager" persist>
-  <Tab value="npm">`npm install @orbitdocs/nestjs`</Tab>
-  <Tab value="pnpm">`pnpm add @orbitdocs/nestjs`</Tab>
+  <Tab value="npm">`npm install @vitra-ai/orbitdocs-nestjs`</Tab>
+  <Tab value="pnpm">`pnpm add @vitra-ai/orbitdocs-nestjs`</Tab>
 </Tabs>
 ```
 
 <Tabs items={['npm', 'pnpm']} groupId="package-manager" persist>
-  <Tab value="npm">`npm install @orbitdocs/nestjs`</Tab>
-  <Tab value="pnpm">`pnpm add @orbitdocs/nestjs`</Tab>
+  <Tab value="npm">`npm install @vitra-ai/orbitdocs-nestjs`</Tab>
+  <Tab value="pnpm">`pnpm add @vitra-ai/orbitdocs-nestjs`</Tab>
 </Tabs>
 
 | Prop | On | What it does |
@@ -262,12 +262,12 @@ A block with the language `npm` becomes tabs for npm, pnpm, yarn and bun:
 
 ````mdx
 ```npm
-npm install @orbitdocs/nestjs
+npm install @vitra-ai/orbitdocs-nestjs
 ```
 ````
 
 ```npm
-npm install @orbitdocs/nestjs
+npm install @vitra-ai/orbitdocs-nestjs
 ```
 
 ## Links to operations

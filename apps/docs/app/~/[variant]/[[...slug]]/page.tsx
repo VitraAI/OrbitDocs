@@ -1,6 +1,6 @@
-import { GuidePage } from '@orbitdocs/next';
-import { orbitMdxComponents } from '@orbitdocs/next/mdx';
-import { guideVariantParams, isGuideVariantPage } from '@orbitdocs/next/server';
+import { GuidePage } from '@vitra-ai/orbitdocs-next';
+import { orbitMdxComponents } from '@vitra-ai/orbitdocs-next/mdx';
+import { guideVariantParams, isGuideVariantPage } from '@vitra-ai/orbitdocs-next/server';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';

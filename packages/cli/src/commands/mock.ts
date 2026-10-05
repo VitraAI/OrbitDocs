@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 
-import { specFile } from '@orbitdocs/core';
-import type { LoadedConfig } from '@orbitdocs/core/loader';
-import { buildReferenceModel, loadDocument, type Document } from '@orbitdocs/openapi';
+import { specFile } from '@vitra-ai/orbitdocs-core';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
+import { buildReferenceModel, loadDocument, type Document } from '@vitra-ai/orbitdocs-openapi';
 
 import { fail, log } from '../util';
 

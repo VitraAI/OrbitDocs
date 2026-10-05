@@ -1,4 +1,4 @@
-import type { Schema } from '@orbitdocs/openapi';
+import type { Schema } from '@vitra-ai/orbitdocs-openapi';
 
 import { type FieldOptions, fieldHtml, schemaFieldsHtml } from './server/fields';
 

@@ -42,6 +42,6 @@ export {
   referenceStaticParams,
 } from './reference';
 export { OrbitRoot } from './root';
-export { defineConfig, resolveConfig, type OrbitDocsConfig, type OrbitDocsConfigInput } from '@orbitdocs/core';
+export { defineConfig, resolveConfig, type OrbitDocsConfig, type OrbitDocsConfigInput } from '@vitra-ai/orbitdocs-core';
 export { PageActions } from './page-actions';
 export { ClientPage } from './client-page';

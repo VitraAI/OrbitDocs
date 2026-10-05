@@ -1,8 +1,8 @@
-# @orbitdocs/core
+# @vitra-ai/orbitdocs-core
 
 The `orbitdocs.config.ts` schema, loader and shared types.
 
-Most projects use it through `@orbitdocs/next` and the `orbitdocs` CLI.
+Most projects use it through `@vitra-ai/orbitdocs-next` and the `orbitdocs` CLI.
 
 Part of [OrbitDocs](https://github.com/VitraAI/OrbitDocs): open-source API documentation for NestJS,
 with a Scalar-style reference, MDX guides, an API client, private docs, Ask AI and SDKs. The npm

@@ -1,10 +1,10 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-import { buildAiManifest } from '@orbitdocs/ai';
-import { referenceRoute, specFile } from '@orbitdocs/core';
-import type { LoadedConfig } from '@orbitdocs/core/loader';
-import { buildReferenceModel, loadDocument } from '@orbitdocs/openapi';
+import { buildAiManifest } from '@vitra-ai/orbitdocs-ai';
+import { referenceRoute, specFile } from '@vitra-ai/orbitdocs-core';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
+import { buildReferenceModel, loadDocument } from '@vitra-ai/orbitdocs-openapi';
 import { parse } from 'yaml';
 
 import { log } from '../util';

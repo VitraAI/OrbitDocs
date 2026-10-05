@@ -3,9 +3,9 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-import { type ApiConfig, type NestSourceConfig, specFile } from '@orbitdocs/core';
-import type { LoadedConfig } from '@orbitdocs/core/loader';
-import { type FilterOptions, findDocumentationGaps, loadDocument, stableStringify } from '@orbitdocs/openapi';
+import { type ApiConfig, type NestSourceConfig, specFile } from '@vitra-ai/orbitdocs-core';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
+import { type FilterOptions, findDocumentationGaps, loadDocument, stableStringify } from '@vitra-ai/orbitdocs-openapi';
 
 import { fail, log, resolveFrom, runShell } from '../util';
 import { writeAccessManifest, writeAccessVariants } from './access';
@@ -86,9 +86,9 @@ export async function extract(loaded: LoadedConfig, options: ExtractOptions = {}
     }
     let cli: string;
     try {
-      cli = resolveFrom(root, '@orbitdocs/nestjs/extract-cli');
+      cli = resolveFrom(root, '@vitra-ai/orbitdocs-nestjs/extract-cli');
     } catch {
-      throw new Error(`${ids}: @orbitdocs/nestjs is not installed in ${root}. Run \`npm install @orbitdocs/nestjs\` there.`);
+      throw new Error(`${ids}: @vitra-ai/orbitdocs-nestjs is not installed in ${root}. Run \`npm install @vitra-ai/orbitdocs-nestjs\` there.`);
     }
     mkdirSync(join(dir, 'openapi'), { recursive: true });
     const request = {

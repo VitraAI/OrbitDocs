@@ -1,10 +1,10 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-import { type AccessManifest, buildManifest, implies, planVariants, type RestrictedPage, requiredGroups, type VariantSet } from '@orbitdocs/auth';
-import { specFile } from '@orbitdocs/core';
-import type { LoadedConfig } from '@orbitdocs/core/loader';
-import { buildReferenceModel, loadDocument, pruneDocument, stableStringify } from '@orbitdocs/openapi';
+import { type AccessManifest, buildManifest, implies, planVariants, type RestrictedPage, requiredGroups, type VariantSet } from '@vitra-ai/orbitdocs-auth';
+import { specFile } from '@vitra-ai/orbitdocs-core';
+import type { LoadedConfig } from '@vitra-ai/orbitdocs-core/loader';
+import { buildReferenceModel, loadDocument, pruneDocument, stableStringify } from '@vitra-ai/orbitdocs-openapi';
 import { parse } from 'yaml';
 
 import { log } from '../util';

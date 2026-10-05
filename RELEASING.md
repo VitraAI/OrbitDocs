@@ -2,7 +2,7 @@
 
 ## npm packages
 
-The eight npm packages (`orbitdocs` and `@orbitdocs/*`) are released together, with one version, by
+The eight npm packages (`@vitra-ai/orbitdocs` and `@vitra-ai/orbitdocs-*`) are released together, with one version, by
 [Changesets](https://github.com/changesets/changesets) and the `Release` workflow
 (`.github/workflows/release.yml`).
 
@@ -20,14 +20,16 @@ Pull requests opened by the workflow don't trigger the `CI` workflow (a GitHub r
 
 Publishing is off until the npm side is ready: without it, step 3 only merges the version bump.
 
-1. On npmjs.com, make sure the `orbitdocs` organization exists and owns the `@orbitdocs` scope, and that
-   the publishing account is a member with publish rights.
-2. Create a **granular access token** with read and write access to the `@orbitdocs` packages and the
-   `orbitdocs` package.
+1. On npmjs.com, make sure the publishing account is a member of the `vitra-ai` organization with
+   publish rights on the `@vitra-ai` scope.
+2. Create a **granular access token** with read and write access to the `@vitra-ai` scope (it covers
+   `@vitra-ai/orbitdocs` and the `@vitra-ai/orbitdocs-*` packages, including ones not published yet).
 3. In GitHub, **Settings → Secrets and variables → Actions**:
    - Secrets: `NPM_TOKEN` = the token.
    - Variables: `NPM_PUBLISH_ENABLED` = `true`.
-4. Re-run the latest `Release` workflow on `main`, or merge the next version pull request.
+4. Re-run the latest `Release` workflow on `main`, or merge the next version pull request. The first
+   release publishes `0.1.0` straight away: its changelogs are already written, so there is no version
+   pull request for it.
 5. Remove the "coming to npm soon" `banner` from `apps/docs/orbitdocs.config.ts`: the install commands in the docs work from now on.
 
 ### After the first publish: trusted publishing
@@ -51,9 +53,9 @@ its own `CHANGELOG.md`; operators update with `git pull` and `docker compose up 
 2. **Root Directory**: `apps/docs`. Leave **Include files outside the root directory** on: the build
    uses the workspace packages.
 3. **Framework Preset**: Other. Install, build and output come from `vercel.json`
-   (`turbo run build --filter=@orbitdocs/docs`, output `out`).
+   (`turbo run build --filter=@vitra-ai/orbitdocs-docs`, output `out`).
 4. Deploy. Every push to `main` deploys production; every pull request gets a preview.
 
 The demo API on the site is a snapshot of the sample app's spec, `apps/docs/demo/travel.json`. After
-changing `examples/nest-sample`, run `pnpm --filter @orbitdocs/docs demo:sync` and commit the snapshot;
+changing `examples/nest-sample`, run `pnpm --filter @vitra-ai/orbitdocs-docs demo:sync` and commit the snapshot;
 CI fails while it is out of date.

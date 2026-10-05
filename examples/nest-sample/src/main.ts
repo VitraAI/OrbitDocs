@@ -5,7 +5,7 @@ import { join } from 'node:path';
 
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { mountOrbitDocs } from '@orbitdocs/nestjs';
+import { mountOrbitDocs } from '@vitra-ai/orbitdocs-nestjs';
 
 import { AppModule } from './app.module';
 
