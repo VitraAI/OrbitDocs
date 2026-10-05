@@ -84,6 +84,7 @@ output: { mode: process.env.ORBITDOCS_MODE === 'server' ? 'server' : 'static', b
 | --- | --- | --- | --- | --- |
 | `ORBITDOCS_PLATFORM_URL` | For `publish`, unless `--platform` is given | none | The platform URL, such as `https://docs.acme.com`. `--platform` wins. | `orbitdocs publish` |
 | `ORBITDOCS_TOKEN` | For `publish`, unless `--token` is given | none | A project publish token (`odp_…`). `--token` wins. | `orbitdocs publish` |
+| `PORT` | No | `3000` | Port the production build is served on. `-p` wins. | `orbitdocs start` |
 
 `orbitdocs deploy --target vercel` runs the Vercel CLI, which has its own login and variables. OrbitDocs reads none of them.
 

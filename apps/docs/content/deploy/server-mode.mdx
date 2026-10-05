@@ -54,7 +54,7 @@ export const config = {
 npx orbitdocs build
 ```
 
-The CLI prints ``Server build in .next (start with `next start`)``.
+The CLI prints ``Server build in .next (start it with `orbitdocs start` or `next start`)``.
 
 </Step>
 <Step>
@@ -62,8 +62,10 @@ The CLI prints ``Server build in .next (start with `next start`)``.
 **Start it** from the docs app folder, with the secrets in the environment:
 
 ```bash
-ORBITDOCS_AUTH_SECRET=$(openssl rand -hex 32) npx next start -p 3001
+ORBITDOCS_AUTH_SECRET=$(openssl rand -hex 32) npx orbitdocs start -p 3001
 ```
+
+`orbitdocs start` runs `next start` for a server build; `npx next start -p 3001` works the same.
 
 </Step>
 </Steps>

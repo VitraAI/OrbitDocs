@@ -31,6 +31,7 @@ npx @vitra-ai/orbitdocs init      # creates docs/ (a Next.js app) in your Nest p
 cd docs && npm install
 npm run dev             # http://localhost:3000
 npm run build           # static site in docs/out
+npm start               # serve that build on http://localhost:3000
 ```
 
 ## Packages

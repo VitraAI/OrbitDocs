@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "orbitdocs dev",
     "build": "orbitdocs build",
+    "start": "orbitdocs start",
     "extract": "orbitdocs extract",
     "check": "orbitdocs check",
     "typecheck": "next typegen && tsc --noEmit"

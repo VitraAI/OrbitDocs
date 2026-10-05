@@ -37,7 +37,7 @@ The compiled module is always set to `dist/app.module.js`. Check that path again
 ```txt
 docs/
 ├── orbitdocs.config.ts        the site config: APIs, theme, navigation, features
-├── package.json               scripts: dev, build, extract, check, typecheck
+├── package.json               scripts: dev, build, start, extract, check, typecheck
 ├── next.config.ts             withOrbitDocs(config): static export, basePath, MDX
 ├── proxy.ts                   private docs and Ask AI in Next server mode
 ├── tsconfig.json
@@ -92,6 +92,7 @@ You can edit any other file too. It is a normal Next.js app.
 | --- | --- | --- |
 | `npm run dev` | `orbitdocs dev` | Extracts, starts `next dev` and re-extracts when the API changes. |
 | `npm run build` | `orbitdocs build` | Extracts, checks links, then builds the site. |
+| `npm start` | `orbitdocs start` | Serves the last build on http://localhost:3000, to check it before you deploy. |
 | `npm run extract` | `orbitdocs extract` | Writes `openapi/<api id>.json` only. |
 | `npm run check` | `orbitdocs check` | Finds broken `op:` links and `<Endpoint>`s (guides and `reference/` content) and missing specs. |
 | `npm run typecheck` | `next typegen && tsc --noEmit` | Type-checks the app. |

@@ -1,4 +1,4 @@
-import type { OperationModel, ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
+import { BINARY_EXAMPLE, formFields, type OperationModel, type ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
 
 import type { AuthDraft, Collection, Environment, KV, RequestDraft, Workspace } from './types';
 
@@ -62,14 +62,10 @@ export function requestFromOperation(op: OperationModel, apiId: string, collecti
   if (content) {
     if (content.mediaType.includes('json')) body = { mode: 'json', raw: JSON.stringify(content.example ?? {}, null, 2), form: [] };
     else if (content.mediaType === 'multipart/form-data' || content.mediaType === 'application/x-www-form-urlencoded') {
-      const fields = Object.entries((content.example as Record<string, unknown>) ?? {}).map(([key, v]) => ({
-        key,
-        value: v === '<binary>' ? '' : str(v),
-        enabled: true,
-        file: v === '<binary>',
-      }));
+      const fields = formFields(content.example).map((f) => ({ key: f.name, value: f.value, enabled: true, file: f.file }));
       body = { mode: content.mediaType === 'multipart/form-data' ? 'multipart' : 'form-urlencoded', raw: '', form: fields };
-    } else body = { mode: 'raw', raw: str(content.example), contentType: content.mediaType, form: [] };
+      // A file body can't be typed in: start empty rather than with the placeholder.
+    } else body = { mode: 'raw', raw: content.example === BINARY_EXAMPLE ? '' : str(content.example), contentType: content.mediaType, form: [] };
   }
   const draft: RequestDraft = {
     id: `${apiId}:${op.slug}`,

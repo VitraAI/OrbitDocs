@@ -76,8 +76,9 @@ export async function build(loaded: LoadedConfig, options: { skipExtract?: boole
       log.warn('Private docs are enforced by the server that serves them: mountOrbitDocs (Nest) or output.mode "server". Plain static hosts serve every file.');
     }
     log.ok(`Static site in ${outDir(dir)}${config.output.basePath ? ` (served under ${config.output.basePath})` : ''}`);
+    log.dim('Check it locally with `orbitdocs start`.');
     return outDir(dir);
   }
-  log.ok('Server build in .next (start with `next start`)');
+  log.ok('Server build in .next (start it with `orbitdocs start` or `next start`)');
   return join(dir, '.next');
 }

@@ -19,6 +19,7 @@ Except `init`, every command loads `orbitdocs.config.ts` from the **current fold
 | [`extract`](#extract) | Write `openapi/<id>.json` for each API. |
 | [`check`](#check) | Find missing specs and broken operation links. |
 | [`build`](#build) | Extract, check and build the site. |
+| [`start`](#start) | Serve the production build locally. |
 | [`deploy`](#deploy) | Build and ship to Vercel, a static host, Nest or Docker. |
 | [`publish`](#publish) | Build and upload to a self-hosted OrbitDocs platform. |
 | [`lint`](#lint) | Lint the specs with Spectral. |
@@ -56,6 +57,8 @@ What it reads from the Nest project to fill in the config:
 | Swagger usage | Count of `@ApiOperation(` in `src/` | Suggests `routes: 'all'` when above zero |
 
 Without `--routes` in a terminal it asks which routes to show, suggesting `all` when the project already has `@ApiOperation` decorators. The source folder is `sourceRoot` from `nest-cli.json` (default `src`); the module is always `dist/app.module.js`.
+
+The app's OrbitDocs packages get the version of the CLI you ran (as a `^` range), since the packages are released together.
 
 Fails when the target folder isn't empty (`… is not empty (use --force to write into it).`). Warns when no Nest project is found.
 
@@ -138,7 +141,26 @@ Runs extract, check, then `next build`. Fails on documentation gaps with `comple
 | `static` | `out/` | Writes redirect pages and `out/_redirects`. Warns when the config has `access`. |
 | `server` | `.next/` | Start it with `next start`. |
 
-Both modes write `.orbitdocs/build.json` with the base path and mode, for the platform and CI.
+Both modes write `.orbitdocs/build.json` with the base path and mode, for the platform, CI and `start`.
+
+## start
+
+```bash
+npx orbitdocs start [-p <port>]
+```
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `-p, --port <port>` | `PORT`, else `3000` | Port to serve on. |
+
+Serves the last `orbitdocs build`, so you can check the production site before you deploy it. New docs apps run it with `npm start`.
+
+| Build | What it runs |
+| --- | --- |
+| `static` | A file server for `out/`, under `output.basePath`. It answers like the [deploy targets](/deploy): `/a/` serves `a/index.html`, `/a` serves `a.html` or redirects to `/a/`, `out/_redirects` rules apply, and unknown paths get `404.html`. |
+| `server` | `next start` in the docs app. |
+
+Fails when there is no build (`… Run orbitdocs build first.`). Warns when `orbitdocs.config.ts` has changed `output` since the build, and when a static build has `access`: a static server sends every page, so private docs need `mountOrbitDocs` or server mode.
 
 ## deploy
 

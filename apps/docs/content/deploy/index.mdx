@@ -58,6 +58,7 @@ export default defineConfig({
 
 ```bash
 npx orbitdocs build                          # out/ (static) or .next/ (server)
+npx orbitdocs start                          # serve that build on localhost to check it
 npx orbitdocs deploy --target vercel --prod  # build, then vercel deploy
 npx orbitdocs deploy --target static         # build, then print where to upload out/
 npx orbitdocs deploy --target nest           # build, then print the mountOrbitDocs call
@@ -83,7 +84,7 @@ Add `--skip-build` to any target to deploy the build that is already there. Ever
 | --- | --- | --- |
 | `out/` | static | The whole site: HTML per page (`page/index.html`), assets, `404.html`, `llms.txt`, `openapi/<id>.json`. |
 | `out/_redirects` | static | Redirect rules for Netlify and Cloudflare Pages. Only written when `redirects` is set. |
-| `.next/` | server | The Next build. Start it with `next start`. |
+| `.next/` | server | The Next build. Start it with `next start` (or `orbitdocs start`). |
 | `openapi/<id>.json` | both | The extracted spec of each API. |
 | `.orbitdocs/` | both | Build metadata: the access manifest, the AI index and the theme CSS. Never served. |
 

@@ -28,7 +28,7 @@ Samples are built from the operation's examples, so they run as shown:
 
 - **URL.** The first server in `servers`, plus the path. Path parameters use their example, default or first enum value.
 - **Query and headers.** Required ones always, optional ones only when they have an example. This keeps samples short.
-- **Body.** The request body's example. Without one, an example is generated from the schema. Multipart bodies list each field; file fields become a file upload.
+- **Body.** The request body's example. Without one, an example is generated from the schema. Multipart and form bodies list each field, repeating the name for each item of a list; file fields become a file upload.
 - **Auth.** A placeholder for the operation's security scheme: `YOUR_API_KEY`, `Bearer YOUR_TOKEN` or a Basic header. When a reader enters a credential, it replaces the placeholder. See [Authentication](/api-reference/authentication).
 
 <Callout type="info" title="Better examples, better samples">

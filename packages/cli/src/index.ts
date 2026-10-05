@@ -15,12 +15,14 @@ import { mock } from './commands/mock';
 import { publish, type PublishOptions } from './commands/publish';
 import { sdk, writeWorkflow } from './commands/sdk';
 import { sdkTest } from './commands/sdk-test';
+import { start } from './commands/start';
 import { fail, log } from './util';
+import { CLI_VERSION } from './version';
 
 const program = new Command()
   .name('orbitdocs')
   .description('API documentation from your NestJS code: write guides in MDX, deploy anywhere.')
-  .version('0.1.0');
+  .version(CLI_VERSION);
 
 const wrap =
   <A extends unknown[]>(fn: (...args: A) => Promise<void>) =>
@@ -99,6 +101,12 @@ program
   .action(wrap(async (opts: { skipExtract?: boolean }) => {
     await build(await loadConfig(), opts);
   }));
+
+program
+  .command('start')
+  .description('Serve the production build: out/ (static) or `next start` (server)')
+  .option('-p, --port <port>', 'port (default: PORT or 3000)')
+  .action(wrap(async (opts: { port?: string }) => start(await loadConfig(), opts)));
 
 program
   .command('deploy')

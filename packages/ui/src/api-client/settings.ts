@@ -26,7 +26,12 @@ export interface ClientSettings {
   snippetLanguage: string;
   /** Size of the request pane, percent of the split. */
   split: number;
+  /** Width of the collections sidebar, px. */
+  sidebarWidth: number;
 }
+
+/** Collections sidebar width: default and the range the drag handle allows, px. */
+export const SIDEBAR_WIDTH = { default: 272, min: 200, max: 560 } as const;
 
 export interface ClientDefaults {
   layout?: ClientSettings['layout'];
@@ -48,6 +53,7 @@ export function defaultSettings(defaults: ClientDefaults = {}): ClientSettings {
     confirmProduction: true,
     snippetLanguage: 'curl',
     split: 50,
+    sidebarWidth: SIDEBAR_WIDTH.default,
   };
 }
 

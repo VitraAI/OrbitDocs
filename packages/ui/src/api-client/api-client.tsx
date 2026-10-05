@@ -36,7 +36,7 @@ import { UrlBar, VariableChips } from './components/url-bar';
 import { type ClientSeed, requestHash } from './seed';
 import { codeRequest, toCurl } from './code';
 import { sendRequest } from './send';
-import { ALL_FEATURES, type ClientDefaults, useClientSettings } from './settings';
+import { ALL_FEATURES, type ClientDefaults, SIDEBAR_WIDTH, useClientSettings } from './settings';
 import { useWorkspace } from './store';
 import type { RequestDraft, RunResult } from './types';
 import { scope } from './variables';
@@ -394,10 +394,32 @@ export function ApiClient({ seeds, storageKey = 'orbitdocs:client', initialReque
     e.preventDefault();
   };
 
+  // Drag (or arrow keys on) the sidebar's edge to set its width; double-click resets it.
+  const sidebarWidth = (px: number) => Math.min(SIDEBAR_WIDTH.max, Math.max(SIDEBAR_WIDTH.min, Math.round(px)));
+  const startSidebarResize = (e: React.PointerEvent<HTMLDivElement>) => {
+    const panel = e.currentTarget.previousElementSibling?.getBoundingClientRect();
+    if (!panel) return;
+    const move = (ev: PointerEvent) => setSettings({ sidebarWidth: sidebarWidth(ev.clientX - panel.left) });
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    e.preventDefault();
+  };
+  const keySidebarResize = (e: React.KeyboardEvent) => {
+    const step = e.key === 'ArrowLeft' ? -16 : e.key === 'ArrowRight' ? 16 : 0;
+    if (!step) return;
+    e.preventDefault();
+    setSettings({ sidebarWidth: sidebarWidth(settings.sidebarWidth + step) });
+  };
+
   const style = {
     ...(settings.accent ? { '--accent': settings.accent, '--focus': settings.accent } : {}),
     '--oc-font-size': `${settings.fontSize}px`,
     '--oc-split': `${settings.split}%`,
+    '--oc-sidebar-width': `${settings.sidebarWidth}px`,
   } as CSSProperties;
 
   const activeEnvSelect = (
@@ -438,16 +460,31 @@ export function ApiClient({ seeds, storageKey = 'orbitdocs:client', initialReque
       <Toast.Provider placement="bottom end" />
       <Rail view={view} onView={setView} onSettings={() => setSettingsOpen(true)} features={features} />
       {settings.showSidebar ? (
-        <CollectionsPanel
-          collections={ws.collections}
-          requests={ws.requests}
-          activeId={draft?.id}
-          onOpen={open}
-          onNew={newRequest}
-          onContextMenu={(e, t, el) =>
-            t.kind === 'request' ? ctx.open(e, 'Request actions', requestItems(t.id, 'sidebar'), el) : ctx.open(e, 'Collection actions', collectionItems(t.id), el)
-          }
-        />
+        <>
+          <CollectionsPanel
+            collections={ws.collections}
+            requests={ws.requests}
+            activeId={draft?.id}
+            onOpen={open}
+            onNew={newRequest}
+            onContextMenu={(e, t, el) =>
+              t.kind === 'request' ? ctx.open(e, 'Request actions', requestItems(t.id, 'sidebar'), el) : ctx.open(e, 'Collection actions', collectionItems(t.id), el)
+            }
+          />
+          <div
+            className="oc-side-resizer"
+            role="separator"
+            aria-label="Resize sidebar"
+            aria-orientation="vertical"
+            aria-valuemin={SIDEBAR_WIDTH.min}
+            aria-valuemax={SIDEBAR_WIDTH.max}
+            aria-valuenow={settings.sidebarWidth}
+            tabIndex={0}
+            onPointerDown={startSidebarResize}
+            onKeyDown={keySidebarResize}
+            onDoubleClick={() => setSettings({ sidebarWidth: SIDEBAR_WIDTH.default })}
+          />
+        </>
       ) : null}
       <section className="oc-main">
         <header className="oc-topbar">

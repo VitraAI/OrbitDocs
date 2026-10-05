@@ -94,7 +94,7 @@ A `Content-Type` header you add yourself wins. `GET` and `HEAD` requests never s
 - **JSON** shows **Valid JSON** or **Invalid JSON** with the parser's message. **Prettify** reformats valid JSON. Variables are allowed in JSON, in strings or as values; **Prettify** is off while the body contains one.
 - **Multipart** rows have a **Type** of Text or File. A File row shows a file picker. Picked files are not saved: pick them again after a reload.
 
-Generated requests use the example body from the spec. Upload operations arrive as Multipart, with file fields already set to File.
+Generated requests use the example body from the spec. Upload operations arrive as Multipart, with file fields already set to File. A field that takes a list of files arrives as one File row: add a row with the same name for each extra file. Other lists arrive as one row per item, because forms repeat the field name.
 
 ## Auth
 

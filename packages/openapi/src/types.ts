@@ -8,6 +8,10 @@ export interface Schema extends Json {
   $ref?: string;
   type?: string | string[];
   format?: string;
+  /** OpenAPI 3.1 file content (what `format: binary` upgrades to). */
+  contentMediaType?: string;
+  /** OpenAPI 3.1 encoded string, e.g. `base64` (what `format: byte` upgrades to). */
+  contentEncoding?: string;
   title?: string;
   description?: string;
   example?: unknown;

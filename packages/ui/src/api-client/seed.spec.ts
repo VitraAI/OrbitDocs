@@ -1,7 +1,44 @@
+import { buildReferenceModel, loadDocument } from '@vitra-ai/orbitdocs-openapi';
 import { describe, expect, it } from 'vitest';
 
-import { type ClientSeed, clientSeed, mergeSeed, requestHash } from './seed';
+import { type ClientSeed, clientSeed, mergeSeed, requestFromOperation, requestHash } from './seed';
 import type { Workspace } from './types';
+
+/** The operation of a one-route OpenAPI 3.0 document with this request body (upgraded to 3.1 like any spec). */
+async function operationWithBody(content: Record<string, unknown>) {
+  const { document } = await loadDocument({
+    openapi: '3.0.3',
+    info: { title: 'T', version: '1' },
+    paths: { '/uploads': { post: { operationId: 'upload', requestBody: { content }, responses: { '201': { description: 'Created' } } } } },
+  });
+  return buildReferenceModel(document, 't').operations[0]!;
+}
+
+describe('requestFromOperation', () => {
+  it('seeds files as file fields, one row per file of a list', async () => {
+    const op = await operationWithBody({
+      'multipart/form-data': {
+        schema: {
+          type: 'object',
+          properties: { files: { type: 'array', items: { type: 'string', format: 'binary' } }, note: { type: 'string', example: 'hi' } },
+        },
+      },
+    });
+    expect(requestFromOperation(op, 't', 'api:t').body).toEqual({
+      mode: 'multipart',
+      raw: '',
+      form: [
+        { key: 'files', value: '', enabled: true, file: true },
+        { key: 'note', value: 'hi', enabled: true, file: false },
+      ],
+    });
+  });
+
+  it('starts a file body empty', async () => {
+    const op = await operationWithBody({ 'application/octet-stream': { schema: { type: 'string', format: 'binary' } } });
+    expect(requestFromOperation(op, 't', 'api:t').body).toEqual({ mode: 'raw', raw: '', contentType: 'application/octet-stream', form: [] });
+  });
+});
 
 const seed: ClientSeed = {
   collection: { id: 'api:t', name: 'T', auth: { type: 'none' }, folders: ['A'], source: { api: 't' }, preRequestScript: '', postResponseScript: '' },

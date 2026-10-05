@@ -1,6 +1,9 @@
 import { deref } from './refs';
 import type { MediaType, Schema } from './types';
 
+/** Example value of a file; form bodies turn it into a file field. */
+export const BINARY_EXAMPLE = '<binary>';
+
 const FORMAT_EXAMPLES: Record<string, unknown> = {
   'date-time': '2026-01-15T09:30:00Z',
   date: '2026-01-15',
@@ -12,10 +15,20 @@ const FORMAT_EXAMPLES: Record<string, unknown> = {
   hostname: 'example.com',
   ipv4: '192.0.2.1',
   ipv6: '2001:db8::1',
-  binary: '<binary>',
+  binary: BINARY_EXAMPLE,
   byte: 'U3dhZ2dlciByb2Nrcw==',
   password: '********',
 };
+
+/**
+ * A file: `format: binary` (OpenAPI 3.0), or `contentMediaType` without
+ * `contentEncoding` (3.1, which is what `loadDocument` upgrades 3.0 files to).
+ */
+export function isBinarySchema(schema: Schema): boolean {
+  if (schema.format === 'binary') return true;
+  const type = Array.isArray(schema.type) ? schema.type.find((t) => t !== 'null') : schema.type;
+  return schema.contentMediaType !== undefined && schema.contentEncoding === undefined && (type === undefined || type === 'string');
+}
 
 export interface ExampleOptions {
   /** `request` skips readOnly properties, `response` skips writeOnly ones. */
@@ -54,6 +67,8 @@ export function exampleFor(
   }
   const variant = s.oneOf?.[0] ?? s.anyOf?.[0];
   if (variant) return exampleFor(variant, schemas, options, depth + 1, seen);
+  if (isBinarySchema(s)) return BINARY_EXAMPLE;
+  if (s.contentEncoding === 'base64' || s.contentEncoding === 'base64url') return FORMAT_EXAMPLES.byte;
 
   const type = Array.isArray(s.type) ? s.type.find((t) => t !== 'null') : s.type;
   switch (type ?? (s.properties ? 'object' : s.items ? 'array' : undefined)) {
@@ -103,6 +118,31 @@ export function mediaExample(
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** One field of a form body (`multipart/form-data` or `application/x-www-form-urlencoded`). */
+export interface FormFieldExample {
+  name: string;
+  /** Text value; empty for a file. */
+  value: string;
+  /** A file to attach rather than text. */
+  file: boolean;
+}
+
+/**
+ * The fields of a form body example: a list becomes one field per item (forms
+ * repeat the name, e.g. one `files` part per file) and files become file fields.
+ */
+export function formFields(example: unknown): FormFieldExample[] {
+  if (!isObject(example)) return [];
+  return Object.entries(example).flatMap(([name, value]) => {
+    const items = Array.isArray(value) ? (value.length ? value : [undefined]) : [value];
+    return items.map((item) =>
+      item === BINARY_EXAMPLE
+        ? { name, value: '', file: true }
+        : { name, value: item === undefined || item === null ? '' : typeof item === 'string' ? item : JSON.stringify(item), file: false },
+    );
+  });
+}
 
 /** A schema's own example: `example` (OpenAPI 3.0) or the first of `examples` (3.1 / JSON Schema). */
 export function schemaExample(schema: Schema | undefined): unknown {

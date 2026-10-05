@@ -204,7 +204,8 @@ export function Terminal({ lines, title = 'Terminal', speed = 32, loop = false }
           </button>
         </span>
       </div>
-      <pre className="od-terminal-body" aria-label={parsed.map((l) => (l.kind === 'cmd' ? `$ ${l.text}` : l.text)).join('\n')}>
+      {/* Focusable so keyboard readers can scroll long lines (the scrollbar is hidden). */}
+      <pre className="od-terminal-body" tabIndex={0} aria-label={parsed.map((l) => (l.kind === 'cmd' ? `$ ${l.text}` : l.text)).join('\n')}>
         {parsed.map((line, i) => {
           if (i > cursor[0]) return null;
           const typing = i === cursor[0];

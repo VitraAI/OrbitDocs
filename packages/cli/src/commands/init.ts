@@ -3,6 +3,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { log } from '../util';
+import { CLI_VERSION } from '../version';
 
 export interface InitOptions {
   /** Docs folder name (default `docs`). */
@@ -15,7 +16,8 @@ export interface InitOptions {
   routes?: 'opt-in' | 'all';
 }
 
-const VERSION = '^0.1.0';
+/** New docs apps use this CLI's own release line (the packages are released together). */
+const VERSION = `^${CLI_VERSION}`;
 
 /** Facts read from the Nest project so the generated config matches main.ts. */
 export function detectNest(root: string) {

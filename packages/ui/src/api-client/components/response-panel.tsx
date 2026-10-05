@@ -1,7 +1,7 @@
 'use client';
 
-import { Button, Chip, SearchField, Table, Tabs, Tooltip, toast } from '@heroui/react';
-import { LuCircleCheck as CheckCircle2, LuClock as Clock, LuCopy as Copy, LuDownload as Download, LuHardDrive as HardDrive, LuCircleX as XCircle, LuBan as SendOff } from 'react-icons/lu';
+import { Button, Chip, Kbd, SearchField, Spinner, Table, Tabs, Tooltip, toast } from '@heroui/react';
+import { LuCircleCheck as CheckCircle2, LuClock as Clock, LuCopy as Copy, LuDownload as Download, LuHardDrive as HardDrive, LuSend as Send, LuCircleX as XCircle, LuBan as SendOff } from 'react-icons/lu';
 import { useMemo, useState } from 'react';
 
 import type { RunResult } from '../types';
@@ -40,10 +40,22 @@ export function ResponsePanel({ result, sending, wrap, sendDisabled }: { result?
     return (
       <div className="oc-response oc-empty">
         <div className="oc-empty-art" aria-hidden>
-          ⟶
+          {sending ? <Spinner size="sm" color="current" /> : <Send size={22} />}
         </div>
         <p className="oc-empty-title">{sending ? 'Sending…' : 'Send a request to see the response'}</p>
-        <p className="oc-hint">Press ⌘ ↵ to send · ⌘ K for commands</p>
+        <p className="oc-hint oc-empty-keys">
+          <span>Press</span>
+          <Kbd>
+            <Kbd.Abbr keyValue="command" />
+            <Kbd.Content>↵</Kbd.Content>
+          </Kbd>
+          <span>to send ·</span>
+          <Kbd>
+            <Kbd.Abbr keyValue="command" />
+            <Kbd.Content>K</Kbd.Content>
+          </Kbd>
+          <span>for commands</span>
+        </p>
       </div>
     );
   }

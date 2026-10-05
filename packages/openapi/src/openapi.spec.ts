@@ -1,17 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  BINARY_EXAMPLE,
   buildReferenceModel,
   DanglingReferenceError,
   exampleFor,
   filterDocument,
   findDocumentationGaps,
+  formFields,
+  isBinarySchema,
   loadDocument,
   ORBIT_EXTENSION,
   pruneDocument,
   pruneModel,
   slugify,
   stableStringify,
+  typeLabel,
   type Document,
 } from './index';
 
@@ -201,6 +205,68 @@ describe('exampleFor', () => {
   it('skips readOnly in requests', () => {
     const s = { type: 'object', properties: { id: { type: 'string', readOnly: true }, name: { type: 'string' } } };
     expect(exampleFor(s, {}, { direction: 'request' })).toEqual({ name: 'string' });
+  });
+});
+
+describe('file fields', () => {
+  /** An OpenAPI 3.0 upload, as @nestjs/swagger writes it; loadDocument upgrades it to 3.1. */
+  const upload = (): Document => ({
+    openapi: '3.0.3',
+    info: { title: 'Files', version: '1' },
+    paths: {
+      '/uploads': {
+        post: {
+          operationId: 'upload',
+          requestBody: {
+            content: {
+              'multipart/form-data': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    files: { type: 'array', items: { type: 'string', format: 'binary' } },
+                    cover: { type: 'string', format: 'binary' },
+                    tags: { type: 'array', items: { type: 'string' }, example: ['dub', 'es'] },
+                    title: { type: 'string', example: 'Trailer' },
+                  },
+                },
+              },
+            },
+          },
+          responses: { '201': { description: 'Created' } },
+        },
+      },
+    },
+  });
+
+  it('keeps files recognisable after the 3.1 upgrade', async () => {
+    const { document } = await loadDocument(upload());
+    const content = buildReferenceModel(document, 'f').operations[0]!.requestBody!.content[0]!;
+    expect(content.example).toEqual({ files: [BINARY_EXAMPLE], cover: BINARY_EXAMPLE, tags: ['dub', 'es'], title: 'Trailer' });
+    expect(typeLabel(content.schema!.properties!.files, {})).toBe('string · binary[]');
+    expect(typeLabel(content.schema!.properties!.cover, {})).toBe('string · binary');
+  });
+
+  it('builds examples for files and encoded strings', () => {
+    expect(exampleFor({ type: 'string', format: 'binary' }, {})).toBe(BINARY_EXAMPLE);
+    expect(exampleFor({ contentMediaType: 'image/png' }, {})).toBe(BINARY_EXAMPLE);
+    expect(exampleFor({ type: 'array', items: { contentMediaType: 'application/octet-stream' } }, {})).toEqual([BINARY_EXAMPLE]);
+    expect(exampleFor({ type: 'string', contentEncoding: 'base64' }, {})).toBe('U3dhZ2dlciByb2Nrcw==');
+    expect(isBinarySchema({ type: 'string', contentMediaType: 'image/png', contentEncoding: 'base64' })).toBe(false);
+    expect(typeLabel({ type: 'string', contentEncoding: 'base64' }, {})).toBe('string · base64');
+  });
+
+  it('turns a form example into fields: one per list item, files marked', () => {
+    expect(formFields({ files: [BINARY_EXAMPLE, BINARY_EXAMPLE], tags: ['dub', 'es'], title: 'Trailer', meta: { a: 1 }, none: [], missing: undefined })).toEqual([
+      { name: 'files', value: '', file: true },
+      { name: 'files', value: '', file: true },
+      { name: 'tags', value: 'dub', file: false },
+      { name: 'tags', value: 'es', file: false },
+      { name: 'title', value: 'Trailer', file: false },
+      { name: 'meta', value: '{"a":1}', file: false },
+      { name: 'none', value: '', file: false },
+      { name: 'missing', value: '', file: false },
+    ]);
+    expect(formFields(undefined)).toEqual([]);
   });
 });
 

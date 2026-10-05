@@ -1,3 +1,4 @@
+import { isBinarySchema } from './example';
 import { deref, refName } from './refs';
 import type { Schema } from './types';
 
@@ -16,9 +17,13 @@ export function typeLabel(schema: Schema | undefined, schemas: Record<string, Sc
     label = `${typeLabel(s.items, schemas)}[]`;
   } else if (ref && (s.properties || s.allOf)) {
     label = ref;
+  } else if (isBinarySchema(s)) {
+    // 3.0 `format: binary` and its 3.1 upgrade (`contentMediaType`) read the same.
+    label = 'string · binary';
   } else if (types.length) {
     label = types.join(' | ');
     if (s.format) label += ` · ${s.format}`;
+    else if (s.contentEncoding) label += ` · ${s.contentEncoding}`;
   } else if (s.properties) {
     label = 'object';
   } else if (ref) {

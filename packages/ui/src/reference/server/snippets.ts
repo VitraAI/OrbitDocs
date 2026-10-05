@@ -1,4 +1,4 @@
-import type { OperationModel, ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
+import { formFields, type OperationModel, type ReferenceModel } from '@vitra-ai/orbitdocs-openapi';
 import { snippetz } from '@scalar/snippetz';
 
 import { highlight } from './highlight';
@@ -58,12 +58,9 @@ export function exampleRequest(op: OperationModel, model: ReferenceModel, server
   };
   if (body) {
     if (body.mediaType === 'multipart/form-data' || body.mediaType === 'application/x-www-form-urlencoded') {
-      const fields = Object.entries((body.example as Record<string, unknown>) ?? {});
       har.postData = {
         mimeType: body.mediaType,
-        params: fields.map(([name, v]) =>
-          v === '<binary>' ? { name, fileName: `${name}.pdf` } : { name, value: stringify(v) },
-        ),
+        params: formFields(body.example).map((f) => (f.file ? { name: f.name, fileName: `${f.name}.pdf` } : { name: f.name, value: f.value })),
       } as Har['postData'];
     } else {
       har.headers!.push({ name: 'Content-Type', value: body.mediaType });
