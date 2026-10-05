@@ -1,13 +1,6 @@
 import { defineConfig } from '@vitra-ai/orbitdocs-next/config';
 
 export default defineConfig({
-  // Until the packages are on npm, the install commands in these docs don't work yet.
-  // Remove this banner on the day of the first npm release.
-  banner: {
-    content: 'OrbitDocs packages are coming to npm soon. Until then, run it from the GitHub repo →',
-    url: 'https://github.com/VitraAI/OrbitDocs',
-    dismissible: false,
-  },
   site: {
     title: 'OrbitDocs',
     url: 'https://orbitdocs.vitra.ai',
