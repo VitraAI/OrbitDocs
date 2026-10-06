@@ -1,5 +1,14 @@
 # @vitra-ai/orbitdocs-platform
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [ee35366]
+  - @vitra-ai/orbitdocs-auth@0.2.1
+  - @vitra-ai/orbitdocs-ai@0.2.1
+  - @vitra-ai/orbitdocs-openapi@0.2.1
+
 ## 0.1.1
 
 ### Patch Changes
