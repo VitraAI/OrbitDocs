@@ -1,5 +1,15 @@
 # @vitra-ai/orbitdocs
 
+## 0.2.2
+
+### Patch Changes
+
+- 1bd684a: Fix `orbitdocs extract` / `orbitdocs build` failing with "Unterminated string in JSON" when the extraction result is large (many APIs, many documentation gaps). The extractor child now exits only after its result has been flushed to stdout, and the CLI parses the result on the child's `close` event, after stdout has been read to the end, instead of on `exit`.
+- @vitra-ai/orbitdocs-ai@0.2.2
+  - @vitra-ai/orbitdocs-auth@0.2.2
+  - @vitra-ai/orbitdocs-core@0.2.2
+  - @vitra-ai/orbitdocs-openapi@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes
