@@ -38,14 +38,17 @@ function filterOptions(api: ApiConfig): FilterOptions {
   };
 }
 
-function runExtractor<T = Array<{ operations: number; gaps: string[] }>>(cli: string, requestFile: string, cwd: string): Promise<T> {
+/** Runs the extractor child and parses its `ORBITDOCS_RESULT` line. Exported for tests. */
+export function runExtractor<T = Array<{ operations: number; gaps: string[] }>>(cli: string, requestFile: string, cwd: string): Promise<T> {
   return new Promise((resolvePromise, reject) => {
     const child = spawn(process.execPath, [cli, requestFile], { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
     let err = '';
     child.stdout.on('data', (d: Buffer) => (out += d.toString()));
     child.stderr.on('data', (d: Buffer) => (err += d.toString()));
-    child.on('exit', (code) => {
+    // 'close', not 'exit': 'exit' can fire before the child's stdout has been read to the end,
+    // which cut a large result off mid-JSON ("Unterminated string in JSON").
+    child.on('close', (code) => {
       const line = out.split('\n').find((l) => l.startsWith('ORBITDOCS_RESULT '));
       if (code === 0 && line) return resolvePromise(JSON.parse(line.slice('ORBITDOCS_RESULT '.length)));
       reject(new Error(`Extraction failed:\n${err || out}`));
