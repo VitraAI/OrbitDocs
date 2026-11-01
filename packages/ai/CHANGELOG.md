@@ -1,5 +1,12 @@
 # @vitra-ai/orbitdocs-ai
 
+## 0.2.2
+
+### Patch Changes
+
+- @vitra-ai/orbitdocs-auth@0.2.2
+  - @vitra-ai/orbitdocs-openapi@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

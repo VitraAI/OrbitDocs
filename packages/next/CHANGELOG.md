@@ -1,5 +1,15 @@
 # @vitra-ai/orbitdocs-next
 
+## 0.2.2
+
+### Patch Changes
+
+- @vitra-ai/orbitdocs-ai@0.2.2
+  - @vitra-ai/orbitdocs-auth@0.2.2
+  - @vitra-ai/orbitdocs-core@0.2.2
+  - @vitra-ai/orbitdocs-openapi@0.2.2
+  - @vitra-ai/orbitdocs-ui@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes
