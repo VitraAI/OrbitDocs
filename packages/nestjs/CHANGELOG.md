@@ -1,5 +1,13 @@
 # @vitra-ai/orbitdocs-nestjs
 
+## 0.2.3
+
+### Patch Changes
+
+- @vitra-ai/orbitdocs-ai@0.2.3
+  - @vitra-ai/orbitdocs-auth@0.2.3
+  - @vitra-ai/orbitdocs-openapi@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes
