@@ -1,5 +1,11 @@
 # @vitra-ai/orbitdocs-ui
 
+## 0.2.3
+
+### Patch Changes
+
+- @vitra-ai/orbitdocs-openapi@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes
